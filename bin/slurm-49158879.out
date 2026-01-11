@@ -1,0 +1,60 @@
+=====================================================
+Start Time  : Sat May  3 07:07:50 PM PDT 2025
+Submit Dir  : /central/groups/enviromics/data/GTDB/bin
+Job ID/Name : 49158879 / operon-org
+Node List   : hpc-83-13
+Num Tasks   : 32 total [1 nodes @ 32 CPUs/node]
+======================================================
+
+getting operon fastas
+running microbeannotator
+Loading diamond/2.1.7-gcc-13.2.0-cfkl5pd
+  Loading requirement: zlib-ng/2.1.3-gcc-13.2.0-jetnfwa
+2025-05-03 19:08:05,240 [INFO]:  ---- This is MicrobeAnnotator v2.0.5 ---- 
+2025-05-03 19:08:05,266 [INFO]: Validating user inputs
+2025-05-03 19:08:05,928 [INFO]: Passed
+2025-05-03 19:08:05,928 [INFO]: Processing 5599 files. I will run 8 files in parallel with 4 threads per file.
+2025-05-03 19:08:05,936 [INFO]: Restarting from last checkpoint
+2025-05-03 19:08:05,937 [INFO]: Step 2
+2025-05-03 19:08:06,119 [INFO]: Searching proteins against Swissprot
+
+Error opening file ../operon-org/microbeannotator/temporal_proteins/GB_GCA_013041765.1_JABDRL010000192.1_operon.fasta.step_2: No such file or directory
+
+Error opening file ../operon-org/microbeannotator/temporal_proteins/GB_GCA_021798485.1_JAJZGK010000148.1_operon.fasta.step_2: No such file or directory
+
+Error opening file ../operon-org/microbeannotator/temporal_proteins/GB_GCA_031290695.1_JAITNB010000026.1_operon.fasta.step_2: No such file or directory
+
+Error opening file ../operon-org/microbeannotator/temporal_proteins/GB_GCA_031278575.1_JAITKD010000016.1_operon.fasta.step_2: No such file or directory
+
+Error opening file ../operon-org/microbeannotator/temporal_proteins/GB_GCA_937886325.1_CALABV010000158.1_operon.fasta.step_2: No such file or directory
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/central/groups/enviromics/miniconda3/envs/microbeannotator/lib/python3.7/multiprocessing/pool.py", line 121, in worker
+    result = (True, func(*args, **kwds))
+  File "/central/groups/enviromics/miniconda3/envs/microbeannotator/lib/python3.7/multiprocessing/pool.py", line 44, in mapstar
+    return list(map(*args))
+  File "/central/groups/enviromics/miniconda3/envs/microbeannotator/lib/python3.7/site-packages/microbeannotator/pipeline/protein_search.py", line 232, in similarity_search
+    blast_filter_slow(method_output_file, filtered_file, id_perc, bitscore, evalue, aln_percent)
+  File "/central/groups/enviromics/miniconda3/envs/microbeannotator/lib/python3.7/site-packages/microbeannotator/pipeline/protein_search.py", line 138, in blast_filter_slow
+    with open(input_tab) as blast_input:
+FileNotFoundError: [Errno 2] No such file or directory: '../operon-org/microbeannotator/swissprot_results/GB_GCA_013041765.1_JABDRL010000192.1_operon.fasta.step_2.diamond'
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/groups/enviromics/miniconda3/envs/microbeannotator/bin/microbeannotator", line 980, in <module>
+    main()
+  File "/groups/enviromics/miniconda3/envs/microbeannotator/bin/microbeannotator", line 428, in main
+    multiple_arguments=arguments_to_pass), input_proteins)
+  File "/central/groups/enviromics/miniconda3/envs/microbeannotator/lib/python3.7/multiprocessing/pool.py", line 268, in map
+    return self._map_async(func, iterable, mapstar, chunksize).get()
+  File "/central/groups/enviromics/miniconda3/envs/microbeannotator/lib/python3.7/multiprocessing/pool.py", line 657, in get
+    raise self._value
+FileNotFoundError: [Errno 2] No such file or directory: '../operon-org/microbeannotator/swissprot_results/GB_GCA_013041765.1_JABDRL010000192.1_operon.fasta.step_2.diamond'
+
+======================================================
+End Time   : Sat May  3 10:28:13 PM PDT 2025
+======================================================
+

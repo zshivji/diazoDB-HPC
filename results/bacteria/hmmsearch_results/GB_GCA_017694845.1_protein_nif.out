@@ -1,0 +1,306 @@
+# hmmsearch :: search profile(s) against a sequence database
+# HMMER 3.4 (Aug 2023); http://hmmer.org/
+# Copyright (C) 2023 Howard Hughes Medical Institute.
+# Freely distributed under the BSD open source license.
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# query HMM file:                  ../HMMs/combined_nif_04012025.hmm
+# target sequence database:        ../all_rep_proteins_aa/bacteria/GB_GCA_017694845.1_protein.faa
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Query:       nifH-03292025  [M=327]
+Scores for complete sequences (score includes all domains):
+   --- full sequence ---   --- best 1 domain ---    -#dom-
+    E-value  score  bias    E-value  score  bias    exp  N  Sequence             Description
+    ------- ------ -----    ------- ------ -----   ---- --  --------             -----------
+    1.6e-12   44.0   0.0    2.3e-08   30.3   0.0    2.1  2  JADIMI010000060.1_8   # 7756 # 8529 # -1 # ID=42_8;partial=00
+    4.4e-07   26.1   0.2    7.3e-06   22.1   0.2    2.2  2  JADIMI010000083.1_37  # 52829 # 53899 # -1 # ID=72_37;partial
+
+
+Domain annotation for each sequence (and alignments):
+>> JADIMI010000060.1_8  # 7756 # 8529 # -1 # ID=42_8;partial=00;start_type=ATG;rbs_motif=AATAA;rbs_spacer=7bp;gc_cont=0.
+   #    score  bias  c-Evalue  i-Evalue hmmfrom  hmm to    alifrom  ali to    envfrom  env to     acc
+ ---   ------ ----- --------- --------- ------- -------    ------- -------    ------- -------    ----
+   1 !   30.3   0.0   2.5e-11   2.3e-08      17      56 ..      11      50 ..       2      86 .. 0.87
+   2 !   11.9   0.0   9.8e-06    0.0092     149     257 ..     142     255 ..     139     257 .. 0.75
+
+  Alignments for each domain:
+  == domain 1  score: 30.3 bits;  conditional E-value: 2.5e-11
+        nifH-03292025 17 KGGiGKSttasnlsaalaeegkkvlivGCdPKaDstrlll 56
+                         KGG+GK tta nl+a la  +kkvli+  dP a +t+ l 
+  JADIMI010000060.1_8 11 KGGVGKTTTAINLAASLAVLEKKVLIIDADPQANTTSGLN 50
+                         9**********************************98775 PP
+
+  == domain 2  score: 11.9 bits;  conditional E-value: 9.8e-06
+        nifH-03292025 149 adevyivtsgemmalYaanniakgikkyaee..ggvrlgGlicNsr..kvdkeeelveefaeklgtqiiafv.prsnevqkaelekktvi 233
+                          ad+++i +  e+ al     ++++i+ ++     + ++ G+++ +   +++ ++++v+++ e++g  +++++ +r+  +++a  ++k +i
+  JADIMI010000060.1_8 142 ADSIMIPVQPEFFALEGLGKLLQTIRLVQGGinPDLTIEGFLVTMFdgRTKVHSQVVSQLKEHFGDMVFKTIiQRNIRLSEAPSHGKPII 231
+                          66666666677777777777777776666652244555666555441146678999*********99998761666789*********** PP
+
+        nifH-03292025 234 eaapdseqakeyreLakkilenkk 257
+                           ++  s+ +++y +La++ilen++
+  JADIMI010000060.1_8 232 LYDVVSNGTTNYLNLAREILENNR 255
+                          *********************975 PP
+
+>> JADIMI010000083.1_37  # 52829 # 53899 # -1 # ID=72_37;partial=00;start_type=ATG;rbs_motif=AAAAAA;rbs_spacer=10bp;gc_c
+   #    score  bias  c-Evalue  i-Evalue hmmfrom  hmm to    alifrom  ali to    envfrom  env to     acc
+ ---   ------ ----- --------- --------- ------- -------    ------- -------    ------- -------    ----
+   1 !   22.1   0.2   7.8e-09   7.3e-06      16      40 ..     108     132 ..      99     138 .. 0.93
+   2 ?    1.6   0.0     0.013        13     166     193 ..     252     280 ..     239     355 .. 0.83
+
+  Alignments for each domain:
+  == domain 1  score: 22.1 bits;  conditional E-value: 7.8e-09
+         nifH-03292025  16 GKGGiGKSttasnlsaalaeegkkv 40 
+                           GKGG+GKSt+a nl++ala+eg++v
+  JADIMI010000083.1_37 108 GKGGVGKSTVAVNLAVALAREGYRV 132
+                           9*********************998 PP
+
+  == domain 2  score: 1.6 bits;  conditional E-value: 0.013
+         nifH-03292025 166 anniakgikkyaee.ggvrlgGlicNsrk 193
+                             ++ kg++ ++++  + r+ Gli N+  
+  JADIMI010000083.1_37 252 LADVEKGVNMFRNQsINKRIYGLIENMAW 280
+                           468899****998867999*******865 PP
+
+
+
+Internal pipeline statistics summary:
+-------------------------------------
+Query model(s):                            1  (327 nodes)
+Target sequences:                       1882  (740295 residues searched)
+Passed MSV filter:                        69  (0.0366631); expected 37.6 (0.02)
+Passed bias filter:                       58  (0.0308183); expected 37.6 (0.02)
+Passed Vit filter:                         8  (0.0042508); expected 1.9 (0.001)
+Passed Fwd filter:                         2  (0.0010627); expected 0.0 (1e-05)
+Initial search space (Z):               1882  [actual number of targets]
+Domain search space  (domZ):               2  [number of targets reported over threshold]
+# CPU time: 0.02u 0.00s 00:00:00.02 Elapsed: 00:00:00.01
+# Mc/sec: 13053.71
+//
+Query:       nifD-03292025  [M=482]
+Scores for complete sequences (score includes all domains):
+   --- full sequence ---   --- best 1 domain ---    -#dom-
+    E-value  score  bias    E-value  score  bias    exp  N  Sequence Description
+    ------- ------ -----    ------- ------ -----   ---- --  -------- -----------
+
+   [No hits detected that satisfy reporting thresholds]
+
+
+Domain annotation for each sequence (and alignments):
+
+   [No targets detected that satisfy reporting thresholds]
+
+
+Internal pipeline statistics summary:
+-------------------------------------
+Query model(s):                            1  (482 nodes)
+Target sequences:                       1882  (740295 residues searched)
+Passed MSV filter:                        74  (0.0393199); expected 37.6 (0.02)
+Passed bias filter:                       59  (0.0313496); expected 37.6 (0.02)
+Passed Vit filter:                         5  (0.00265675); expected 1.9 (0.001)
+Passed Fwd filter:                         0  (0); expected 0.0 (1e-05)
+Initial search space (Z):               1882  [actual number of targets]
+Domain search space  (domZ):               0  [number of targets reported over threshold]
+# CPU time: 0.02u 0.00s 00:00:00.02 Elapsed: 00:00:00.01
+# Mc/sec: 28776.47
+//
+Query:       nifK-03292025  [M=490]
+Scores for complete sequences (score includes all domains):
+   --- full sequence ---   --- best 1 domain ---    -#dom-
+    E-value  score  bias    E-value  score  bias    exp  N  Sequence Description
+    ------- ------ -----    ------- ------ -----   ---- --  -------- -----------
+
+   [No hits detected that satisfy reporting thresholds]
+
+
+Domain annotation for each sequence (and alignments):
+
+   [No targets detected that satisfy reporting thresholds]
+
+
+Internal pipeline statistics summary:
+-------------------------------------
+Query model(s):                            1  (490 nodes)
+Target sequences:                       1882  (740295 residues searched)
+Passed MSV filter:                        51  (0.0270988); expected 37.6 (0.02)
+Passed bias filter:                       46  (0.0244421); expected 37.6 (0.02)
+Passed Vit filter:                         5  (0.00265675); expected 1.9 (0.001)
+Passed Fwd filter:                         0  (0); expected 0.0 (1e-05)
+Initial search space (Z):               1882  [actual number of targets]
+Domain search space  (domZ):               0  [number of targets reported over threshold]
+# CPU time: 0.02u 0.00s 00:00:00.02 Elapsed: 00:00:00.01
+# Mc/sec: 18771.33
+//
+Query:       nifB-03292025  [M=505]
+Scores for complete sequences (score includes all domains):
+   --- full sequence ---   --- best 1 domain ---    -#dom-
+    E-value  score  bias    E-value  score  bias    exp  N  Sequence Description
+    ------- ------ -----    ------- ------ -----   ---- --  -------- -----------
+
+   [No hits detected that satisfy reporting thresholds]
+
+
+Domain annotation for each sequence (and alignments):
+
+   [No targets detected that satisfy reporting thresholds]
+
+
+Internal pipeline statistics summary:
+-------------------------------------
+Query model(s):                            1  (505 nodes)
+Target sequences:                       1882  (740295 residues searched)
+Passed MSV filter:                        51  (0.0270988); expected 37.6 (0.02)
+Passed bias filter:                       39  (0.0207226); expected 37.6 (0.02)
+Passed Vit filter:                         3  (0.00159405); expected 1.9 (0.001)
+Passed Fwd filter:                         0  (0); expected 0.0 (1e-05)
+Initial search space (Z):               1882  [actual number of targets]
+Domain search space  (domZ):               0  [number of targets reported over threshold]
+# CPU time: 0.02u 0.00s 00:00:00.02 Elapsed: 00:00:00.01
+# Mc/sec: 21320.99
+//
+Query:       nifE-03292025  [M=556]
+Scores for complete sequences (score includes all domains):
+   --- full sequence ---   --- best 1 domain ---    -#dom-
+    E-value  score  bias    E-value  score  bias    exp  N  Sequence Description
+    ------- ------ -----    ------- ------ -----   ---- --  -------- -----------
+
+   [No hits detected that satisfy reporting thresholds]
+
+
+Domain annotation for each sequence (and alignments):
+
+   [No targets detected that satisfy reporting thresholds]
+
+
+Internal pipeline statistics summary:
+-------------------------------------
+Query model(s):                            1  (556 nodes)
+Target sequences:                       1882  (740295 residues searched)
+Passed MSV filter:                        73  (0.0387885); expected 37.6 (0.02)
+Passed bias filter:                       56  (0.0297556); expected 37.6 (0.02)
+Passed Vit filter:                         5  (0.00265675); expected 1.9 (0.001)
+Passed Fwd filter:                         0  (0); expected 0.0 (1e-05)
+Initial search space (Z):               1882  [actual number of targets]
+Domain search space  (domZ):               0  [number of targets reported over threshold]
+# CPU time: 0.03u 0.01s 00:00:00.04 Elapsed: 00:00:00.02
+# Mc/sec: 18703.72
+//
+Query:       nifN-03292025  [M=700]
+Scores for complete sequences (score includes all domains):
+   --- full sequence ---   --- best 1 domain ---    -#dom-
+    E-value  score  bias    E-value  score  bias    exp  N  Sequence Description
+    ------- ------ -----    ------- ------ -----   ---- --  -------- -----------
+
+   [No hits detected that satisfy reporting thresholds]
+
+
+Domain annotation for each sequence (and alignments):
+
+   [No targets detected that satisfy reporting thresholds]
+
+
+Internal pipeline statistics summary:
+-------------------------------------
+Query model(s):                            1  (700 nodes)
+Target sequences:                       1882  (740295 residues searched)
+Passed MSV filter:                        68  (0.0361318); expected 37.6 (0.02)
+Passed bias filter:                       55  (0.0292242); expected 37.6 (0.02)
+Passed Vit filter:                         5  (0.00265675); expected 1.9 (0.001)
+Passed Fwd filter:                         0  (0); expected 0.0 (1e-05)
+Initial search space (Z):               1882  [actual number of targets]
+Domain search space  (domZ):               0  [number of targets reported over threshold]
+# CPU time: 0.03u 0.00s 00:00:00.03 Elapsed: 00:00:00.02
+# Mc/sec: 18604.69
+//
+Query:       pchlide-04012025  [M=508]
+Scores for complete sequences (score includes all domains):
+   --- full sequence ---   --- best 1 domain ---    -#dom-
+    E-value  score  bias    E-value  score  bias    exp  N  Sequence Description
+    ------- ------ -----    ------- ------ -----   ---- --  -------- -----------
+
+   [No hits detected that satisfy reporting thresholds]
+
+
+Domain annotation for each sequence (and alignments):
+
+   [No targets detected that satisfy reporting thresholds]
+
+
+Internal pipeline statistics summary:
+-------------------------------------
+Query model(s):                            1  (508 nodes)
+Target sequences:                       1882  (740295 residues searched)
+Passed MSV filter:                        50  (0.0265675); expected 37.6 (0.02)
+Passed bias filter:                       46  (0.0244421); expected 37.6 (0.02)
+Passed Vit filter:                         7  (0.00371945); expected 1.9 (0.001)
+Passed Fwd filter:                         0  (0); expected 0.0 (1e-05)
+Initial search space (Z):               1882  [actual number of targets]
+Domain search space  (domZ):               0  [number of targets reported over threshold]
+# CPU time: 0.02u 0.00s 00:00:00.02 Elapsed: 00:00:00.01
+# Mc/sec: 24264.84
+//
+[ok]
+# hmmsearch :: search profile(s) against a sequence database
+# HMMER 3.4 (Aug 2023); http://hmmer.org/
+# Copyright (C) 2023 Howard Hughes Medical Institute.
+# Freely distributed under the BSD open source license.
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# query HMM file:                  ../HMMs/nifV_07242025.hmm
+# target sequence database:        ../all_rep_proteins_aa/bacteria/GB_GCA_017694845.1_protein.faa
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Query:       nifV-07242025  [M=437]
+Scores for complete sequences (score includes all domains):
+   --- full sequence ---   --- best 1 domain ---    -#dom-
+    E-value  score  bias    E-value  score  bias    exp  N  Sequence             Description
+    ------- ------ -----    ------- ------ -----   ---- --  --------             -----------
+    3.5e-92  306.4   1.6    4.2e-92  306.2   1.6    1.1  1  JADIMI010000061.1_13  # 16800 # 18296 # -1 # ID=43_13;partial
+
+
+Domain annotation for each sequence (and alignments):
+>> JADIMI010000061.1_13  # 16800 # 18296 # -1 # ID=43_13;partial=00;start_type=ATG;rbs_motif=None;rbs_spacer=None;gc_con
+   #    score  bias  c-Evalue  i-Evalue hmmfrom  hmm to    alifrom  ali to    envfrom  env to     acc
+ ---   ------ ----- --------- --------- ------- -------    ------- -------    ------- -------    ----
+   1 !  306.2   1.6   2.2e-95   4.2e-92      15     394 ..       4     391 ..       1     438 [. 0.87
+
+  Alignments for each domain:
+  == domain 1  score: 306.2 bits;  conditional E-value: 2.2e-95
+         nifV-07242025  15 avvinDtTLRDGeQaaGvaFsleeklaiAkaLdaaGveelEvGipamGeeereairaiaalglkakllaWcRlresdieaaaal....g 99 
+                           ++ + DtTLRDGeQ +G  +++ ek+++Ak L+++ v+ +E G p+ +  + ++i +i ++  ++++ a +R++e+di+ aa+      
+  JADIMI010000061.1_13   4 KLYVFDTTLRDGEQVPGCQLNTIEKIELAKLLESMKVDIIECGFPVSSPGDFKSIVEISKIVTESTICALTRAVEKDIDVAADAlhfaR 92 
+                           57899********************************************************99****************9886422113 PP
+
+         nifV-07242025 100 vkrvdlsipvSdiqiaaklkrdrawvleeleelvklAldaglevsvGaEDaSRadeefllevaevaqeaGasrlRfaDTlGildPfttl 188
+                             r++  i +Sd +i++k++++r+ +l++  ++vk+A++   +v   aEDa R+++e l++v+e++ +aGa+ + + DT G   P +  
+  JADIMI010000061.1_13  93 RPRIHTGIGTSDYHIRYKFNSNREEILQRAVAAVKYARKYVDDVEFYAEDAGRTENEYLARVVEAVIAAGATVVNIPDTTGYCLPEEYG 181
+                           468************************************************************************************** PP
+
+         nifV-07242025 189 ekvkkLraal....dlelEmHaHnDlGlAtANtlaavkaGathvnttvnGLGERAGnAaLeevvlalkrlygid..tgidlkrlpelse 271
+                           +k+k L++++    +  +  H+HnDlG+AtANtla+v  Ga +v++tvnG+GERAGn a+eevv+a+k  ++i   t+i  + +++ s+
+  JADIMI010000061.1_13 182 AKIKYLVDNVpnidKAIISTHCHNDLGMATANTLAGVMNGARQVEVTVNGVGERAGNTAMEEVVMAVKCRKDIPvyTDIVSRMFNKASH 270
+                           *******9983222356899************************************************99887522789999******* PP
+
+         nifV-07242025 272 lvakasgrpvpaqkaivGeavFtHEsGiHvdgllkdpetYegldPeevGrer.rlvlGkhsGraavkaalaelgieldeeeaealleav 359
+                            v++  ++pv+++kaivG+++F+H sGiH dg+lk++e+Ye +dP++vG +  ++ l   sGraa+k+ +++lgie+++ee++a  ++ 
+  JADIMI010000061.1_13 271 SVSTLMRMPVQPNKAIVGRNAFAHSSGIHQDGVLKNRESYEIIDPADVGVNDsTIELTARSGRAALKHHFQRLGIEMSKEELDASYQKF 359
+                           *************************************************9861567********************************9 PP
+
+         nifV-07242025 360 relaeetkrslteeeLlelveellaaeeaakaaak 394
+                            +la  +k+++++++Ll l+  ++   + a++++ 
+  JADIMI010000061.1_13 360 LQLAD-AKKEINDSDLLMLAGVTQD--KIAQKIRL 391
+                           99886.5778999999999876442..22222222 PP
+
+
+
+Internal pipeline statistics summary:
+-------------------------------------
+Query model(s):                            1  (437 nodes)
+Target sequences:                       1882  (740295 residues searched)
+Passed MSV filter:                        52  (0.0276302); expected 37.6 (0.02)
+Passed bias filter:                       42  (0.0223167); expected 37.6 (0.02)
+Passed Vit filter:                         5  (0.00265675); expected 1.9 (0.001)
+Passed Fwd filter:                         1  (0.00053135); expected 0.0 (1e-05)
+Initial search space (Z):               1882  [actual number of targets]
+Domain search space  (domZ):               1  [number of targets reported over threshold]
+# CPU time: 0.02u 0.00s 00:00:00.02 Elapsed: 00:00:00.01
+# Mc/sec: 20238.15
+//
+[ok]

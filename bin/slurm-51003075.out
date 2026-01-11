@@ -1,0 +1,329 @@
+=====================================================
+Start Time  : Tue Jul  1 06:22:29 PM PDT 2025
+Submit Dir  : /central/groups/enviromics/data/GTDB/bin
+Job ID/Name : 51003075 / SSN
+Node List   : hpc-92-26
+Num Tasks   : 8 total [1 nodes @ 8 CPUs/node]
+======================================================
+
+createdb ../SSN/PF00148-unreviewed.fasta ../SSN/queryDB 
+
+MMseqs Version:       	13.45111
+Database type         	0
+Shuffle input database	true
+Createdb mode         	0
+Write lookup file     	1
+Offset of numeric ids 	0
+Compressed            	0
+Verbosity             	3
+
+Converting sequences
+[===
+Time for merging to queryDB_h: 0h 0m 0s 29ms
+Time for merging to queryDB: 0h 0m 0s 82ms
+Database type: Aminoacid
+Time for processing: 0h 0m 0s 360ms
+createdb ../SSN/PF00148-unreviewed.fasta ../SSN/targetDB 
+
+MMseqs Version:       	13.45111
+Database type         	0
+Shuffle input database	true
+Createdb mode         	0
+Write lookup file     	1
+Offset of numeric ids 	0
+Compressed            	0
+Verbosity             	3
+
+Converting sequences
+[===
+Time for merging to targetDB_h: 0h 0m 0s 18ms
+Time for merging to targetDB: 0h 0m 0s 122ms
+Database type: Aminoacid
+Time for processing: 0h 0m 0s 298ms
+createindex ../SSN/targetDB ../SSN/tmp 
+
+MMseqs Version:          	13.45111
+Seed substitution matrix 	nucl:nucleotide.out,aa:VTML80.out
+k-mer length             	0
+Alphabet size            	nucl:5,aa:21
+Compositional bias       	1
+Max sequence length      	65535
+Max results per query    	300
+Mask residues            	1
+Mask lower case residues 	0
+Spaced k-mers            	1
+Spaced k-mer pattern     	
+Sensitivity              	7.5
+k-score                  	0
+Check compatible         	0
+Search type              	0
+Split database           	0
+Split memory limit       	0
+Verbosity                	3
+Threads                  	32
+Min codons in orf        	30
+Max codons in length     	32734
+Max orf gaps             	2147483647
+Contig start mode        	2
+Contig end mode          	2
+Orf start mode           	1
+Forward frames           	1,2,3
+Reverse frames           	1,2,3
+Translation table        	1
+Translate orf            	0
+Use all table starts     	false
+Offset of numeric ids    	0
+Create lookup            	0
+Compressed               	0
+Add orf stop             	false
+Overlap between sequences	0
+Sequence split mode      	1
+Header split mode        	0
+Strand selection         	1
+Remove temporary files   	false
+
+createindex ../SSN/targetDB ../SSN/tmp 
+
+MMseqs Version:          	13.45111
+Seed substitution matrix 	nucl:nucleotide.out,aa:VTML80.out
+k-mer length             	0
+Alphabet size            	nucl:5,aa:21
+Compositional bias       	1
+Max sequence length      	65535
+Max results per query    	300
+Mask residues            	1
+Mask lower case residues 	0
+Spaced k-mers            	1
+Spaced k-mer pattern     	
+Sensitivity              	7.5
+k-score                  	0
+Check compatible         	0
+Search type              	0
+Split database           	0
+Split memory limit       	0
+Verbosity                	3
+Threads                  	32
+Min codons in orf        	30
+Max codons in length     	32734
+Max orf gaps             	2147483647
+Contig start mode        	2
+Contig end mode          	2
+Orf start mode           	1
+Forward frames           	1,2,3
+Reverse frames           	1,2,3
+Translation table        	1
+Translate orf            	0
+Use all table starts     	false
+Offset of numeric ids    	0
+Create lookup            	0
+Compressed               	0
+Add orf stop             	false
+Overlap between sequences	0
+Sequence split mode      	1
+Header split mode        	0
+Strand selection         	1
+Remove temporary files   	false
+
+indexdb ../SSN/targetDB ../SSN/targetDB --seed-sub-mat nucl:nucleotide.out,aa:VTML80.out -k 0 --alph-size nucl:5,aa:21 --comp-bias-corr 1 --max-seq-len 65535 --max-seqs 300 --mask 1 --mask-lower-case 0 --spaced-kmer-mode 1 -s 7.5 --k-score 0 --check-compatible 0 --search-type 0 --split 0 --split-memory-limit 0 -v 3 --threads 32 
+
+Estimated memory consumption: 1G
+Write VERSION (0)
+Write META (1)
+Write SCOREMATRIX3MER (4)
+Write SCOREMATRIX2MER (3)
+Write SCOREMATRIXNAME (2)
+Write SPACEDPATTERN (23)
+Write GENERATOR (22)
+Write DBR1INDEX (5)
+Write DBR1DATA (6)
+Write HDR1INDEX (18)
+Write HDR1DATA (19)
+Index table: counting k-mers
+[=================================================================] 30.66K 0s 529ms
+Index table: Masked residues: 19598
+Index table: fill
+[=================================================================] 30.66K 0s 426ms
+Index statistics
+Entries:          13073781
+DB size:          563 MB
+Avg k-mer size:   0.204278
+Top 10 k-mers
+    GLGDAV	4893
+    AGKVGP	4854
+    GCYGGV	4781
+    SQLHAN	4422
+    GDNGAW	4362
+    NIGASR	4232
+    PVCGGV	4232
+    GPGGSW	4151
+    DMHSPV	4015
+    AYGKVW	3897
+Write ENTRIES (9)
+Write ENTRIESOFFSETS (10)
+Write SEQINDEXDATASIZE (15)
+Write SEQINDEXSEQOFFSET (16)
+Write SEQINDEXDATA (14)
+Write ENTRIESNUM (12)
+Write SEQCOUNT (13)
+Time for merging to targetDB.idx: 0h 0m 0s 0ms
+Time for processing: 0h 0m 2s 372ms
+mkdir: cannot create directory ‘../SSN/tmp’: File exists
+search ../SSN/queryDB ../SSN/targetDB ../SSN/resultDB tmp 
+
+MMseqs Version:                        	13.45111
+Substitution matrix                    	nucl:nucleotide.out,aa:blosum62.out
+Add backtrace                          	false
+Alignment mode                         	2
+Alignment mode                         	0
+Allow wrapped scoring                  	false
+E-value threshold                      	0.001
+Seq. id. threshold                     	0
+Min alignment length                   	0
+Seq. id. mode                          	0
+Alternative alignments                 	0
+Coverage threshold                     	0
+Coverage mode                          	0
+Max sequence length                    	65535
+Compositional bias                     	1
+Max reject                             	2147483647
+Max accept                             	2147483647
+Include identical seq. id.             	false
+Preload mode                           	0
+Pseudo count a                         	1
+Pseudo count b                         	1.5
+Score bias                             	0
+Realign hits                           	false
+Realign score bias                     	-0.2
+Realign max seqs                       	2147483647
+Gap open cost                          	nucl:5,aa:11
+Gap extension cost                     	nucl:2,aa:1
+Zdrop                                  	40
+Threads                                	32
+Compressed                             	0
+Verbosity                              	3
+Seed substitution matrix               	nucl:nucleotide.out,aa:VTML80.out
+Sensitivity                            	5.7
+k-mer length                           	0
+k-score                                	2147483647
+Alphabet size                          	nucl:5,aa:21
+Max results per query                  	300
+Split database                         	0
+Split mode                             	2
+Split memory limit                     	0
+Diagonal scoring                       	true
+Exact k-mer matching                   	0
+Mask residues                          	1
+Mask lower case residues               	0
+Minimum diagonal score                 	15
+Spaced k-mers                          	1
+Spaced k-mer pattern                   	
+Local temporary path                   	
+Rescore mode                           	0
+Remove hits by seq. id. and coverage   	false
+Sort results                           	0
+Mask profile                           	1
+Profile E-value threshold              	0.1
+Global sequence weighting              	false
+Allow deletions                        	false
+Filter MSA                             	1
+Maximum seq. id. threshold             	0.9
+Minimum seq. id.                       	0
+Minimum score per column               	-20
+Minimum coverage                       	0
+Select N most diverse seqs             	1000
+Min codons in orf                      	30
+Max codons in length                   	32734
+Max orf gaps                           	2147483647
+Contig start mode                      	2
+Contig end mode                        	2
+Orf start mode                         	1
+Forward frames                         	1,2,3
+Reverse frames                         	1,2,3
+Translation table                      	1
+Translate orf                          	0
+Use all table starts                   	false
+Offset of numeric ids                  	0
+Create lookup                          	0
+Add orf stop                           	false
+Overlap between sequences              	0
+Sequence split mode                    	1
+Header split mode                      	0
+Chain overlapping alignments           	0
+Merge query                            	1
+Search type                            	0
+Search iterations                      	1
+Start sensitivity                      	4
+Search steps                           	1
+Exhaustive search mode                 	false
+Filter results during exhaustive search	0
+Strand selection                       	1
+LCA search mode                        	false
+Disk space limit                       	0
+MPI runner                             	
+Force restart with latest tmp          	false
+Remove temporary files                 	false
+
+prefilter ../SSN/queryDB ../SSN/targetDB.idx tmp/15937641503677807102/pref_0 --sub-mat nucl:nucleotide.out,aa:blosum62.out --seed-sub-mat nucl:nucleotide.out,aa:VTML80.out -k 0 --k-score 2147483647 --alph-size nucl:5,aa:21 --max-seq-len 65535 --max-seqs 300 --split 0 --split-mode 2 --split-memory-limit 0 -c 0 --cov-mode 0 --comp-bias-corr 1 --diag-score 1 --exact-kmer-matching 0 --mask 1 --mask-lower-case 0 --min-ungapped-score 15 --add-self-matches 0 --spaced-kmer-mode 1 --db-load-mode 0 --pca 1 --pcb 1.5 --threads 32 --compressed 0 -v 3 -s 5.7 
+
+Index version: 16
+Generated by:  13.45111
+ScoreMatrix:  VTML80.out
+Query database size: 30659 type: Aminoacid
+Estimated memory consumption: 1G
+Target database size: 30659 type: Aminoacid
+Process prefiltering step 1 of 1
+
+k-mer similarity threshold: 112
+Starting prefiltering scores calculation (step 1 of 1)
+Query db start 1 to 30659
+Target db start 1 to 30659
+[=================================================================] 30.66K 1m 28s 639ms
+
+394.282951 k-mers per position
+450166 DB matches per sequence
+0 overflows
+0 queries produce too many hits (truncated result)
+299 sequences passed prefiltering per query sequence
+300 median result list length
+0 sequences with 0 size result lists
+Time for merging to pref_0: 0h 0m 0s 88ms
+Time for processing: 0h 1m 30s 20ms
+align ../SSN/queryDB ../SSN/targetDB.idx tmp/15937641503677807102/pref_0 ../SSN/resultDB --sub-mat nucl:nucleotide.out,aa:blosum62.out -a 0 --alignment-mode 2 --alignment-output-mode 0 --wrapped-scoring 0 -e 0.001 --min-seq-id 0 --min-aln-len 0 --seq-id-mode 0 --alt-ali 0 -c 0 --cov-mode 0 --max-seq-len 65535 --comp-bias-corr 1 --max-rejected 2147483647 --max-accept 2147483647 --add-self-matches 0 --db-load-mode 0 --pca 1 --pcb 1.5 --score-bias 0 --realign 0 --realign-score-bias -0.2 --realign-max-seqs 2147483647 --gap-open nucl:5,aa:11 --gap-extend nucl:2,aa:1 --zdrop 40 --threads 32 --compressed 0 -v 3 
+
+Index version: 16
+Generated by:  13.45111
+ScoreMatrix:  VTML80.out
+Compute score and coverage
+Query database size: 30659 type: Aminoacid
+Target database size: 30659 type: Aminoacid
+Calculation of alignments
+[=================================================================] 30.66K 7m 2s 300ms
+Time for merging to resultDB: 0h 0m 0s 76ms
+9196964 alignments calculated
+9157582 sequence pairs passed the thresholds (0.995718 of overall calculated)
+298.691467 hits per query sequence
+Time for processing: 0h 7m 2s 740ms
+convertalis ../SSN/queryDB ../SSN/targetDB ../SSN/resultDB ../SSN/resultDB.m8 
+
+MMseqs Version:        	13.45111
+Substitution matrix    	nucl:nucleotide.out,aa:blosum62.out
+Alignment format       	0
+Format alignment output	query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits
+Translation table      	1
+Gap open cost          	nucl:5,aa:11
+Gap extension cost     	nucl:2,aa:1
+Database output        	false
+Preload mode           	0
+Search type            	0
+Threads                	32
+Compressed             	0
+Verbosity              	3
+
+[=================================================================] 30.66K 3s 22ms
+Time for merging to resultDB.m8: 0h 0m 1s 232ms
+Time for processing: 0h 0m 4s 438ms
+
+======================================================
+End Time   : Tue Jul  1 06:31:20 PM PDT 2025
+======================================================
+
