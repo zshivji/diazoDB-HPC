@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### To-do
+- compress GTDB-taxonomy.tsv and update code to properly read in
+- update nitrogenase filtering criteria
+
+
 ### Added
 
+- Description of scripts in repo to README.md
+- Sandbox diazoDB website files under /website
+ 
 ### Fixed 
 
 ### Changed
