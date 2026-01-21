@@ -1,10 +1,10 @@
 const tooltip = document.getElementById("tooltip");
 
 Promise.all([
-  fetch("tree.svg").then(r => r.text()).then(svgText => {
+  fetch("./tree.svg").then(r => r.text()).then(svgText => {
     document.getElementById("tree-container").innerHTML = svgText;
   }),
-  fetch("metadata.json").then(r => r.json())
+  fetch("./metadata.json").then(r => r.json())
 ]).then(([svgText, metadata]) => {
 
   document.getElementById("tree-container").innerHTML = svgText;
