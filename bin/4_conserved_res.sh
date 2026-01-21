@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --time=02:04:00   # walltime
-#SBATCH --ntasks=1   # number of processor cores (i.e. tasks)
+#SBATCH --time=08:04:00   # walltime
+#SBATCH --ntasks=4   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=1   # number of nodes
 #SBATCH --mem 40GB   # memory per CPU core
 #SBATCH -J aln_hits   # job name
@@ -26,11 +26,11 @@ echo "Job ID/Name : $SLURM_JOBID / $SLURM_JOB_NAME"
 echo "======================================================"
 echo ""
 
-#python aln_nif_hits.py
+python aln_nif_hits.py 1 20260114
 
-#python conserved-res.py
+#python conserved-res.py 20260114
 
-#python final-fasta-export.py
+#python final-fasta-export.py 20260114
 
 echo ""
 echo "======================================================"
