@@ -1,41 +1,51 @@
-const tooltip = document.getElementById("tooltip");
+console.log("tree.js is running");
 
-Promise.all([
-  fetch("./tree.svg").then(r => r.text()).then(svgText => {
-    document.getElementById("tree-container").innerHTML = svgText;
-  }),
-  fetch("./metadata.json").then(r => r.json())
-]).then(([svgText, metadata]) => {
+fetch("./tree.svg")
+  .then(r => r.text())
+  .then(svg => {
+    document.getElementById("tree-container").innerHTML = svg;
+    console.log("SVG injected");
+  })
+  .catch(console.error);
 
-  document.getElementById("tree-container").innerHTML = svgText;
+// const tooltip = document.getElementById("tooltip");
 
-  // iTOL leaf labels are <text> elements
-  const labels = document.querySelectorAll("svg text");
+// Promise.all([
+//   fetch("./tree.svg").then(r => r.text()).then(svgText => {
+//     document.getElementById("tree-container").innerHTML = svgText;
+//   }),
+//   fetch("./metadata.json").then(r => r.json())
+// ]).then(([svgText, metadata]) => {
 
-  labels.forEach(label => {
-    const id = label.textContent.trim();
+//   document.getElementById("tree-container").innerHTML = svgText;
 
-    if (!metadata[id]) return;
+//   // iTOL leaf labels are <text> elements
+//   const labels = document.querySelectorAll("svg text");
 
-    label.classList.add("tree-label");
+//   labels.forEach(label => {
+//     const id = label.textContent.trim();
 
-    label.addEventListener("mouseover", e => {
-      tooltip.innerHTML = `
-        <b>${id}</b><br>
-        ${metadata[id].species}<br>
-        ${metadata[id].taxonomy}<br>
-        ${metadata[id].environment}
-      `;
-      tooltip.style.display = "block";
-    });
+//     if (!metadata[id]) return;
 
-    label.addEventListener("mousemove", e => {
-      tooltip.style.left = e.pageX + 10 + "px";
-      tooltip.style.top = e.pageY + 10 + "px";
-    });
+//     label.classList.add("tree-label");
 
-    label.addEventListener("mouseout", () => {
-      tooltip.style.display = "none";
-    });
-  });
-});
+//     label.addEventListener("mouseover", e => {
+//       tooltip.innerHTML = `
+//         <b>${id}</b><br>
+//         ${metadata[id].species}<br>
+//         ${metadata[id].taxonomy}<br>
+//         ${metadata[id].environment}
+//       `;
+//       tooltip.style.display = "block";
+//     });
+
+//     label.addEventListener("mousemove", e => {
+//       tooltip.style.left = e.pageX + 10 + "px";
+//       tooltip.style.top = e.pageY + 10 + "px";
+//     });
+
+//     label.addEventListener("mouseout", () => {
+//       tooltip.style.display = "none";
+//     });
+//   });
+// });
