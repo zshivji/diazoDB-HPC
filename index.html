@@ -1,95 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Tree with Metadata</title>
-
-  <!-- Load PhyloCanvas Plugin (working build) -->
-  <link rel="stylesheet" href="https://unpkg.com/phylocanvas-plugin/dist/phylocanvas.css" />
-  <script src="https://unpkg.com/phylocanvas-plugin/dist/phylocanvas.min.js"></script>
-
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      padding: 10px;
-      background: #2c3e50;
-      color: white;
-    }
-    #tree {
-      flex: 1;
-    }
-    /* Tooltip styling */
-    #tooltip {
-      position: absolute;
-      background: rgba(0,0,0,0.85);
-      color: white;
-      padding: 5px 8px;
-      border-radius: 4px;
-      font-size: 14px;
-      pointer-events: none;
-      display: none;
-      z-index: 1000;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Phylogenetic Tree</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header>
-    <h2>My Interactive Phylogenetic Tree with Metadata</h2>
-  </header>
 
-  <!-- Tree container -->
-  <div id="tree"></div>
-  <div id="tooltip"></div>
+<h2>Phylogenetic Tree</h2>
 
-  <script>
-    let metadata = {};
+<div id="tree-container"></div>
+<div id="tooltip"></div>
 
-    // Load metadata, then tree
-    Promise.all([
-      fetch("metadata.json").then(r => r.json()),
-      fetch("tree.newick").then(r => r.text())
-    ]).then(([meta, newick]) => {
-      metadata = meta;
-
-      // Create the tree
-      const tree = PhyloCanvas.createTree('tree', {
-        type: 'circular',
-        showLabels: true
-      });
-      tree.load(newick);
-
-      const tooltip = document.getElementById("tooltip");
-
-      // Attach hover tooltips
-      tree.on('mouseover', node => {
-        if (!node.id) return; // skip internal nodes without IDs
-
-        let content = `<b>Node ID:</b> ${node.id}`;
-        if (metadata[node.id]) {
-          content += `<br><b>Species:</b> ${metadata[node.id].species}`;
-          content += `<br><b>Phenotype:</b> ${metadata[node.id].phenotype}`;
-        }
-        tooltip.innerHTML = content;
-        tooltip.style.display = "block";
-      });
-
-      tree.on('mousemove', (node, event) => {
-        tooltip.style.left = (event.clientX + 10) + "px";
-        tooltip.style.top = (event.clientY + 10) + "px";
-      });
-
-      tree.on('mouseout', () => {
-        tooltip.style.display = "none";
-      });
-    });
-  </script>
+<script src="js/tree.js"></script>
 </body>
 </html>
