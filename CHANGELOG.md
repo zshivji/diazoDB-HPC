@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### To-do
 - update nitrogenase filtering criteria
 - differentiate anf, vnf from nif
+- diazoDB test
+    - neg check against marD seqs
+    - no more hits than expected
 
 
 ### Added
@@ -18,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sandbox diazoDB website files under /website
 - variable **date** so all files in parse_hmmer pipeline automatically named by date created
 - need test case for keeping/dropping best hit in each gene cluster for conserved residue matching
+- connected project to dvc (data version control)
  
 ### Fixed 
 - compress GTDB-taxonomy.tsv and update code to properly read in
