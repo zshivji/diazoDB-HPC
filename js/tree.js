@@ -6,9 +6,9 @@ Promise.all([
 ]).then(([svg, metadata]) => {
   document.getElementById("tree-container").innerHTML = svg;
   console.log("SVG + metadata loaded");
-  attachTooltips(metadata);
 }).catch(console.error);
 
+//attachTooltips(metadata);
 
 //   const metadata = metadata;
 //   console.log("metadata fetched");
