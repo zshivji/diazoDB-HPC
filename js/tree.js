@@ -21,7 +21,7 @@ Promise.all([
   console.log("labels:", labels.length);
 
   labels.forEach(label => {
-    const id = label.textContent.trim(); // remove whitespace
+    const id = label.textContent.trim().replace(/'/g, ""); // remove quotes
     console.log("SVG label:", id);
     console.log("metadata has key?", metadata[id]);
     
