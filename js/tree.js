@@ -10,43 +10,14 @@ Promise.all([
 
 //attachTooltips(metadata);
 
-//   const metadata = metadata;
-//   console.log("metadata fetched");
-
-//   .then(svg => {
-//     document.getElementById("tree-container").innerHTML = svg;
-//     console.log("SVG injected");
-//   })
-//   .catch(console.error);
-
-// fetch("./metadata.json")
-//   .then(r => r.json())
-//   .then(data => {metadata = data; console.log("metadata fetched");})
-//   .catch(console.error);
 
 
+const tooltip = document.getElementById("tooltip");
 
 
-
-// fetch("./tree.svg")
-//   .then(r => r.text())
-//   .then(svg => {
-//     document.getElementById("tree-container").innerHTML = svg;
-//     console.log("SVG injected");
-//   })
-//   .catch(console.error);
-
-// fetch("./metadata.json")
-//   .then(r => r.json())
-//   .then(data => {metadata = data; console.log("metadata fetched");})
-//   .catch(console.error);
-
-
-// const tooltip = document.getElementById("tooltip");
-
-
-// // iTOL leaf labels are <text> elements
-// const labels = document.querySelectorAll("svg text");
+// iTOL leaf labels are <text> elements
+const labels = document.querySelectorAll("svg text");
+console.log("Number of SVG text labels found:", labels.length);
 
 // labels.forEach(label => {
 //   const id = label.textContent.trim();
