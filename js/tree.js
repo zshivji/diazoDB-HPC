@@ -16,7 +16,7 @@ const tooltip = document.getElementById("tooltip");
 
 
 // iTOL leaf labels are <text> elements
-const labels = document.querySelectorAll("svg text");
+const labels = document.querySelectorAll("svg tspan, svg text");
 console.log("Number of SVG text labels found:", labels.length);
 
 // labels.forEach(label => {
