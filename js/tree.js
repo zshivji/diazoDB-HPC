@@ -1,11 +1,11 @@
 console.log("tree.js is running");
 
 
-// grab iTOL leaf labels (<text> elements)
-function attachTooltips(metadata) {
-  const labels = document.querySelectorAll("svg text");
-  console.log("labels:", labels.length);
-}
+// // grab iTOL leaf labels (<text> elements)
+// function attachTooltips(metadata) {
+//   const labels = document.querySelectorAll("svg text");
+//   console.log("labels:", labels.length);
+// }
 
 const tooltip = document.getElementById("tooltip");
 
@@ -22,6 +22,8 @@ Promise.all([
 
   labels.forEach(label => {
     const id = label.textContent.trim(); // remove whitespace
+    console.log("SVG label:", id);
+    console.log("metadata has key?", metadata[id]);
     
     if (!metadata[id]) return; // skip label if not in metadata
 
