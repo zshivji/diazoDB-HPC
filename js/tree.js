@@ -1,14 +1,19 @@
 console.log("tree.js is running");
 
+function attachTooltips(metadata) {
+  const labels = document.querySelectorAll("svg text");
+  console.log("labels:", labels.length);
+}
+
 Promise.all([
   fetch("./tree.svg").then(r => r.text()),
   fetch("./metadata.json").then(r => r.json())
 ]).then(([svg, metadata]) => {
   document.getElementById("tree-container").innerHTML = svg;
+  attachTooltips(metadata);
   console.log("SVG + metadata loaded");
 }).catch(console.error);
 
-//attachTooltips(metadata);
 
 
 
