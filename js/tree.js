@@ -1,7 +1,9 @@
 console.log("tree.js is running");
 
-// grab tooltip element
+// define variables
 const tooltip = document.getElementById("tooltip");
+const searchInput = document.getElementById("tree-search");
+let labelData = [];
 
 // load SVG + metadata + leaf labels + add tooltip interactivity
 Promise.all([
@@ -15,15 +17,14 @@ Promise.all([
   const labels = document.querySelectorAll("svg text");
   console.log("labels:", labels.length);
 
-  const labelData = [];
+  labelData = []; // reset labelData
 
   labels.forEach(label => {
     const id = label.textContent.trim().replace(/'/g, ""); // remove quotes
-    console.log("SVG label:", id);
-    console.log("metadata has key?", metadata[id]);
     
     if (!metadata[id]) return; // skip label if not in metadata
 
+    // store label + metadata for search functionality
     labelData.push({
       label,
       id,
@@ -32,7 +33,7 @@ Promise.all([
         metadata[id].species,
         metadata[id].taxonomy,
         metadata[id].environment
-      ].join("<br>").toLowerCase()
+      ].join(" ").toLowerCase()
     });
 
     label.classList.add("tree-label");
@@ -59,7 +60,6 @@ Promise.all([
 }).catch(console.error);
 
 // add search functionality
-const searchInput = document.createElement("tree-search");
 
 searchInput.addEventListener("input", () => {
   const query = searchInput.value.toLowerCase().trim();
