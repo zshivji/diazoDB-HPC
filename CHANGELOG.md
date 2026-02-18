@@ -19,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Description of scripts in repo to README.md
 - Sandbox diazoDB website files under /website
-- variable **date** so all files in parse_hmmer pipeline automatically named by date created
 - need test case for keeping/dropping best hit in each gene cluster for conserved residue matching
 - connected project to dvc (data version control)
  

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --time=08:04:00   # walltime
+#SBATCH --time=04:04:00   # walltime #8hrs?
 #SBATCH --ntasks=4   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=1   # number of nodes
 #SBATCH --mem 40GB   # memory per CPU core
@@ -26,11 +26,13 @@ echo "Job ID/Name : $SLURM_JOBID / $SLURM_JOB_NAME"
 echo "======================================================"
 echo ""
 
-python aln_nif_hits.py 1 20260114
+python aln_nif_hits.py 1
 
-#python conserved-res.py 20260114
+python conserved-res.py
 
-#python final-fasta-export.py 20260114
+python final-fasta-export.py
+
+python diazoDB-check.py
 
 echo ""
 echo "======================================================"

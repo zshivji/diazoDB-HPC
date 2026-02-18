@@ -9,11 +9,11 @@ import os
 import glob
 import sys
 
-date = sys.argv[1]
+#date = sys.argv[1]
 
 def check_gene(gene, ref_seq, important_residues, passing_score, p=False):
     
-    alignment = AlignIO.read(f"../results/{gene}.aln", "fasta")
+    alignment = AlignIO.read(f"../results/fasta_splits/{gene}.aln", "fasta")
 
     for record in alignment:
         if ref_seq in record.description:
@@ -97,8 +97,8 @@ passing_score = 25
 
 nifH_checked = check_gene('nifH_split.00001', ref_seq_nifH, important_residues_nifH, passing_score, p=True)
 
-for file in glob.glob(f'../results/nifH_split.00*.aln'):
-    if file == '../results/nifH_split.00001.aln':
+for file in glob.glob(f'../results/fasta_splits/nifH_split.00*.aln'):
+    if file == '../results/fasta_splits/nifH_split.00001.aln':
         continue
     new = check_gene(file[:-4], ref_seq_nifH, important_residues_nifH, passing_score)
     nifH_checked = pd.concat([nifH_checked, new])
@@ -116,8 +116,8 @@ passing_score = 15
 
 nifD_checked = check_gene('nifD_split.00001', ref_seq_nifD, important_residues_nifD, passing_score, p=True)
 
-for file in glob.glob(f'../results/nifD_split.00*.aln'):
-    if file == '../results/nifD_split.00001.aln':
+for file in glob.glob(f'../results/fasta_splits/nifD_split.00*.aln'):
+    if file == '../results/fasta_splits/nifD_split.00001.aln':
         continue
     new = check_gene(file[:-4], ref_seq_nifD, important_residues_nifD, passing_score)
     nifD_checked = pd.concat([nifD_checked, new])
@@ -140,8 +140,8 @@ passing_score = 12 # could be more rigorous
 
 nifE_checked = check_gene('nifE_split.00001', ref_seq_nifE, important_residues_nifE, passing_score, p=True)
 
-for file in glob.glob(f'../results/nifE_split.00*.aln'):
-    if file == '../results/nifE_split.00001.aln':
+for file in glob.glob(f'../results/fasta_splits/nifE_split.00*.aln'):
+    if file == '../results/fasta_splits/nifE_split.00001.aln':
         continue
     new = check_gene(file[:-4], ref_seq_nifE, important_residues_nifE, passing_score)
     nifE_checked = pd.concat([nifE_checked, new])
@@ -167,8 +167,8 @@ passing_score = 9 # S188 has not been verified to be conserved (8 is too conserv
 
 nifK_checked = check_gene('nifK_split.00001', ref_seq_nifK, important_residues_nifK, passing_score, p=True)
 
-for file in glob.glob(f'../results/nifK_split.00*.aln'):
-    if file == '../results/nifK_split.00001.aln':
+for file in glob.glob(f'../results/fasta_splits/nifK_split.00*.aln'):
+    if file == '../results/fasta_splits/nifK_split.00001.aln':
         continue
     new = check_gene(file[:-4], ref_seq_nifK, important_residues_nifK, passing_score)
     nifK_checked = pd.concat([nifK_checked, new])
@@ -196,8 +196,8 @@ passing_score = 3
 
 nifN_checked = check_gene('nifN_split.00001', ref_seq_nifN, important_residues_nifN, passing_score, p=True)
 
-for file in glob.glob(f'../results/nifN_split.00*.aln'):
-    if file == '../results/nifN_split.00001.aln':
+for file in glob.glob(f'../results/fasta_splits/nifN_split.00*.aln'):
+    if file == '../results/fasta_splits/nifN_split.00001.aln':
         continue
     new = check_gene(file[:-4], ref_seq_nifN, important_residues_nifN, passing_score)
     nifN_checked = pd.concat([nifN_checked, new])
@@ -226,7 +226,7 @@ seqs = []
 for gene in 'DKEN':
 
     # for each gene, get all hmm hit acc
-    result = list(SeqIO.parse(f"../results/nif{gene}.fasta", "fasta"))
+    result = list(SeqIO.parse(f"../results/fasta_splits/nif{gene}.fasta", "fasta"))
     hit = [record.description.split(" ")[-1] for record in result]
 
     # get seq that failed check
@@ -238,20 +238,20 @@ for gene in 'DKEN':
 print(str(len(seqs)) + " seqs failed nifDKEN checks", flush=True)
 
 # Write the records to a FASTA file
-with open(f"../results/nifDKEN_{date}.fasta", "w") as output_handle:
+with open(f"../results/fasta_splits/nifDKEN.fasta", "w") as output_handle:
     SeqIO.write(seqs, output_handle, "fasta")
 
 # add reference sequences
 for gene in 'DKEN':
-    os.system(f"seqtk subseq ../results/nif{gene}.fasta ../results/ref_seq.ids >> ../results/nifDKEN_{date}.fasta")
+    os.system(f"seqtk subseq ../results/fasta_splits/nif{gene}.fasta ../results/ref_seq.ids >> ../results/fasta_splits/nifDKEN.fasta")
 
 print('aligning failed sequences', flush=True)
 # aln all seqs
 num = int(len(seqs)/200) +1  # how many splits
-os.system(f"seqtk split -n {num} ../results/fasta_splits/nifDKEN_split ../results/nifDKEN_{date}.fasta") # split fasta file
+os.system(f"seqtk split -n {num} ../results/fasta_splits/nifDKEN_split ../results/fasta_splits/nifDKEN.fasta") # split fasta file
 for i in range(num):
     print(i+1)
-    os.system(f"seqtk subseq ../results/nifDKEN_{date}.fasta ../results/ref_seq.ids >> ../results/fasta_splits/nifDKEN_split.{str(i+1).zfill(5)}.fa") # add reference sequences
+    os.system(f"seqtk subseq ../results/fasta_splits/nifDKEN.fasta ../results/ref_seq.ids >> ../results/fasta_splits/nifDKEN_split.{str(i+1).zfill(5)}.fa") # add reference sequences
     os.system(f"mafft --auto --quiet --thread 4 ../results/fasta_splits/nifDKEN_split.{str(i+1).zfill(5)}.fa > ../results/fasta_splits/nifDKEN_split.{str(i+1).zfill(5)}.aln")
     
 
@@ -264,7 +264,7 @@ nifE_backup = check_gene('nifDKEN_split.00001', ref_seq_nifE, important_residues
 nifN_backup = check_gene('nifDKEN_split.00001', ref_seq_nifN, important_residues_nifN, passing_score)
 
 for file in glob.glob(f'nifDKEN_split.00*.aln'):
-    if file == '../results/nifDKEN_split.00001.aln':
+    if file == '../results/fasta_splits/nifDKEN_split.00001.aln':
         continue
     nifD_backup = check_gene(file[:-4], ref_seq_nifD, important_residues_nifD, passing_score)
     nifD_backup = pd.concat([nifD_backup, new])
@@ -399,7 +399,7 @@ nifN = pd.concat([nifN, nifN_backup])
 nif = pd.concat([nifH, nifD, nifK, nifE, nifN])
 nif.sort_index(inplace = True)
 
-nif.to_csv(f'../results/nif_rescheck_nofilt_{date}.csv')
+nif.to_csv(f'../results/fasta_splits/nif_rescheck_nofilt.csv')
 
 # Are any nifD,E,K being missed and printed nifN (for example?) should I align all DKEN first and then check for conserved residues?
 
@@ -414,7 +414,7 @@ def gene_check(genes):
                 return True
 
 # multi-index to cluster by genome, contig
-nif = pd.read_csv(f'../results/nif_rescheck_nofilt_{date}.csv')
+nif = pd.read_csv(f'../results/fasta_splits/nif_rescheck_nofilt.csv')
 nif.reset_index(inplace = True)
 nif.set_index(['GenomeID', 'contig'], inplace = True)
 nif.sort_index(inplace = True)
@@ -468,43 +468,5 @@ filtered_nif2 = filtered_nif2[['Gene', 'E-value', 'Bit Score', 'Location', 'Orie
 filtered_nif2.drop_duplicates(inplace = True)
 
 # export 
-filtered_nif2.to_feather(f'../results/nif_final_{date}.feather')
-filtered_nif2.to_csv(f'../results/nif_final_{date}.csv')
-
-nif = pd.read_feather(f'../results/nif_final_{date}.feather')
-
-# export fasta files
-nifH = nif[(nif.Gene == 'nifH')]
-nifD = nif[(nif.Gene == 'nifD')]
-nifK = nif[(nif.Gene == 'nifK')]
-nifB = nif[(nif.Gene == 'nifB')]
-nifE = nif[(nif.Gene == 'nifE')]
-nifN = nif[(nif.Gene == 'nifN')]
-
-gene_list = [nifH, nifD, nifK, nifB, nifE, nifN]
-gene_names = ['nifH', 'nifD', 'nifK', 'nifB', 'nifE', 'nifN']
-
-# get fasta sequences for each gene & export to fasta
-for gene, name in zip(gene_list, gene_names):
-    print(name, flush=True)
-    records = []
-
-    for genome,hit in gene.iterrows():
-
-        file = glob.glob(f"../all_rep_proteins_aa/*/{genome[0]}_protein.faa")[0]
-
-        for result in SeqIO.parse(file, "fasta"):
-            if result.id == genome[2]:
-                # store seq
-                gene.loc[genome, 'Seq'] = str(result.seq)
-                # convert to seqrecord
-                record = SeqRecord(Seq(result.seq), id=genome[0], description=genome[2])
-                records.append(record)
-                # exit loop once sequence is found
-                break
-        
-    # Write the records to a FASTA file
-    with open("../results/check_" + name + ".fasta", "w") as output_handle:
-        SeqIO.write(records, output_handle, "fasta")
-
-print("done", flush=True)
+filtered_nif2.to_feather(f'../results/fasta_splits/nif_final.feather')
+filtered_nif2.to_csv(f'../results/fasta_splits/nif_final.csv')
