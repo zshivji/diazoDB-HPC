@@ -26,7 +26,7 @@ echo "Job ID/Name : $SLURM_JOBID / $SLURM_JOB_NAME"
 echo "======================================================"
 echo ""
 
-python aln_nif_hits.py 1
+python aln_nif_hits.py 0
 
 python conserved-res.py
 

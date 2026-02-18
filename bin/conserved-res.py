@@ -1,15 +1,12 @@
-from Bio import AlignIO
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-
 import pandas as pd
 import numpy as np
 import os
 import glob
-import sys
 
-#date = sys.argv[1]
+from Bio import AlignIO
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 def check_gene(gene, ref_seq, important_residues, passing_score, p=False):
     

@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 ### Fixed 
 - compress GTDB-taxonomy.tsv and update code to properly read in
+- save fastas as > hit genomeID for easy downsteam analysis
 - Major upgrades to parse_hmmer.ipynb
     - changed # simultaneously aligned seqs from 4000 to 200
 

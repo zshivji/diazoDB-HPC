@@ -1,15 +1,18 @@
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
-
 from itertools import combinations
 import pandas as pd
 import numpy as np
 from scipy.cluster.hierarchy import linkage, fcluster
-import sys
+import argparse
 from cluster_pos import cluster_pos
 
+# get outpur folder
+parser = argparse.ArgumentParser(description='')
+parser.add_argument('--dir', help='Whether to reload fasta sequences (True/False)')
+args = parser.parse_args()
+dir = args.dir
 # get parsed hmm results
-dir = sys.argv[1]
 hits = pd.read_feather(f'../results/{dir}/hits.feather')
 
 # save "contig" as col

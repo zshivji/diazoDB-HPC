@@ -39,8 +39,8 @@ for gene, name in zip(gene_list, gene_names):
             if result.id == genome[-1]: # -1 or 2
                 # store seq
                 gene.loc[genome, 'Seq'] = str(result.seq)
-                # convert to seqrecord
-                record = SeqRecord(result.seq, id=genome[0], description=genome[-1])
+                # convert to seqrecord (>hit genome)
+                record = SeqRecord(result.seq, id=genome[-1], description=genome[0])
                 records.append(record)
                 # exit loop once sequence is found
                 break
