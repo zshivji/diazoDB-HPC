@@ -1,11 +1,15 @@
 import pandas as pd
-from Bio import SearchIO
 import re
 import glob
-import sys
+import argparse
 
-# get folder
-dir = sys.argv[1]
+from Bio import SearchIO
+
+# get outpur folder
+parser = argparse.ArgumentParser(description='')
+parser.add_argument('--dir', help='Whether to reload fasta sequences (True/False)')
+args = parser.parse_args()
+dir = args.dir
 
 # Get taxonomy from GTDB, https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/
     # NCBI taxonomy from metadata files
