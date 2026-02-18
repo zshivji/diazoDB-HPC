@@ -9,7 +9,7 @@ import sys
 
 # reload fasta files?
 reload_fasta = sys.argv[1]
-date = sys.argv[2]
+#date = sys.argv[2]
 
 # grab both archaea + bacteria hits
 nif_archaea = pd.read_feather('../results/archaea/nif.feather')
@@ -58,8 +58,8 @@ if reload_fasta: # should skip if fasta sequences have already been extracted
 for gene in gene_names:
     print("aligning "+ gene, flush=True)
     num = eval(f"int({gene}.shape[0]/200)+1") # how many splits
-    os.system(f"seqtk split -n {num} ../results/fasta_splits/{gene}_split ../results/{gene}_{date}.fasta") # split fasta file
+    os.system(f"seqtk split -n {num} ../results/fasta_splits/{gene}_split ../results/{gene}.fasta") # split fasta file
     for i in range(num):
         print(i+1)
-        os.system(f"seqtk subseq ../results/{gene}_{date}.fasta ../results/ref_seq.ids >> ../results/fasta_splits/{gene}_split.{str(i+1).zfill(5)}.fa") # add reference sequences
+        os.system(f"seqtk subseq ../results/{gene}.fasta ../results/ref_seq.ids >> ../results/fasta_splits/{gene}_split.{str(i+1).zfill(5)}.fa") # add reference sequences
         os.system(f"mafft --auto --quiet --thread 4 ../results/fasta_splits/{gene}_split.{str(i+1).zfill(5)}.fa > ../results/fasta_splits/{gene}_split.{str(i+1).zfill(5)}.aln")
