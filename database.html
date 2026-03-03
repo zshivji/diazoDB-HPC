@@ -12,9 +12,11 @@
   <table id="csvTable" border="1"></table>
 
       <script>
-      Promise.all([
       fetch("DiazoDB-data.csv")
-      ]).then(response => response.text())
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+        return r.text();
+      })
       .then(data => {
           const rows = data.split("\n").map(row => row.split(","));
           const table = document.getElementById("csvTable");
