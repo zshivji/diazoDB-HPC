@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiazoDB Table</title>
+
+  <!-- Load PhyloCanvas Plugin (working build) -->
+  <link rel="stylesheet" href="https://unpkg.com/phylocanvas-plugin/dist/phylocanvas.css" />
+  <script src="https://unpkg.com/phylocanvas-plugin/dist/phylocanvas.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      padding: 10px;
+      background: #2c3e50;
+      color: white;
+    }
+    #tree {
+      flex: 1;
+    }
+    /* Tooltip styling */
+    #tooltip {
+      position: absolute;
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+    <table id="csvTable" border="1"></table>
+
+    <script>
+    Promise.all([
+    fetch("nif-final.csv")
+    ]).then(response => response.text())
+    .then(data => {
+        const rows = data.split("\n").map(row => row.split(","));
+        const table = document.getElementById("csvTable");
+
+        rows.forEach((row, index) => {
+        const tr = document.createElement("tr");
+
+        row.forEach(cell => {
+            const element = document.createElement(index === 0 ? "th" : "td");
+            element.textContent = cell.trim();
+            tr.appendChild(element);
+        });
+
+        table.appendChild(tr);
+        });
+    });
+</script>
+</body>
+</html>
