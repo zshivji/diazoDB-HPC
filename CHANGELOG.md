@@ -11,11 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - compress GTDB-taxonomy.tsv and update code to properly read in
 - update nitrogenase filtering criteria
 
+### Added
+
+### Fixed
+
+### Changed
+
+### Removed
+
+
+## [0.1.1] - 2026-03-03
 
 ### Added
 
+- DiazoDB website
+    - index.html source for main webpage (phylogenetic tree)
+    - database.html source for database page
 - Description of scripts in repo to README.md
-- Sandbox diazoDB website files under /website
+- Tracking with DVC
  
 ### Fixed 
 
