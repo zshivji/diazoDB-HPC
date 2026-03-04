@@ -6,57 +6,75 @@ const tpl = document.getElementById("rowTemplate");
 
 // load final nitrogenase data, display in table
 function addRow(row, idx) {
-  const node = tpl.contentEditable.cloneNode(true);
+  const node = tpl.content.cloneNode(true);
   const tr = node.querySelector("tr");
 
   // checkbox + label wiring
   const input = tr.querySelector('input[type="checkbox"]');
   const label = tr.querySelector("label");
-  const checkboxId = '_r_${idx}';
+  const checkboxId = `_r_${idx}`;
   console.log("Adding row with accession: " + checkboxId);
 
-  input.dataset.id = row.accession;
+  input.dataset.id = row.GeneAcc || row.GenomeAcc || String(idx);
   input.id = checkboxId;
 
   label.htmlFor = checkboxId;
-  label.setAttribute('aria-label', row.accession);
+  label.setAttribute('aria-label', input.dataset.id);
 
   // accession link
-  const genomeAcc = tr.querySelector(".col-GenomeAcc");
-  const genomeText = row.GenomeAcc.split("_")[1] + "_" + row.GenomeAcc.split("_")[2];
-  genomeAcc.innerHTML = genomeText; // replace template content
-  const genomeA = document.createElement("a");
-  genomeA.textContent = genomeText;
-  genomeA.href = `https://gtdb.ecogenomic.org/genome?gid=${genomeText}`;
-  genomeA.setAttribute("translate", "no");
-  genomeAcc.appendChild(genomeA);
+  const genomeAccRaw = row.GenomeAcc.split("_")[1] + "_" + row.GenomeAcc.split("_")[2] || "";
+  const genomeA = tr.querySelector(".col-GenomeAcc a.BqBnJ");
 
-  console.log("Adding row with link: " + genomeA.href);
+  if (genomeA) {
+    genomeA.textContent = genomeAccRaw;
+    genomeA.href = genomeAccRaw
+      ? `https://gtdb.ecogenomic.org/genome?gid=${encodeURIComponent(genomeAccRaw)}`
+      : "#";
+    genomeA.setAttribute("translate", "no");
+  }
+
+  console.log("Adding row with link: " + genomeAccRaw);
 
   // plain text columns
-  tr.querySelector(".col-Organism").textContent = row.Organism
-  tr.querySelector(".col-NitrogenaseSet").textContent = row.NitrogenaseSet
-  tr.querySelector(".col-GroupNo").textContent = row.GroupNo
-  tr.querySelector(".col-Env").textContent = row.Env
-  tr.querySelector(".col-GeneCluster").textContent = row.GeneCluster
-  tr.querySelector(".col-Regulon").textContent = row.Regulon
-  tr.querySelector(".col-PredGrowthTemp").textContent = row.PredGrowthTemp
-  tr.querySelector(".col-ContigAcc").textContent = row.ContigAcc
-  tr.querySelector(".col-GeneAcc").textContent = row.GeneAcc
-  tr.querySelector(".col-GTDBPhylo").textContent = row.GTDBPhylo
-  tr.querySelector(".col-NCBIPyhlo").textContent = row.NCBIPyhlo
+  tr.querySelector(".col-Organism").textContent = row.Organism || "";
+  tr.querySelector(".col-NitrogenaseSet").textContent = row.NitrogenaseSet || "";
+  tr.querySelector(".col-GroupNo").textContent = row.GroupNo || "";
+  tr.querySelector(".col-Env").textContent = row.Env || "";
+  tr.querySelector(".col-GeneCluster").textContent = row.GeneCluster || ""; 
+  tr.querySelector(".col-Regulon").textContent = row.Regulon || "";
+  tr.querySelector(".col-PredGrowthTemp").textContent = row.PredGrowthTemp || "";
+  tr.querySelector(".col-ContigAcc").textContent = row.ContigAcc || "";
+  tr.querySelector(".col-GeneAcc").textContent = row.GeneAcc || "";
+  tr.querySelector(".col-GTDBPhylo").textContent = row.GTDBPhylo || "";
+  tr.querySelector(".col-NCBIPyhlo").textContent = row.NCBIPyhlo || "";
 
   tbody.appendChild(node);
 
 }
 
+// parse CSV text into array of objects, using first line as keys
+function parseCSVToObjects(csvText) {
+  const lines = csvText.trim().split(/\r?\n/);
+  const headers = lines[0].split(",").map(h => h.trim());
+
+  return lines.slice(1)
+    .filter(line => line.trim().length >0)
+    .map(line => {
+    const cols = line.split(",");
+    const obj = {};
+    headers.forEach((header, i) => (obj[header] = (cols[i] ??"").trim()));
+    return obj;
+  });
+}
+
+// load CSV, parse, and add rows to table
 fetch("DiazoDB-data.csv")
       .then(r => {
         if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
         return r.text();
       })
-      .then(data => {
-        const rows = data.split("\n").map(row => row.split(","));
-        
-        rows.forEach((row, index) => addRow(row, index+1));
-      });
+      .then(csvText => {
+        const rows = parseCSVToObjects(csvText);
+        console.log(`Parsed ${rows.length} rows from CSV.`);
+      })
+      .catch(error => console.error("Error loading CSV:", error));
