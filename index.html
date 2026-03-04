@@ -1,43 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DiazoDB</title>
   <link rel="stylesheet" href="./css/style.css" />
 </head>
+
 <body>
 
-<main>
-<!-- <div style='position: absolute; bottom: 25px; right: 10px;'></div> -->
-  <label for="tree-search">Search:</label>
-  <input
-    type="search"
-    id="tree-search"
-    placeholder="Search nodes…"
-    style="width: 300px; padding: 6px; margin-bottom: 10px;"
-  />
+  <main>
+    <!-- <div style='position: absolute; bottom: 25px; right: 10px;'></div> -->
+    <label for="tree-search">Search:</label>
+    <input type="search" id="tree-search" placeholder="Search nodes…"
+      style="width: 300px; padding: 6px; margin-bottom: 10px;" />
 
-  <br>
+    <br>
 
-  <a href="./database.html">Diazo Database</a>
+    <a href="./database.html">Diazo Database</a>
+    <a href="./blog.html">Nitrogenase Blog</a>
 
-  <h1>My Interactive Tree</h1>
-  <div id="tree-container"></div>
+    <h1>My Interactive Tree</h1>
+    <div id="tree-container"></div>
 
-  <div id="tooltip"></div>
+    <div id="tooltip"></div>
 
-  <script src="./js/tree.js" defer></script>
+    <script src="./js/tree.js" defer></script>
 
-</main>
+    <!-- adding template to replicate seqhub gene diagrams in box up box-->
+    <template id="operonTemplate">
+      <div class="flex-1 min-w-0 bg-transparent p-2 cq-md:p-3">
+        <!-- gene diagram -->
+        <div class="relative p-1 m-auto" style="height: 40px; width: 100%;">
+          <div>
+            <div data-vector-id="cds-0" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 0px; width: 13.394208px; opacity: 0.6; z-index: 32;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-1" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 20.713186px; width: 18.417036px; opacity: 0.6; z-index: 33;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-2" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 39.776014px; width: 17.842998px; opacity: 0.6; z-index: 34;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-3" class="flex items-center transition-all duration-200 cursor-pointer h-3 mt-3"
+              style="position: absolute; left: 57.284157px; width: 10px; opacity: 0.6; z-index: 13;">
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-right-width: 8px; border-right-style: solid; border-right-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-4" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 65.296763px; width: 10px; opacity: 0.6; z-index: 36;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-5" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 71.443748px; width: 10px; opacity: 0.6; z-index: 37;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-6" class="flex items-center transition-all duration-200 cursor-pointer h-3 mt-3"
+              style="position: absolute; left: 82.254787px; width: 15.25983px; opacity: 0.6; z-index: 16;">
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-right-width: 8px; border-right-style: solid; border-right-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-7" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 100.647905px; width: 10px; opacity: 0.6; z-index: 39;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-8" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 113.276729px; width: 11.313322px; opacity: 0.6; z-index: 40;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-9" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 124.207359px; width: 10.093492px; opacity: 0.6; z-index: 41;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-11" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 162.835298px; width: 20.139148px; opacity: 0.6; z-index: 43;">
+              <div class="h-full flex-1" style="background-color: rgb(240, 175, 22);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(240, 175, 22); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-12" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 187.423237px; width: 15.25983px; opacity: 0.6; z-index: 44;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-13" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 202.611312px; width: 30.113049px; opacity: 0.6; z-index: 45;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-14" class="flex items-center transition-all duration-200 cursor-pointer h-3 mt-3"
+              style="position: absolute; left: 234.685656px; width: 33.700784px; opacity: 0.6; z-index: 24;">
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-right-width: 8px; border-right-style: solid; border-right-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-15" class="flex items-center transition-all duration-200 cursor-pointer h-3 mt-3"
+              style="position: absolute; left: 268.840886px; width: 16.33615px; opacity: 0.6; z-index: 25;">
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-right-width: 8px; border-right-style: solid; border-right-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-16" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 295.629302px; width: 15.11632px; opacity: 0.6; z-index: 48;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-17" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 310.673867px; width: 20.426167px; opacity: 0.6; z-index: 49;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-18" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 331.028279px; width: 17.268961px; opacity: 0.6; z-index: 50;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-19" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 347.986303px; width: 17.340716px; opacity: 0.6; z-index: 51;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-20" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 372.526405px; width: 10px; opacity: 0.6; z-index: 52;">
+              <div class="h-full flex-1" style="background-color: rgb(156, 163, 175);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(156, 163, 175); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div data-vector-id="cds-10" class="flex items-center transition-all duration-200 cursor-pointer h-3 mb-3"
+              style="position: absolute; left: 142.02644px; width: 15.331584px; opacity: 1; z-index: 63;">
+              <div class="absolute h-full w-[2px]"
+                style="background-color: rgb(103, 204, 92); left: -2px; right: auto; z-index: 1;"></div>
+              <div class="absolute top-0 w-2 h-2 rounded-full transform -translate-y-1 left-0 -translate-x-[5px]"
+                style="background-color: rgb(103, 204, 92); z-index: 1;"></div>
+              <div class="h-full flex-1" style="background-color: rgb(73, 143, 255);"></div>
+              <div class="w-0 h-3 transition-all duration-200"
+                style="border-left-width: 8px; border-left-style: solid; border-left-color: rgb(73, 143, 255); border-top-width: 6px; border-top-style: solid; border-top-color: transparent; border-bottom-width: 6px; border-bottom-style: solid; border-bottom-color: transparent;">
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- bottom axis, need to add genome len in kb netween span tags in js -->
+        <div class="mt-1">
+          <div class="relative w-full h-8 mt-2">
+            <div class="absolute top-0 left-0 right-0 h-px bg-gray-200"></div>
+            <div class="absolute flex flex-col items-start" style="left: 0%; transform: translateX(0px);">
+              <div class="w-px h-2 bg-gray-300"></div><span
+                class="text-[8px] sm:text-[10px] text-gray-400 mt-1 font-mono text-left transition-opacity duration-200"></span>
+            </div>
+            <div class="absolute flex flex-col items-center" style="left: 20%; transform: translateX(-50%);">
+              <div class="w-px h-2 bg-gray-300"></div><span
+                class="text-[8px] sm:text-[10px] text-gray-400 mt-1 font-mono text-center transition-opacity duration-200"></span>
+            </div>
+            <div class="absolute flex flex-col items-center" style="left: 40%; transform: translateX(-50%);">
+              <div class="w-px h-2 bg-gray-300"></div><span
+                class="text-[8px] sm:text-[10px] text-gray-400 mt-1 font-mono text-center transition-opacity duration-200"></span>
+            </div>
+            <div class="absolute flex flex-col items-center" style="left: 60%; transform: translateX(-50%);">
+              <div class="w-px h-2 bg-gray-300"></div><span
+                class="text-[8px] sm:text-[10px] text-gray-400 mt-1 font-mono text-center transition-opacity duration-200"></span>
+            </div>
+            <div class="absolute flex flex-col items-center" style="left: 80%; transform: translateX(-50%);">
+              <div class="w-px h-2 bg-gray-300"></div><span
+                class="text-[8px] sm:text-[10px] text-gray-400 mt-1 font-mono text-center transition-opacity duration-200"></span>
+            </div>
+            <div class="absolute flex flex-col items-end" style="left: 100%; transform: translateX(-100%);">
+              <div class="w-px h-2 bg-gray-300"></div><span
+                class="text-[8px] sm:text-[10px] text-gray-400 mt-1 font-mono text-right transition-opacity duration-200"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
 
-<footer>
+  </main>
+
+  <footer>
     <div>
       <b>Citation:</b>
-      Shivji (2026) 
+      Shivji (2026)
     </div>
-</footer>
+  </footer>
 
 </body>
-</html>
 
+</html>
