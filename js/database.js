@@ -76,5 +76,9 @@ fetch("DiazoDB-data.csv")
       .then(csvText => {
         const rows = parseCSVToObjects(csvText);
         console.log(`Parsed ${rows.length} rows from CSV.`);
+        rows.forEach((row, idx) => {
+          console.log(`Adding row ${idx} with GeneAcc: ${row.GeneAcc}`);
+          addRow(row, idx+1)});
+        
       })
       .catch(error => console.error("Error loading CSV:", error));
