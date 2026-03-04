@@ -13,6 +13,7 @@ function addRow(row, idx) {
   const input = tr.querySelector('input[type="checkbox"]');
   const label = tr.querySelector("label");
   const checkboxId = '_r_${idx}';
+  console.log("Adding row with accession: " + checkboxId);
 
   input.dataset.id = row.accession;
   input.id = checkboxId;
@@ -22,13 +23,15 @@ function addRow(row, idx) {
 
   // accession link
   const genomeAcc = tr.querySelector(".col-GenomeAcc");
-  genomeAcc.innerHTML = ""; // replace template content
+  const genomeText = row.GenomeAcc.split("_")[1] + "_" + row.GenomeAcc.split("_")[2];
+  genomeAcc.innerHTML = genomeText; // replace template content
   const genomeA = document.createElement("a");
-  genomeA.textContent = row.genomeText;
-  genomeA.href = `/taxonomy/${row.taxonId}`;
-  genomeA.title = `${row.genomeText}, taxon ID ${row.taxonId}`;
+  genomeA.textContent = genomeText;
+  genomeA.href = `https://gtdb.ecogenomic.org/genome?gid=${genomeText}`;
   genomeA.setAttribute("translate", "no");
   genomeAcc.appendChild(genomeA);
+
+  console.log("Adding row with link: " + genomeA.href);
 
   // plain text columns
   tr.querySelector(".col-Organism").textContent = row.Organism
