@@ -1,40 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DiazoDB</title>
+
 </head>
+
 <body>
   <script>console.log("database.html properly loaded");</script>
 
   <a href="./index.html">Phylo Tree</a>
   <table id="csvTable" border="1"></table>
 
-      <script>
-      fetch("DiazoDB-data.csv")
+  <script>
+    fetch("DiazoDB-data.csv")
       .then(r => {
         if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
         return r.text();
       })
       .then(data => {
-          const rows = data.split("\n").map(row => row.split(","));
-          const table = document.getElementById("csvTable");
+        const rows = data.split("\n").map(row => row.split(","));
+        const table = document.getElementById("csvTable");
 
-          rows.forEach((row, index) => {
+        rows.forEach((row, index) => {
           const tr = document.createElement("tr");
 
           row.forEach(cell => {
-              const element = document.createElement(index === 0 ? "th" : "td");
-              element.textContent = cell.trim();
-              tr.appendChild(element);
+            const element = document.createElement(index === 0 ? "th" : "td");
+            element.textContent = cell.trim();
+            tr.appendChild(element);
           });
 
           table.appendChild(tr);
-          });
+        });
       });
   </script>
+ <!-- UniProt Table code-->
+  <table class="hotjar-margin Anr5j data-table">
+    <thead>
+      <tr>
+        <th class="data-table__header-cell--checkbox">
+          <div class="checkbox-cell"><input id="_r_0_" type="checkbox"><label for="_r_0_"
+              aria-label="Selection control for all visible items"></label></div>
+        </th>
+        <th class="data-table__header-cell--sortable" data-column-name="Organism"><span>Organism</span></th>
+        <!--  <th class="" data-column-name="reviewed"></th> -->
+        <th class="data-table__header-cell--sortable" data-column-name="NitrogenaseSet"><span data-article-id="nitrogenase_set">Nitrogenase Set</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="GroupNo"><span data-article-id="group_number">Group Number</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="Env"><span data-article-id="environment">Environment</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="GeneCluster"><span data-article-id="gene_cluster">Gene Cluster</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="Regulon"><span data-article-id="regulon">Regulon</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="PredGrowthTemp"><span data-article-id="predicted_growth_temperature">Predicted Growth Temperature</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="GenomeAcc"><span data-article-id="genome_accession">Genome Accession</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="ContigAcc"><span data-article-id="contig_accession">Contig Accession</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="GeneAcc"><span data-article-id="gene_accession">Gene Accession</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="GTDBPhylo"><span data-article-id="gtdb_phylogeny">GTDB Phylogeny</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="NCBIPyhlo"><span data-article-id="ncbi_phylogeny">NCBI Phylogeny</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody" translate="no"></tbody>
+  </table>
+
+ <!-- Create row template to populate table -->
+<template id="rowTemplate">
+  <tr>
+            data-article-id="organism-name">Organism</span></th>
+        <th class="data-table__header-cell--sortable" data-column-name="length"><span>Length</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody" translate="no"></tbody>
+  </table>
+
+ <!-- Create row template to populate table -->
+<template id="rowTemplate">
+  <tr>
+    <td class="checkbox-cell">
+      <input data-id="" id="" type="checkbox">
+      <label for="" aria-label="" title="click to select, shift+click for multiple selection"></label>
+    </td>
+    <td class="col-Organism"></td>
+    <!-- Uniprot gold icon for reviewed: <td><span class="entry-title__status icon--reviewed" title=""></span></td> -->
+    <td class="col-NitrogenaseSet"></td>
+    <td class="col-GroupNo"></td> 
+    <td class="col-Env"></td>
+    <td class="col-GeneCluster"></td> <!-- is it possible to add operon fig like seqhub here? -->
+    <td class="col-Regulon"></td>
+    <td class="col-PredGrowthTemp"></td> <!-- Pull from bactdrive -->
+    <td class="col-GenomeAcc">
+        <span class="S2LRp S9Gr5">
+        <a class="BqBnJ" href=""></a> <!-- Link to GTDB/NCBI -->
+      </span>
+    </td>
+    <td class="col-ContigAcc"></td> <!-- Link to NCBI -->
+    <td class="col-GeneAcc"></td> <!-- list of gene accession or start:stop, Link to NCBI -->
+    <td class="col-GTDBPhylo"></td>
+    <td class="col-NCBIPyhlo"></td>
+  </tr>
+</template>
+</template>
 
 </body>
-</html>
 
+</html>
