@@ -11,111 +11,154 @@
 </head>
 
 <body>
+  <div id="root">
+    <header>
+      <div class="header">
+        <div class="header__link"><a href="/">
+            <div aria-label="DiazoDB home page"></div>
+          </a></div>
+        <div class="header__navigation">
+          <ul class="no-bullet rZ_Xt">
+            <li><a translate="no" href="./index.html">Phylo Tree</a></li>
+            <li><a translate="no" href="./blog.html">Nitrogenase Blog</a></li>
+          </ul>
+        </div>
+        <div class="header__search">
+          <section role="search">
+            <form aria-label="Main search" class="main-search">
+              <div class="main-search__input-container"><input aria-label="Text query in diazoDB"
+                  style="--input-padding: 12ch;" type="search" value="nif">
+              </div><button class="button primary" type="submit">Search</button>
+            </form>
+          </section>
+        </div>
+      </div>
+    </header>
 
-  <header>
-    <div class="header">
-      <div class="header__link"><a href="/">
-          <div aria-label="DiazoDB home page"></div>
-        </a></div>
-      <div class="header__navigation">
-        <ul class="no-bullet rZ_Xt">
-          <li><a translate="no" href="./index.html">Phylo Tree</a></li>
-          <li><a translate="no" href="./blog.html">Nitrogenase Blog</a></li>
-        </ul>
-      </div>
-      <div class="header__search">
-        <section role="search">
-          <form aria-label="Main search" class="main-search">
-            <div class="main-search__input-container"><input aria-label="Text query in diazoDB"
-                style="--input-padding: 12ch;" type="search" value="nif">
-            </div><button class="button primary" type="submit">Search</button>
-          </form>
-        </section>
-      </div>
+    <!-- UniProt Table code-->
+    <div>
+      <!-- Side panel-->
+      <aside>
+        <div class="h1v0V">
+          <ul class="no-bullet">
+            <li>
+              <div>
+                <div class="bDpVk">Popular organisms</div>
+                <ul class="expandable-list no-bullet">
+                  <li><a class=""
+                      href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A3702">A.
+                      vinelandii (3)</a></li>
+                  <li><a class=""
+                      href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A39947">R. capsulatus
+                      (3)</a></li>
+                  <li><a class=""
+                      href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A9606">M. acetivorans
+                      (3)</a></li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div>
+                <div class="bDpVk">Popular Posts</div>
+                <ul class="expandable-list no-bullet">
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div>
+                <div class="bDpVk">Nitrogenase Phylogenies</div>
+                <ul class="expandable-list no-bullet">
+                  <li><a class="" href="">NifH Phylogengy</a></li>
+                  <li><a class="" href="">NifD Phylogengy</a></li>
+                  <li><a class="" href="">NifK Phylogengy</a></li>
+                  <li><a class="" href="">NifDKEN Phylogengy</a></li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </aside>
+      <!-- main panel-->
+      <main>
+        <table class="hotjar-margin Anr5j data-table">
+          <thead>
+            <tr>
+              <th class="data-table__header-cell--checkbox">
+                <div class="checkbox-cell"><input id="_r_0_" type="checkbox"><label for="_r_0_"
+                    aria-label="Selection control for all visible items"></label></div>
+              </th>
+              <th class="data-table__header-cell--sortable" data-column-name="Organism"><span>Organism</span></th>
+              <!--  <th class="" data-column-name="reviewed"></th> -->
+              <th class="data-table__header-cell--sortable" data-column-name="NitrogenaseSet"><span
+                  data-article-id="nitrogenase_set">Nitrogenase Set</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="GroupNo"><span
+                  data-article-id="group_number">Group Number</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="Env"><span
+                  data-article-id="environment">Environment</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="GeneCluster"><span
+                  data-article-id="gene_cluster">Gene Cluster</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="Regulon"><span
+                  data-article-id="regulon">Regulon</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="PredGrowthTemp"><span
+                  data-article-id="predicted_growth_temperature">Predicted Growth Temperature</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="GenomeAcc"><span
+                  data-article-id="genome_accession">Genome Accession</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="ContigAcc"><span
+                  data-article-id="contig_accession">Contig Accession</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="GeneAcc"><span
+                  data-article-id="gene_accession">Gene Accession</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="GTDBPhylo"><span
+                  data-article-id="gtdb_phylogeny">GTDB Phylogeny</span></th>
+              <th class="data-table__header-cell--sortable" data-column-name="NCBIPyhlo"><span
+                  data-article-id="ncbi_phylogeny">NCBI Phylogeny</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody" translate="no"></tbody>
+        </table>
+
+        <!-- Create row template to populate table -->
+        <template id="rowTemplate">
+          <tr>
+            <td class="checkbox-cell">
+              <input data-id="" id="" type="checkbox">
+              <label for="" aria-label="" title="click to select, shift+click for multiple selection"></label>
+            </td>
+            <td class="col-Organism"></td>
+            <!-- Uniprot gold icon for reviewed: <td><span class="entry-title__status icon--reviewed" title=""></span></td> -->
+            <td class="col-NitrogenaseSet"></td>
+            <td class="col-GroupNo"></td>
+            <td class="col-Env"></td>
+            <td class="col-GeneCluster"></td> <!-- is it possible to add operon fig like seqhub here? -->
+            <td class="col-Regulon"></td>
+            <td class="col-PredGrowthTemp"></td> <!-- Pull from bactdrive -->
+            <td class="col-GenomeAcc">
+              <span class="S2LRp S9Gr5">
+                <a class="BqBnJ" href=""></a> <!-- Link to GTDB/NCBI -->
+              </span>
+            </td>
+            <td class="col-ContigAcc"></td> <!-- Link to NCBI -->
+            <td class="col-GeneAcc"></td> <!-- list of gene accession or start:stop, Link to NCBI -->
+            <td class="col-GTDBPhylo"></td>
+            <td class="col-NCBIPyhlo"></td>
+          </tr>
+        </template>
+
+        <!-- Loading logo (can we make it a spinning nitrogenase?)-->
+        <div class="data-loader__loading">
+          <div class="loader-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="loader"
+              width="100" height="100">
+              <g id="Artboard" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                <path
+                  d="M9,50 C15.8333333,39.3333333 22.6666667,34 29.5,34 C36.3333333,34 43.1666667,39.3333333 50,50 C56.8333333,60.6666667 63.6666667,66 70.5,66 C77.3333333,66 84.1666667,60.6666667 91,50"
+                  id="Line" stroke="#3ca3ca" stroke-width="2" stroke-linecap="square"></path>
+              </g>
+            </svg></div>
+
+        </div>
+      </main>
     </div>
-  </header>
-
-  <a href="./index.html">Phylo Tree</a>
-  <a href="./blog.html">Nitrogenase Blog</a>
-
-  <!-- UniProt Table code-->
-  <div></div>
-  <table class="hotjar-margin Anr5j data-table">
-    <thead>
-      <tr>
-        <th class="data-table__header-cell--checkbox">
-          <div class="checkbox-cell"><input id="_r_0_" type="checkbox"><label for="_r_0_"
-              aria-label="Selection control for all visible items"></label></div>
-        </th>
-        <th class="data-table__header-cell--sortable" data-column-name="Organism"><span>Organism</span></th>
-        <!--  <th class="" data-column-name="reviewed"></th> -->
-        <th class="data-table__header-cell--sortable" data-column-name="NitrogenaseSet"><span
-            data-article-id="nitrogenase_set">Nitrogenase Set</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="GroupNo"><span
-            data-article-id="group_number">Group Number</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="Env"><span
-            data-article-id="environment">Environment</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="GeneCluster"><span
-            data-article-id="gene_cluster">Gene Cluster</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="Regulon"><span
-            data-article-id="regulon">Regulon</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="PredGrowthTemp"><span
-            data-article-id="predicted_growth_temperature">Predicted Growth Temperature</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="GenomeAcc"><span
-            data-article-id="genome_accession">Genome Accession</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="ContigAcc"><span
-            data-article-id="contig_accession">Contig Accession</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="GeneAcc"><span
-            data-article-id="gene_accession">Gene Accession</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="GTDBPhylo"><span
-            data-article-id="gtdb_phylogeny">GTDB Phylogeny</span></th>
-        <th class="data-table__header-cell--sortable" data-column-name="NCBIPyhlo"><span
-            data-article-id="ncbi_phylogeny">NCBI Phylogeny</span></th>
-      </tr>
-    </thead>
-    <tbody id="tbody" translate="no"></tbody>
-  </table>
-
-  <!-- Create row template to populate table -->
-  <template id="rowTemplate">
-    <tr>
-      <td class="checkbox-cell">
-        <input data-id="" id="" type="checkbox">
-        <label for="" aria-label="" title="click to select, shift+click for multiple selection"></label>
-      </td>
-      <td class="col-Organism"></td>
-      <!-- Uniprot gold icon for reviewed: <td><span class="entry-title__status icon--reviewed" title=""></span></td> -->
-      <td class="col-NitrogenaseSet"></td>
-      <td class="col-GroupNo"></td>
-      <td class="col-Env"></td>
-      <td class="col-GeneCluster"></td> <!-- is it possible to add operon fig like seqhub here? -->
-      <td class="col-Regulon"></td>
-      <td class="col-PredGrowthTemp"></td> <!-- Pull from bactdrive -->
-      <td class="col-GenomeAcc">
-        <span class="S2LRp S9Gr5">
-          <a class="BqBnJ" href=""></a> <!-- Link to GTDB/NCBI -->
-        </span>
-      </td>
-      <td class="col-ContigAcc"></td> <!-- Link to NCBI -->
-      <td class="col-GeneAcc"></td> <!-- list of gene accession or start:stop, Link to NCBI -->
-      <td class="col-GTDBPhylo"></td>
-      <td class="col-NCBIPyhlo"></td>
-    </tr>
-  </template>
-
-  <!-- Loading logo (can we make it a spinning nitrogenase?)-->
-  <div class="data-loader__loading">
-    <div class="loader-container"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="loader"
-        width="100" height="100">
-        <g id="Artboard" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-          <path
-            d="M9,50 C15.8333333,39.3333333 22.6666667,34 29.5,34 C36.3333333,34 43.1666667,39.3333333 50,50 C56.8333333,60.6666667 63.6666667,66 70.5,66 C77.3333333,66 84.1666667,60.6666667 91,50"
-            id="Line" stroke="#3ca3ca" stroke-width="2" stroke-linecap="square"></path>
-        </g>
-      </svg></div>
+    <button class="button primary z6fUI" type="button" title="scroll to the top of the page" aria-hidden="true" tabindex="-1">⬆</button>
   </div>
-  </div>
-
 </body>
 
 </html>
