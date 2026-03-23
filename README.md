@@ -3,23 +3,29 @@
 ## Nitrogenase Database
 Automated annotation and curation of nitrogenase genes using profile hidden Markov models and conserved residue matching.
 
+## Install
+
 ## Scripts
 
-+ **1_align_mafft.sh** - Clusters (mmseqs easy-cluster) HMM seed sequences at 90% AAI. Aligns (MAFFT) clustered seeds sequences. Builds HMM profiles and combines into single file.
++ **1_align_mafft.sh** - Clusters (mmseqs easy-cluster) HMM seed sequences at 90% AAI. Aligns (MAFFT) clustered seeds sequences. Builds HMM profiles and combines into single file. Stores alignmnets in ***alignments/*** and profiles in ***HMMs/***.
 
-+ **2_hmmsearch.sh** - Runs pHMM search against GTDB R220 all_rep_proteins_aa database (bacteria and archaea).
++ **2_hmmsearch.sh** - Runs pHMM search against GTDB R220 all_rep_proteins_aa database (bacteria and archaea). Stores results as individual files in ***results/{archaea | bacteria}*** (per GTDB accession number) 
 
-+ **3_parse_hmm.sh**
++ **3_parse_hmm.sh** - Calls (1) **Parse_hmm_results.py** and (2) **Parse_hmm_results.py**.
 
-+ **4_conserved_res.sh**
++ **4_conserved_res.sh** - Calls (1) ***aln_nif_hits.py***, (2) ***conserved-res.py***, (3) ***final-fasta-export.py***, and (4) ***diazoDB-check.py***.
 
-+ **5_make_trees.sh**
++ **5_make_trees.sh** - 
 
 + **6_operon_org.sh**
 
 + **7_SSN.sh**
 
-+ **Parse_hmm_results.py**
++ **Parse_hmm_results.py** - Parse pHMM search results (see below criteria), combines with GTDB taxonomy data, and stores results in ***hits.feather***
+    + positive bit score
+    + full sequence evalue must be significant (<0.01)
+    + best domain evalue should be significant (<0.01)
+        + otherwise flagged for manual review to check if it is distant homolog or just short repeats
 
 + **Parse_tophits.py**
 
@@ -31,17 +37,10 @@ Automated annotation and curation of nitrogenase genes using profile hidden Mark
 
 + **final-fasta-export.py**
 
++ **diazoDB-check.sh**
+
 + **get-operon.py**
 
 + **operon-org-plot.py**
 
-+ **run_check_seq.sh**
-
-
-
-## examples
-
-+ **final.py** - makes/formats final TSV, outputs ***NFixDB.tsv***
-
-+ **nitrogenase_fastas.py** - creates new fasta files from ***filteredfasta.tsv***
 
