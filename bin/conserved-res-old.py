@@ -82,37 +82,42 @@ nif.reset_index(inplace = True)
 nif.set_index(['GenomeID'], inplace = True)
 nif['Seq'] = ''
 
-# read json
-config = json.load(open('nif-config.json', 'r'))
+# nifH
+print("checking nifH", flush=True)
+# grab aln numbering to map to ref seq (A. vinelandii)
+important_residues_nifH = [10, 11, 12, 13, 15, 16, 17, 40, 42, 44, 98, 130, 133] # azotobacter
+#GKGGGKS DKD CDC --> also returns BchL, ChlL, and BchX
 
-# performed conserved residue matching
-all_genes_checked = {}
+ref_seq_nifH = 'NZ_BSFG01000004.1_46'
 
-for gene in config:
-    print(f'checking {gene}', flush=True)
-    
-    # clear df
-    checked = pd.DataFrame()
+passing_score = 25
 
-    # load json parameters
-    ref_seq = config[gene]['ref_gene']
-    important_residues = config[gene]['residues']
-    passing_score = config[gene]['passing_score']
+nifH_checked = check_gene('nifH_split.00001', ref_seq_nifH, important_residues_nifH, passing_score, p=True)
 
-    # initialize dataframe
-    checked = check_gene(f'../results/fasta_splits/{gene}_split.00001', ref_seq, important_residues, passing_score, p=True)
+for file in glob.glob(f'../results/fasta_splits/nifH_split.00*.aln'):
+    if file == '../results/fasta_splits/nifH_split.00001.aln':
+        continue
+    new = check_gene(file[:-4], ref_seq_nifH, important_residues_nifH, passing_score)
+    nifH_checked = pd.concat([nifH_checked, new])
 
-    for file in glob.glob(f'../results/fasta_splits/{gene}_split.000*.aln'):
-        if file == f'../results/fasta_splits/{gene}_split.00001.aln':
-            continue
-        new = check_gene(file[:-4], ref_seq, important_residues, passing_score)
-        checked = pd.concat([checked, new])
+    nifH_checked.drop_duplicates(subset = ['hit'], inplace = True)
+    nifH_checked.set_index(['hit'], append= True, inplace = True)
 
-    checked.drop_duplicates(subset = ['hit'], inplace = True)
-    checked.set_index(['hit'], append= True, inplace = True)
-    all_genes_checked[gene] = checked
+print(str(len(nifH_checked)) + " nifH seqs")
 
-    print(str(len(checked)) + f" {gene} seqs")
+# nifD
+print('checking nifD', flush=True)
+important_residues_nifD = [62, 88, 154, 191, 195, 275, 442] # azotobacter
+ref_seq_nifD = 'NZ_BSFG01000004.1_45' # azo
+passing_score = 15
+
+nifD_checked = check_gene('nifD_split.00001', ref_seq_nifD, important_residues_nifD, passing_score, p=True)
+
+for file in glob.glob(f'../results/fasta_splits/nifD_split.00*.aln'):
+    if file == '../results/fasta_splits/nifD_split.00001.aln':
+        continue
+    new = check_gene(file[:-4], ref_seq_nifD, important_residues_nifD, passing_score)
+    nifD_checked = pd.concat([nifD_checked, new])
 
 # for each genome, only keep the best hit per gene cluster
 nifD_checked.drop_duplicates(subset = ['hit'], inplace = True)

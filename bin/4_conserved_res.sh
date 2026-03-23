@@ -18,7 +18,7 @@
 ## /SBATCH -e slurm.%N.%j.err # STDERR
 
 eval "$(conda shell.bash hook)"
-conda activate /home/zshivji/miniconda3/envs/parse_hmm
+conda activate /resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm
 
 echo "====================================================="
 echo "Start Time  : $(date)"
@@ -26,13 +26,13 @@ echo "Job ID/Name : $SLURM_JOBID / $SLURM_JOB_NAME"
 echo "======================================================"
 echo ""
 
-python aln_nif_hits.py 0
+python aln_nif_hits.py #--reload_fasta
 
-python conserved-res.py
+#python conserved-res.py
 
-python final-fasta-export.py
+#python final-fasta-export.py
 
-python diazoDB-check.py
+#python diazoDB-check.py
 
 echo ""
 echo "======================================================"

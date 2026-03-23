@@ -45,9 +45,15 @@ module load mafft/7.505-gcc-13.2.0-nklkvtc
 #mafft --auto --thread 4 ../input-files/clustered_nifN_rep_seq.fasta > ../alignments/nifN-03292025.faa
 #mafft --auto --thread 4 ../input-files/clustered_nifB_rep_seq.fasta > ../alignments/nifB-03292025.faa
 #mafft --auto --thread 4 ../input-files/clustered_nifV-pfam-blast_rep_seq.fasta > ../alignments/nifV-07242025.faa
+mafft --auto --thread 4 ../HMM_seeds/nifB.fasta > ../alignments/nifB-03192026.faa
+mafft --auto --thread 4 ../HMM_seeds/anfO.fasta > ../alignments/anfO-03192026.faa
+mafft --auto --thread 4 ../HMM_seeds/anfG.fasta > ../alignments/anfG-03192026.faa
+mafft --auto --thread 4 ../HMM_seeds/vnfG.fasta > ../alignments/vnfG-03192026.faa
+mafft --auto --thread 4 ../HMM_seeds/nifNB.fasta > ../alignments/nifNB-03192026.faa
+
 
 eval "$(conda shell.bash hook)"
-conda activate /central/groups/enviromics/miniconda3/envs/hmmer
+conda activate /resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm
 
 # build hmm profiles
 #hmmbuild ../HMMs/nifH_03292025.hmm ../alignments/nifH-03292025.faa
@@ -58,9 +64,15 @@ conda activate /central/groups/enviromics/miniconda3/envs/hmmer
 #hmmbuild ../HMMs/nifB_03292025.hmm ../alignments/nifB-03292025.faa
 #hmmbuild ../HMMs/nifV_07242025.hmm ../alignments/nifV-07242025.faa
 #hmmbuild ../HMMs/pchlide_04122025.hmm ../alignments/pchlide-04012025.faa
+hmmbuild ../HMMs/nifB_03192026.hmm ../alignments/nifB-03192026.faa
+hmmbuild ../HMMs/nifNB_03192026.hmm ../alignments/nifNB-03192026.faa
+hmmbuild ../HMMs/anfO_03192026.hmm ../alignments/anfO-03192026.faa
+hmmbuild ../HMMs/anfG_03192026.hmm ../alignments/anfG-03192026.faa
+hmmbuild ../HMMs/vnfG_03192026.hmm ../alignments/vnfG-03192026.faa
+
 
 # combine hmm profiles
-#cat ../HMMs/*.hmm > ../HMMs/combined_nif_04012025.hmm
+cat ../HMMs/*.hmm > ../HMMs/combined_nif_03192026.hmm
 
 echo ""
 echo "======================================================"
