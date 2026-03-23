@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sandbox diazoDB website files under /website
 - need test case for keeping/dropping best hit in each gene cluster for conserved residue matching
 - connected project to dvc (data version control)
+- anfO, anfG, and vnfG matching
+- separating annotations for nifN, nifNB, nifB
  
 ### Fixed 
 - compress GTDB-taxonomy.tsv and update code to properly read in
