@@ -6,7 +6,7 @@ const topSpacer = document.getElementById("topSpacer");
 const bottomSpacer = document.getElementById("bottomSpacer");
 
 const ROW_HEIGHT = 40; // must match CSS .data-row height
-const BUFFER = 20;
+const BUFFER = 10;
 
 let visibleRows = [];
 let currentSort = { key: null, dir: "asc" };
