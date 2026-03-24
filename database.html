@@ -12,6 +12,7 @@
 
 <body>
   <div id="root">
+    <!--load page content first-->
     <header>
       <div class="header">
         <div class="header__link"><a href="/">
@@ -35,10 +36,14 @@
       </div>
     </header>
 
+    <!-- Place holder for analytics--> 
+    <!-- <script async src="https://www.google-analytics.com/analytics.js"></script> -->
+
+
     <!-- UniProt Table code-->
-    <div>
+    <div class="database-layout">
       <!-- Side panel-->
-      <aside>
+      <aside class="database-aside">
         <div class="h1v0V">
           <ul class="no-bullet">
             <li>
@@ -79,46 +84,50 @@
         </div>
       </aside>
       <!-- main panel-->
-      <main>
-        <table class="hotjar-margin Anr5j data-table">
-          <thead>
-            <tr>
-              <th class="data-table__header-cell--checkbox">
-                <div class="checkbox-cell"><input id="_r_0_" type="checkbox"><label for="_r_0_"
-                    aria-label="Selection control for all visible items"></label></div>
-              </th>
-              <th class="data-table__header-cell--sortable" data-column-name="Organism"><span>Organism</span></th>
-              <!--  <th class="" data-column-name="reviewed"></th> -->
-              <th class="data-table__header-cell--sortable" data-column-name="NitrogenaseSet"><span
-                  data-article-id="nitrogenase_set">Nitrogenase Set</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="GroupNo"><span
-                  data-article-id="group_number">Group Number</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="Env"><span
-                  data-article-id="environment">Environment</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="GeneCluster"><span
-                  data-article-id="gene_cluster">Gene Cluster</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="Regulon"><span
-                  data-article-id="regulon">Regulon</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="PredGrowthTemp"><span
-                  data-article-id="predicted_growth_temperature">Predicted Growth Temperature</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="GenomeAcc"><span
-                  data-article-id="genome_accession">Genome Accession</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="ContigAcc"><span
-                  data-article-id="contig_accession">Contig Accession</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="GeneAcc"><span
-                  data-article-id="gene_accession">Gene Accession</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="GTDBPhylo"><span
-                  data-article-id="gtdb_phylogeny">GTDB Phylogeny</span></th>
-              <th class="data-table__header-cell--sortable" data-column-name="NCBIPyhlo"><span
-                  data-article-id="ncbi_phylogeny">NCBI Phylogeny</span></th>
-            </tr>
-          </thead>
-          <tbody id="tbody" translate="no"></tbody>
-        </table>
-
+      <main class="database-main">
+        <div class="table-viewport" id="tableViewport">
+          <table id = "diazoDB-table" class="hotjar-margin Anr5j data-table">
+            <thead>
+              <tr>
+                <th class="data-table__header-cell--checkbox">
+                  <div class="checkbox-cell"><input id="_r_0_" type="checkbox"><label for="_r_0_"
+                      aria-label="Selection control for all visible items"></label></div>
+                </th>
+                <th class="data-table__header-cell--sortable" data-column-name="Organism"><span>Organism</span></th>
+                <!--  <th class="" data-column-name="reviewed"></th> -->
+                <th class="data-table__header-cell--sortable" data-column-name="NitrogenaseSet"><span
+                    data-article-id="nitrogenase_set">Nitrogenase Set</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GroupNo"><span
+                    data-article-id="group_number">Group Number</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="Env"><span
+                    data-article-id="environment">Environment</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GeneCluster"><span
+                    data-article-id="gene_cluster">Gene Cluster</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="Regulon"><span
+                    data-article-id="regulon">Regulon</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="PredGrowthTemp"><span
+                    data-article-id="predicted_growth_temperature">Predicted Growth Temperature</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GenomeAcc"><span
+                    data-article-id="genome_accession">Genome Accession</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="ContigAcc"><span
+                    data-article-id="contig_accession">Contig Accession</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GeneAcc"><span
+                    data-article-id="gene_accession">Gene Accession</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GTDBPhylo"><span
+                    data-article-id="gtdb_phylogeny">GTDB Phylogeny</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="NCBIPyhlo"><span
+                    data-article-id="ncbi_phylogeny">NCBI Phylogeny</span></th>
+              </tr>
+            </thead>
+            <tbody id="tbody" translate="no">
+              <tr id="topSpacer" class="spacer-row"><td colspan="13"></td></tr>
+              <tr id="bottomSpacer" class="spacer-row"><td colspan="13"></td></tr>
+            </tbody>
+          </table>
+        </div>
         <!-- Create row template to populate table -->
         <template id="rowTemplate">
-          <tr>
+          <tr class="data-row">
             <td class="checkbox-cell">
               <input data-id="" id="" type="checkbox">
               <label for="" aria-label="" title="click to select, shift+click for multiple selection"></label>
