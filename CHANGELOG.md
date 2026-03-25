@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - database.html source for database page
 - Description of scripts in repo to README.md
 - Tracking with DVC
+- google analytics to all three webpages
  
 ### Fixed 
 
