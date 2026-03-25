@@ -1,0 +1,18 @@
+environments:
+  cluster:
+    kind: slurm
+pipeline:
+  stages:
+    align_mafft:
+      kind: sbatch
+      script_path: bin/1_align_mafft.sh
+      environment: cluster
+      inputs:
+        - # folder for fasta
+      outputs:
+        - path: alignments/
+          storage: git
+        - path: alignments/
+          storage: git
+      # sbatch_options:
+      #   - --cpus
