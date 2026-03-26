@@ -29,9 +29,15 @@ main {
   flex: 1;
 }
 
+hr.header-separator {
+  margin: 0;
+  border: none;
+  border-top: 1px solid rgb(255, 255, 255)
+}
+
 .database-layout {
   display: grid;
-  grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
   padding: 1rem;
@@ -45,7 +51,7 @@ main {
   overflow: hidden;
   background-color: rgba(96, 91, 63, 0.85);
   padding: 0.75rem;
-  padding-inline-start: 0.35rem;
+  padding-inline-start: 0.50rem;
 }
 
 .page-intro > * :first-child {
@@ -88,6 +94,7 @@ dl {
 
 ul.no-bullet,
 ol.no-bullet {
+  float: left;
   list-style: none;
   margin-left: 0;
 }
@@ -502,6 +509,19 @@ a:hover {
   scrollbar-width: none;
 }
 
+.header__navigation > ul {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5ch;
+  margin: 0;
+  padding: 0;
+}
+
+.header__navigation > ul > li {
+  display: inline-flex;
+}
+
 .header__navigation::-webkit-scrollbar {
   display: none;
 }
@@ -714,7 +734,7 @@ a:hover {
 
 .aside-content ul {
   margin: 0;
-  padding-left: 0;
+  padding-left: 0.125rem;
 }
 
 .aside-content .aside-header {
