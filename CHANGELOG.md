@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated aln_nif_hits.py to reflect parse_hmmer.ipynb changes
 
 ### Changed
+- using GTDB rep aa R226 (https://data.gtdb.aau.ecogenomic.org/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.tar.gz)
 
 ### Removed
 
