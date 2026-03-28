@@ -4,6 +4,7 @@ const tpl = document.getElementById("rowTemplate");
 const viewport = document.getElementById("tableViewport");
 const topSpacer = document.getElementById("topSpacer");
 const bottomSpacer = document.getElementById("bottomSpacer");
+const resultCount = document.getElementById("resultCount");
 
 const ROW_HEIGHT = 40; // must match CSS .data-row height
 const BUFFER = 10;
@@ -36,7 +37,6 @@ const columnKeyMap = {
 const rowCellMap = {
   ".col-Organism": "Organism",
   ".col-NitrogenaseSet": "NitrogenaseSet",
-  ".col-GroupNo": "GroupNo",
   ".col-Env": "Env",
   ".col-GeneCluster": "GeneCluster",
   ".col-Regulon": "Regulon",
@@ -60,6 +60,22 @@ function parseCSVToObjects(csvText) {
       csvHeaders.forEach((header, i) => (obj[header] = (cols[i] ?? "").trim()));
       return obj;
     });
+}
+
+function getGroupTagClass(groupValue) {
+  const normalized = String(groupValue || "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/^group/, "");
+
+  if (/^(1|i)$/.test(normalized)) return "group-tag--g1";
+  if (/^(2|ii)$/.test(normalized)) return "group-tag--g2";
+  if (/^(3|iii)$/.test(normalized)) return "group-tag--g3";
+  if (/^(4|iv)$/.test(normalized)) return "group-tag--g4";
+  if (/^(4a|iva)$/.test(normalized)) return "group-tag--g4a";
+  if (/^(4b|ivb)$/.test(normalized)) return "group-tag--g4b";
+  if (/^(4c|ivc)$/.test(normalized)) return "group-tag--g4b";
+  return "group-tag--other";
 }
 
 // load final nitrogenase data, display in table
@@ -102,6 +118,21 @@ function buildRowNode(row, idx) {
     }
   });
 
+  const groupCell = tr.querySelector(".col-GroupNo");
+  if (groupCell) {
+    const value = String(row.GroupNo || "").trim();
+    if (value) {
+      const tag = document.createElement("span");
+      tag.className = `group-tag ${getGroupTagClass(value)}`;
+      tag.textContent = value;
+      tag.setAttribute("translate", "no");
+      groupCell.textContent = "";
+      groupCell.appendChild(tag);
+    } else {
+      groupCell.textContent = "";
+    }
+  }
+
   return node;
 }
 
@@ -137,6 +168,12 @@ function renderTable(rows) {
   visibleRows = [...rows];
   viewport.scrollTop = 0;
   renderVirtualRows();
+}
+
+function updateResultCount(count) {
+  if (!resultCount) return;
+  const label = count === 1 ? "result" : "results";
+  resultCount.textContent = ` ${count.toLocaleString()} ${label} `;
 }
 
 function isNumberLike(v) {
@@ -212,5 +249,6 @@ fetch("DiazoDB-data.csv")
     const rows = parseCSVToObjects(csvText);
     console.log(`Parsed ${rows.length} rows from CSV.`);
     renderTable(rows);
+    updateResultCount(rows.length);
   })
   .catch(error => console.error("Error loading CSV:", error));

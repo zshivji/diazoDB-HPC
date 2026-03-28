@@ -1,14 +1,119 @@
+:root {
+  --fr--color-sapphire-blue: #014371;
+  --fr--color-sea-blue: #00639a;
+  --fr--color-independence: #4e5a71;
+  --fr--color-gainsborough: #d2dce3;
+  --fr--color-platinum: #e4e8eb;
+  --fr--color-sky-white: #fbfeff;
+  --fr--color-yankees-blue: #161d39;
+  --top-header-margin: 3rem;
+}
+
+html,
+body {
+  font-family: Lato, sans-serif;
+  background-image: url("../header.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: top center;
+}
+
 body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f8f9fa;
+}
+
+hr.header-separator {
+  margin: 0;
+  border: none;
+  border-top: 1px solid rgb(255, 255, 255)
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  align-content: center;
+  color: rgba(255, 255, 255, 0.633);
+  padding: 0.5em 1em;
+  height: var(--top-header-margin);
+}
+
+.header > * {
+  flex: 0 0 auto;
+}
+
+.header .header__link {
+  align-self: baseline;
+}
+
+.header a,
+.header button.button,
+.header a:link,
+.header a:visited,
+.header a:hover,
+.header a:active,
+.header .header__link > a {
+  display: inline-block;
+  color: var(--fr--color-sky-white);
+  margin-bottom: 0;
+  transition: background-color 0.25s ease-out, color 0.25s ease-out;
+}
+
+.header__navigation {
+  flex-shrink: 1;
+  list-style: none;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  margin: 0;
+  padding: 0 0.5ch;
+  gap: 0.5ch;
+  scrollbar-width: none;
+}
+
+.header__navigation > ul {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5ch;
+  margin: 0;
+  padding: 0;
+}
+
+.header__navigation > ul > li {
+  display: inline-flex;
+}
+
+.header__navigation::-webkit-scrollbar {
+  display: none;
+}
+
+.header__navigation a,
+.header__navigation button.button {
+  margin: 0.1rem 0.25rem;
+  border-bottom: 1px solid transparent;
+}
+
+.header__navigation a:hover,
+.header__navigation button.button:hover {
+  border-bottom-color: currentColor;
+}
+
+.header__search {
+  flex: 1;
+}
+
+.header__search input,
+.header__search button {
+  margin: 0;
 }
 
 main {
   flex: 1;
+  background-color: white;
+  overflow: hidden;
 }
 
 footer {
