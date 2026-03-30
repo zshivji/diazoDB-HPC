@@ -28,31 +28,35 @@ echo ""
 
 # load env, software
 eval "$(conda shell.bash hook)"
-conda activate /home/zshivji/miniconda3/envs/make_trees/
+conda activate /resnick/groups/enviromics/zahra/miniconda3/envs/make_trees
 
 module load mafft/7.505-gcc-13.2.0-nklkvtc
 
 echo "preprocessing"
 # cluster
-mmseqs easy-cluster ../results/checked_nifK04292025.fasta ../trees/nifK_noOut_04292025/clustered_nifK_noOut tmp --min-seq-id 0.74 -c 0.8 --cov-mode 0
+#mmseqs easy-cluster ../results/checked_nifK04292025.fasta ../trees/nifK_noOut_04292025/clustered_nifK_noOut tmp --min-seq-id 0.74 -c 0.8 --cov-mode 0
+mmseqs easy-cluster ../results/checked_nifH.fasta ../trees/nifH_500nodes/nifH_500nodes_clustered tmp --min-seq-id 0.86 -c 0.8 --cov-mode 0
 
 # count clusters
-num=$(grep ">" ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.fasta | wc -l)
-echo "$num clusters for 0.77"
+num=$(grep ">" ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.fasta | wc -l)
+echo "$num clusters for 0.86"
 
 # add outgroup
-#cat ../trees/BchB.fasta >> ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.fasta
+cat ../trees/BchL.fasta >> ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.fasta
 
 # align nif sequences
-mafft --auto --thread 4 ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.fasta > ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.aln
+#mafft --auto --thread 4 ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.fasta > ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.aln
+mafft --auto --thread 4 ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.fasta > ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.aln
 
 # remove gappy alignments
-trimal -in ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.aln -out ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.trim -sgc -gappyout -keepheader
+#trimal -in ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.aln -out ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.trim -sgc -gappyout -keepheader
+trimal -in ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.aln -out ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.trim -sgc -gappyout -keepheader
 
 echo "tree building"
 # build maximum likelihood tree
 #iqtree -s ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.trim -safe -m MFP -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000 #use this to find best model and t>
-iqtree -s ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.trim -safe -m LG+R10 -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000 #use this to find best model and threads
+#iqtree -s ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.trim -safe -m LG+R10 -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000 #use this to find best model and threads
+iqtree -s ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.trim -safe -m MFP -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000
 
 echo ""
 echo "======================================================"
