@@ -29,8 +29,6 @@ pipeline:
       outputs:
         - path: alignments/
           storage: git
-        - path: alignments/
-          storage: git
       # sbatch_options:
       #   - --cpus
     
@@ -56,3 +54,11 @@ pipeline:
       environment: cluster
       inputs:
       outputs:
+    export: 
+      kind: sbatch
+      script_path: bin/
+      environment: cluster
+      inputs:
+      outputs:
+        - path: results/final/
+          storage: dvc

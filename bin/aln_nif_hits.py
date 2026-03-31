@@ -55,7 +55,7 @@ if args.reload_fasta: # should skip if fasta sequences have already been extract
                     break
                     
             # Write the records to a FASTA file
-        with open("../results/" + name + ".fasta", "w") as output_handle:
+        with open("../results/intermediate_fastas" + name + ".fasta", "w") as output_handle:
             SeqIO.write(records, output_handle, "fasta")
 
 #align fasta files
