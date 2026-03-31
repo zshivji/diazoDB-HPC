@@ -5,7 +5,7 @@ on:
     branches:
       - main  # Set a branch name to trigger deployment
     paths:
-      - .github/workflows/gh-pages.yml
+      - results/final/nif_genomes.csv
 
 jobs:
   deploy:
@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Check out main branch
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Copy csv to gh-pages
         uses: planetoftheweb/copy-to-branches@v1.3
