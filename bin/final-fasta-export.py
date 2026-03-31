@@ -72,10 +72,126 @@ filtered_nif2.drop_duplicates(inplace = True)
 filtered_nif2.to_feather(f'nif_final.feather')
 filtered_nif2.to_csv(f'nif_final.csv')
 
-# export fasta files for each gene
-nif = pd.read_feather('../results/nif_final.feather')
+# export csv with each gene as individual row
+nif = pd.read_feather('../results/final/nif_final.feather')
+
+
+# export csv grouped by genome
+
+# works but can simplify code once trees are built w hit not GenomeID
+
+
+def get_hit(rec):
+    return rec.description.split(' ')[-1]
+
+
+def get_cluster(file):
+    clusters = {}
+    clusters_fasta = list(SeqIO.parse(file, 'fasta'))
+
+    index = 0
+    while index < len(clusters_fasta)-1:
+        rec = clusters_fasta[index]
+        if rec.seq == '': # cluster header
+            cluster = get_hit(clusters_fasta[index+1]) # hit
+            clause = True
+            members = []
+            i = 1
+            while clause & (index+i < len(clusters_fasta)): # add members (until next cluster header)
+                if clusters_fasta[index+i].seq != '':
+                    members.append(get_hit(clusters_fasta[index+i]))
+                    i+=1
+                elif clusters_fasta[index+i].seq == '':
+                    clause = False
+            index += i
+
+            clusters[cluster] = members
+
+    return clusters
+
+nif = pd.read_csv('results/final/nif_final.csv')
+nif.reset_index(inplace = True)
+nif.set_index(['Hit'], inplace=True)
+
+# add nif groups (based on nifH--for now)
+
+nif['Group'] = ''
+
+#genes = {'H': 'H', 'D': 'D_noOut'}
+genes = {'H': 'H'}
+
+for gene, file in genes.items():
+    # get clustered datapoints
+    clusters = get_cluster(f'trees/nif{file}/clustered_nif{file}_all_seqs.fasta') 
+
+    # assign group 
+    for group in ['1', '2', '3', '4a', '4c', '3anfvnf']:
+        lines = []
+        hits = []
+        with open(f'bin/nif_groups/nif{gene}_group{group}.txt','r') as f:
+            lines = f.read().splitlines()
+            for line in lines:
+                hit = '_'.join(line.split('|')[-1].split(' '))[:-1]
+                hits.append(hit) # reformat "hits" to match nif index
+                hits.extend(clusters[hit]) # add clustered hits to list of hits to update
+        for hit in hits:
+            nif.loc[nif.index == hit, 'Group'] = f'Group {group}'
+
+# load GTDB metadata
+GTDB_metadata = pd.read_csv('GTDB_metadata.gz', sep = '\t', usecols=['accession', 'gtdb_taxonomy', 'ncbi_taxonomy', 
+                                                'ncbi_taxonomy_unfiltered', 'ncbi_country', 'ncbi_isolation_source'])
+
+# def for sorting gene order
+def sort_order(g):
+    order = ['H', 'D', 'K', 'B', 'E', 'N']
+    return order.index(g)
+
+# get gene set (i.e. HDKEN)
+nif['Gene'] = nif['Gene'].str.replace('nif', '')
+nif['Gene set'] = nif[['GenomeID','contig','Gene']].groupby(['GenomeID','contig'])['Gene'].transform(lambda x: ''.join(sorted(x, key=sort_order)))
+# get contig positions (i.e. 1,2,3)
+nif['index'] = nif['Hit'].str.split('_').str[-1]
+nif['Position'] = nif[['GenomeID','contig','index']].groupby(['GenomeID','contig'])['index'].transform(lambda x: ','.join(sorted(x)))
+
+# group by genome, contig and save
+nif = nif[['GenomeID', 'contig', 'Gene set', 'Position', 'GTDB', 'Location' ,'Orientation', 'Group']]
+nif = nif.groupby(['GenomeID','contig']).first()
+nif.reset_index(level=['GenomeID','contig'], inplace = True)
+
+#merge dataframes to include accession, metadata, and sequences (for filtering)
+nif = pd.merge(nif, GTDB_metadata, left_on = 'GenomeID', right_on = 'accession', how = 'left').drop(columns = ['accession', 'GTDB'])
+
+# add summary genomic location (contig:min-max of cluster, like NCBI format)
+nif['Organism'] = nif['gtdb_taxonomy'].str.split(';').str[-1].str.split('__').str[-1]
+nif['Regulon'] = ''
+nif['PredGrowthTemp'] = ''
+nif.rename(columns = {'GenomeID': 'Genome', 'contig': 'Contig', 'Gene set': 'Nitrogenase Set', 
+                      'Group':'Group No', 'gtdb_taxonomy': 'GTDB Taxonomy', 'ncbi_taxonomy': 'NCBI Taxonomy',
+                      'ncbi_isolation_source':'Isolation Source'}, inplace = True)
+nif.sort_index(inplace = True)
+
+nif.to_csv(f'../results/final/nif_genomes.csv')
+
+# export metadata.json for displaying hover info on diazoDB phylo tree
+metadata = {}
+
+for cluster in nif.iterrows():
+    genome = cluster[1]['Genome']
+    environments = cluster[1]['Isolation Source']
+    operon = ''
+
+    metadata[cluster[1]['Organism']] = {'genome': genome, 
+                                        'environments': environments, 'operon': operon}
+    
+import json
+with open('../results/final/metadata.json', 'w') as f:
+    json.dump(metadata, f)
+
+
 
 # export fasta files (use .copy() to avoid SettingWithCopyWarning)
+nif = pd.read_feather(f'../results/final/nif_final.feather')
+
 nifH = nif[(nif.Gene == 'nifH')].copy()
 nifD = nif[(nif.Gene == 'nifD')].copy()
 nifK = nif[(nif.Gene == 'nifK')].copy()
@@ -118,7 +234,7 @@ for gene, name in zip(gene_list, gene_names):
                 break
     print(len(records), flush=True)    
     # Write the records to a FASTA file
-    with open("../results/checked_" + name + ".fasta", "w") as output_handle:
+    with open("../results/final/fastas/final_" + name + ".fasta", "w") as output_handle:
         SeqIO.write(records, output_handle, "fasta")
 
 print("done", flush=True)
