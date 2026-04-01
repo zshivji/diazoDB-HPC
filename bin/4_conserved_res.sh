@@ -28,11 +28,7 @@ echo ""
 
 python aln_nif_hits.py #--reload_fasta
 
-#python conserved-res.py
-
-#python final-fasta-export.py
-
-#python diazoDB-check.py
+python conserved-res.py
 
 echo ""
 echo "======================================================"
