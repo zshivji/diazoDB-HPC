@@ -143,7 +143,7 @@ nifNB = nif[((nif.residue_match == 'nifN') & (nif.Gene == 'nifN') & (nif['Alignm
 nif = pd.concat([nifH, nifD, nifK, nifE, nifN, nifNB, nifB])
 nif.sort_index(inplace = True)
 
-nif.to_csv(f'../results/intermediate_fastas/nif_rescheck_nofilt.csv')
+nif.to_csv(f'../results/tmp/nif_rescheck_nofilt.csv')
 
 #### END OF CONSERVED RESIDUE CHECKING, BELOW IS VALIDATion/BACKUP CODE ####
 

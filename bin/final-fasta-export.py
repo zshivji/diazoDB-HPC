@@ -15,7 +15,7 @@ def gene_check(genes):
                 return True
 
 # multi-index to cluster by genome, contig
-nif = pd.read_csv(f'nif_rescheck_nofilt.csv')
+nif = pd.read_csv(f'../results/tmp/nif_rescheck_nofilt.csv')
 nif.reset_index(inplace = True)
 nif.set_index(['GenomeID', 'contig'], inplace = True)
 nif.sort_index(inplace = True)
@@ -68,22 +68,14 @@ filtered_nif2['Gene'] = filtered_nif2['residue_match']
 filtered_nif2 = filtered_nif2[['Gene', 'E-value', 'Bit Score', 'Location', 'Orientation', 'Alignment Length', 'Sequence Length', 'GTDB']]
 filtered_nif2.drop_duplicates(inplace = True)
 
-# export 
-filtered_nif2.to_feather(f'nif_final.feather')
-filtered_nif2.to_csv(f'nif_final.csv')
-
-# export csv with each gene as individual row
-nif = pd.read_feather('../results/final/nif_final.feather')
-
+# export csv with each gene as individual rowfiltered_nif2.to_feather(f'../results/final/nif_final.feather')
+filtered_nif2.to_csv(f'../results/final/nif_final.csv')
 
 # export csv grouped by genome
-
-# works but can simplify code once trees are built w hit not GenomeID
-
+    # works but can simplify code once trees are built w hit not GenomeID
 
 def get_hit(rec):
     return rec.description.split(' ')[-1]
-
 
 def get_cluster(file):
     clusters = {}
@@ -109,7 +101,7 @@ def get_cluster(file):
 
     return clusters
 
-nif = pd.read_csv('results/final/nif_final.csv')
+nif = pd.read_csv('../results/final/nif_final.csv')
 nif.reset_index(inplace = True)
 nif.set_index(['Hit'], inplace=True)
 
@@ -177,17 +169,17 @@ metadata = {}
 
 for cluster in nif.iterrows():
     genome = cluster[1]['Genome']
+    taxonomy = cluster[1]['GTDB Taxonomy']
     environments = cluster[1]['Isolation Source']
+    regulon = cluster[1]['Regulon']
     operon = ''
 
-    metadata[cluster[1]['Organism']] = {'genome': genome, 
-                                        'environments': environments, 'operon': operon}
+    metadata[cluster[1]['Organism']] = {'genome': genome, 'taxonomy': taxonomy,
+                                        'environments': environments, 'regulon':regulon, 'operon': operon}
     
 import json
 with open('../results/final/metadata.json', 'w') as f:
     json.dump(metadata, f)
-
-
 
 # export fasta files (use .copy() to avoid SettingWithCopyWarning)
 nif = pd.read_feather(f'../results/final/nif_final.feather')

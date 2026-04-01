@@ -3,11 +3,14 @@ import requests
 import pandas as pd
 import glob
 import re
+import sys
+import json
+
 from Bio import SeqIO
 from pygenomeviz import GenomeViz
 
 # organize microbeannotator results
-nif = pd.read_csv('../results/nif_final_04292025.csv', index_col=[0,1])
+nif = pd.read_csv('../results/final/nif_final.csv', index_col=[0,1])
 
 gene_abv = {'K00532': 'hydA'} # store ko2gene
 gene_data = pd.DataFrame(columns = ['genome', 'contig', 'query_id', 'gene', 'ko_number', 'start', 'end', 'orientation'])
@@ -33,7 +36,9 @@ for file in glob.glob(f"../operon-org/microbeannotator/annotation_results/*.anno
     # grab genome and contig from file name
     str = r'([A-Z_]+[A-Z0-9.]+)_([A-Z_]*[A-Z0-9.]+)'
     genome = re.search(str, file).group(1)
+    annot['genome'] = genome
     contig = re.search(str, file).group(2)
+    annot['contig'] = contig
 
     # grab start, end, orientation of each gene
     input = glob.glob(f"../operon-org/input-fastas/{genome}_{contig}_operon.fasta")[0]
@@ -51,17 +56,41 @@ for file in glob.glob(f"../operon-org/microbeannotator/annotation_results/*.anno
         annot.loc[row[1].Hit, 'start'] = int(row[1].Location.split('-')[0])
         annot.loc[row[1].Hit, 'end'] = int(row[1].Location.split('-')[1])
         annot.loc[row[1].Hit, 'orientation'] = 1 # BUG
-
-    annot['genome'] = genome
-    annot['contig'] = contig
     
     annot.reset_index(inplace=True)
     gene_data = pd.concat([gene_data, annot[['genome', 'contig', 'query_id', 'gene', 'ko_number', 'start', 'end', 'orientation']]])
 
 gene_data.to_csv('../operon-org/operon-org-plot-data.csv')
 
+# update metadata.json to store gene data
+with open('../results/final/metadata.json', 'a') as file:
+    metadata = json.load(file)
 
-# plot
+    for cluster in metadata.items():
+        print(cluster)
+        cluster_gene_data = gene_data.loc[gene_data['genome'] == cluster[1]['genome']]
+        print(cluster_gene_data)
+
+        genes = []
+        for gene in cluster_gene_data.iterrows():
+            # for each nif cluster, store surrounding gene info as list
+            genes.append({'gene_id': gene[1].query_id,
+                          'gene_name': gene[1].gene,
+                          'start': gene[1].start,
+                          'end': gene[1].end,
+                          'direction': gene[1].orientation,
+                          'product': gene[1].ko_number})
+        # add operon info to metadata for each cluster (operon start, end, and genes in operon)
+        operon = {'region_start': cluster_gene_data['start'].min(),
+                  'region_end': cluster_gene_data['end'].max(),
+                  'genes': genes}
+        
+        metadata[cluster[1]['operon']] = operon
+
+    # save updated metadata
+    json.dump(metadata, file)
+
+# plot operon organization
 to_plot = sys.argv[0]
 
 if to_plot:

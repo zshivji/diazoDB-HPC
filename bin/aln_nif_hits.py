@@ -55,14 +55,14 @@ if args.reload_fasta: # should skip if fasta sequences have already been extract
                     break
                     
             # Write the records to a FASTA file
-        with open("../results/intermediate_fastas" + name + ".fasta", "w") as output_handle:
+        with open("../results/intermediate_fastas/" + name + ".fasta", "w") as output_handle:
             SeqIO.write(records, output_handle, "fasta")
 
 #align fasta files
 for gene in gene_names:
     print("aligning "+ gene, flush=True)
     num = eval(f"int({gene}.shape[0]/200)+1") # how many splits
-    os.system(f"seqtk split -n {num} ../results/fasta_splits/{gene}_split ../results/{gene}.fasta") # split fasta file
+    os.system(f"seqtk split -n {num} ../results/fasta_splits/{gene}_split ../results/intermediate_fastas/{gene}.fasta") # split fasta file
     for i in range(num):
-        os.system(f"seqtk subseq ../results/{gene}.fasta ../results/ref_seq.ids >> ../results/fasta_splits/{gene}_split.{str(i+1).zfill(5)}.fa") # add reference sequences
+        os.system(f"seqtk subseq ../results/intermediate_fastas/{gene}.fasta ../results/ref_seq.ids >> ../results/fasta_splits/{gene}_split.{str(i+1).zfill(5)}.fa") # add reference sequences
         os.system(f"mafft --auto --quiet --thread 4 ../results/fasta_splits/{gene}_split.{str(i+1).zfill(5)}.fa > ../results/fasta_splits/{gene}_split.{str(i+1).zfill(5)}.aln")
