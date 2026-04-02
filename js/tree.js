@@ -204,8 +204,10 @@ Promise.all([
   labelData = []; // reset labelData
 
   labels.forEach(label => {
-    const id = label.textContent.trim().replace(/'/g, ""); // remove quotes
-    
+    const rawId = label.textContent.trim().replace(/'/g, ""); // remove quotes
+    const idWithoutLeafSuffix = rawId.replace(/_\d+$/, "");
+    const id = metadata[rawId] ? rawId : idWithoutLeafSuffix;
+
     if (!metadata[id]) return; // skip label if not in metadata
 
     // store label + metadata for search functionality
