@@ -194,6 +194,13 @@ function formatTaxonomy(taxonomy) {
     .join(" > ");
 }
 
+function toSearchText(parts) {
+  return parts
+    .map(value => String(value ?? "").toLowerCase().trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
 function buildTooltipHTML(id, nodeMeta) {
   const organism = normalizeText(nodeMeta.organism || nodeMeta.species || id, id);
   const genome = normalizeText(nodeMeta.genome);
@@ -280,20 +287,21 @@ Promise.all([
     if (!id || !metadata[id]) return; // skip label if not in metadata
 
     // store label + metadata for search functionality
+    const nodeMeta = metadata[id];
     labelData.push({
       label,
       id,
-      text: [
+      text: toSearchText([
+        rawId,
         id,
-        metadata[id].organism,
-        metadata[id].genome,
-        metadata[id].taxonomy,
-        metadata[id].group,
-        metadata[id].environments,
-        metadata[id].regulon,
-        ...(metadata[id].operon?.genes || []).map(g => g.gene_name || ""),
-        ...(metadata[id].operon?.genes || []).map(g => g.product || "")
-      ].join(" ").toLowerCase()
+        nodeMeta.organism,
+        nodeMeta.species,
+        nodeMeta.genome,
+        nodeMeta.group,
+        nodeMeta.environments,
+        nodeMeta.environment,
+        nodeMeta.regulon
+      ])
     });
 
     label.classList.add("tree-label");
@@ -320,6 +328,7 @@ Promise.all([
 
 searchInput.addEventListener("input", () => {
   const query = searchInput.value.toLowerCase().trim();
+  const tokens = query.split(/\s+/).filter(Boolean);
 
   if (!query) {
     labelData.forEach(d => {
@@ -329,7 +338,9 @@ searchInput.addEventListener("input", () => {
   }
 
   labelData.forEach(d => {
-    if (d.text.includes(query)) {
+    const isMatch = tokens.every(token => d.text.includes(token));
+
+    if (isMatch) {
       d.label.classList.add("tree-match");
       d.label.classList.remove("tree-dim");
     } else {
