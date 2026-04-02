@@ -240,7 +240,7 @@ viewport.addEventListener("scroll", () => {
 });
 
 // load CSV, parse, and add rows to table
-fetch("DiazoDB-data.csv")
+fetch("results/final/nif_genomes.csv")
   .then(r => {
     if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
     return r.text();
