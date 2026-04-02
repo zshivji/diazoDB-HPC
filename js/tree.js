@@ -13,6 +13,7 @@ const GENE_COLORS = {
 };
 
 const DEFAULT_GENE_COLOR = "#9ca3af";
+const SHOW_OPERON_IN_TOOLTIP = false;
 
 // helper functions
 
@@ -177,13 +178,55 @@ function resolveMetadataKey(rawLabel, metadata) {
   return null;
 }
 
+function normalizeText(value, fallback = "Not available") {
+  const text = String(value ?? "").trim();
+  return text ? text : fallback;
+}
+
+function formatTaxonomy(taxonomy) {
+  const raw = String(taxonomy ?? "").trim();
+  if (!raw) return "Not available";
+
+  return raw
+    .split(";")
+    .map(part => part.trim().replace(/^[a-z]__/, ""))
+    .filter(Boolean)
+    .join(" > ");
+}
+
 function buildTooltipHTML(id, nodeMeta) {
+  const organism = normalizeText(nodeMeta.organism || nodeMeta.species || id, id);
+  const genome = normalizeText(nodeMeta.genome);
+  const group = normalizeText(nodeMeta.group);
+  const environments = normalizeText(nodeMeta.environments || nodeMeta.environment);
+  const regulon = normalizeText(nodeMeta.regulon);
+  const taxonomy = formatTaxonomy(nodeMeta.taxonomy);
+  const operonHtml = SHOW_OPERON_IN_TOOLTIP ? renderOperonHTML(nodeMeta) : "";
+
   return `
-    <div class="tooltip-title">${escapeHtml(id)}</div>
-    <div class="tooltip-line">${escapeHtml(nodeMeta.organism || nodeMeta.species || "")}</div>
-    <div class="tooltip-line">${escapeHtml(nodeMeta.taxonomy || "")}</div>
-    <div class="tooltip-line">${escapeHtml(nodeMeta.environments || nodeMeta.environment || "")}</div>
-    ${renderOperonHTML(nodeMeta)}
+    <div class="tooltip-card">
+      <div class="tooltip-title">${escapeHtml(organism)}</div>
+      <div class="tooltip-subtitle">${escapeHtml(id)}</div>
+
+      <div class="tooltip-meta-grid">
+        <div class="tooltip-key">Genome</div>
+        <div class="tooltip-value">${escapeHtml(genome)}</div>
+
+        <div class="tooltip-key">Group</div>
+        <div class="tooltip-value">${escapeHtml(group)}</div>
+
+        <div class="tooltip-key">Environment</div>
+        <div class="tooltip-value">${escapeHtml(environments)}</div>
+
+        <div class="tooltip-key">Regulon</div>
+        <div class="tooltip-value">${escapeHtml(regulon)}</div>
+      </div>
+
+      <div class="tooltip-taxonomy-label">Taxonomy</div>
+      <div class="tooltip-taxonomy">${escapeHtml(taxonomy)}</div>
+
+      ${operonHtml}
+    </div>
   `;
 }
 
