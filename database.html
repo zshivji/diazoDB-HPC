@@ -31,7 +31,7 @@
         <div class="header__navigation">
           <ul class="no-bullet rZ_Xt">
             <li><a translate="no" href="./index.html">Phylo Tree</a></li>
-            <li><a translate="no" href="./blog.html">Nitrogenase Blog</a></li>
+            <li><a translate="no" href="./wiki.html">Nitrogenase Wiki</a></li>
           </ul>
         </div>
         <div class="header__search">
@@ -98,8 +98,12 @@
         <!-- title -->
         <div class="page-intro">
           <h1 class="">DiazoDB<small id="resultCount"> results </small></h1>
+          <button id="downloadCsvBtn" class="button tertiary" type="button" aria-label="Download table CSV"><svg
+              xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor">
+              <path d="M27.6 21h3.9v7.7H.5v-7.8h3.9v4h23.2v-4zm-3.9-9.7L16 22.9 8.2 11.3h5.9V1.6h3.8v9.7h5.9z"></path>
+            </svg>Download</button>
         </div>
-        <!-- fxn buttons -->
+        <!-- fxn buttons
         <div class="button-group GUgbz">
           <div class="dropdown" aria-expanded="false" aria-haspopup="true"><button class="button tertiary"
               type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"
@@ -111,7 +115,7 @@
               xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor">
               <path d="M27.6 21h3.9v7.7H.5v-7.8h3.9v4h23.2v-4zm-3.9-9.7L16 22.9 8.2 11.3h5.9V1.6h3.8v9.7h5.9z"></path>
             </svg>Download</button>
-        </div>
+        </div> -->
         <!-- table -->
         <div class="table-viewport" id="tableViewport">
           <table id="diazoDB-table" class="hotjar-margin Anr5j data-table">
@@ -123,28 +127,28 @@
                 </th>
                 <th class="data-table__header-cell--sortable" data-column-name="Organism"><span>Organism</span></th>
                 <!--  <th class="" data-column-name="reviewed"></th> -->
-                <th class="data-table__header-cell--sortable" data-column-name="NitrogenaseSet"><span
-                    data-article-id="nitrogenase_set">Nitrogenase Set</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="GroupNo"><span
                     data-article-id="group_number">Group Number</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="NitrogenaseSet"><span
+                    data-article-id="nitrogenase_set">Nitrogenase Set</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="Env"><span
                     data-article-id="environment">Environment</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GenomeAcc"><span
+                    data-article-id="genome_accession">Genome Accession</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="ContigAcc"><span
+                    data-article-id="contig_accession">Contig Accession</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GTDBPhylo"><span
+                    data-article-id="gtdb_phylogeny">GTDB Phylogeny</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="GeneCluster"><span
                     data-article-id="gene_cluster">Gene Cluster</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="Regulon"><span
                     data-article-id="regulon">Regulon</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="PredGrowthTemp"><span
                     data-article-id="predicted_growth_temperature">Predicted Growth Temperature</span></th>
-                <th class="data-table__header-cell--sortable" data-column-name="GenomeAcc"><span
-                    data-article-id="genome_accession">Genome Accession</span></th>
-                <th class="data-table__header-cell--sortable" data-column-name="ContigAcc"><span
-                    data-article-id="contig_accession">Contig Accession</span></th>
-                <th class="data-table__header-cell--sortable" data-column-name="GeneAcc"><span
+                <!-- <th class="data-table__header-cell--sortable" data-column-name="GeneAcc"><span
                     data-article-id="gene_accession">Gene Accession</span></th>
-                <th class="data-table__header-cell--sortable" data-column-name="GTDBPhylo"><span
-                    data-article-id="gtdb_phylogeny">GTDB Phylogeny</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="NCBIPyhlo"><span
-                    data-article-id="ncbi_phylogeny">NCBI Phylogeny</span></th>
+                    data-article-id="ncbi_phylogeny">NCBI Phylogeny</span></th> -->
               </tr>
             </thead>
             <tbody id="tbody" translate="no">
@@ -165,22 +169,22 @@
               <label for="" aria-label="" title="click to select, shift+click for multiple selection"></label>
             </td>
             <td class="col-Organism"></td>
+            <td class="col-GroupNo"></td>
             <!-- Uniprot gold icon for reviewed: <td><span class="entry-title__status icon--reviewed" title=""></span></td> -->
             <td class="col-NitrogenaseSet"></td>
-            <td class="col-GroupNo"></td>
             <td class="col-Env"></td>
-            <td class="col-GeneCluster"></td> <!-- is it possible to add operon fig like seqhub here? -->
-            <td class="col-Regulon"></td>
-            <td class="col-PredGrowthTemp"></td> <!-- Pull from bactdrive -->
             <td class="col-GenomeAcc">
               <span class="S2LRp S9Gr5">
                 <a class="BqBnJ" href=""></a> <!-- Link to GTDB/NCBI -->
               </span>
             </td>
             <td class="col-ContigAcc"></td> <!-- Link to NCBI -->
-            <td class="col-GeneAcc"></td> <!-- list of gene accession or start:stop, Link to NCBI -->
             <td class="col-GTDBPhylo"></td>
-            <td class="col-NCBIPyhlo"></td>
+            <td class="col-GeneCluster"></td> <!-- is it possible to add operon fig like seqhub here? -->
+            <td class="col-Regulon"></td>
+            <td class="col-PredGrowthTemp"></td> <!-- Pull from bactdrive -->
+            <!-- <td class="col-GeneAcc"></td> list of gene accession or start:stop, Link to NCBI -->
+            <!-- <td class="col-NCBIPyhlo"></td> -->
           </tr>
         </template>
       </main>

@@ -5,6 +5,8 @@ const viewport = document.getElementById("tableViewport");
 const topSpacer = document.getElementById("topSpacer");
 const bottomSpacer = document.getElementById("bottomSpacer");
 const resultCount = document.getElementById("resultCount");
+const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+const CSV_PATH = "/results/final/nif_genomes.csv";
 
 const ROW_HEIGHT = 40; // must match CSS .data-row height
 const BUFFER = 10;
@@ -21,17 +23,15 @@ const headers = Array.from(table.querySelectorAll("thead th[data-column-name]"))
 
 const columnKeyMap = {
   Organism: "Organism",
-  NitrogenaseSet: "NitrogenaseSet",
   GroupNo: "GroupNo",
+  NitrogenaseSet: "NitrogenaseSet",
   Env: "Env",
-  GeneCluster: "GeneCluster",
-  Regulon: "Regulon",
-  PredGrowthTemp: "PredGrowthTemp",
   GenomeAcc: "GenomeAcc",
   ContigAcc: "ContigAcc",
-  GeneAcc: "GeneAcc",
   GTDBPhylo: "GTDBPhylo",
-  NCBIPyhlo: "NCBIPyhlo"
+  GeneAcc: "GeneAcc",
+  Regulon: "Regulon",
+  PredGrowthTemp: "PredGrowthTemp"
 };
 
 const rowCellMap = {
@@ -228,6 +228,32 @@ headers.forEach(th => {
   });
 });
 
+async function downloadCurrentCsv() {
+  const response = await fetch(CSV_PATH);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const tempLink = document.createElement("a");
+  tempLink.href = blobUrl;
+  tempLink.download = "nif_genomes.csv";
+  document.body.appendChild(tempLink);
+  tempLink.click();
+  tempLink.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
+if (downloadCsvBtn) {
+  downloadCsvBtn.addEventListener("click", () => {
+    downloadCurrentCsv().catch(error => {
+      console.error("Error downloading CSV:", error);
+      window.location.href = CSV_PATH;
+    });
+  });
+}
+
 let rafPending = false;
 viewport.addEventListener("scroll", () => {
   if (!rafPending) {
@@ -240,7 +266,7 @@ viewport.addEventListener("scroll", () => {
 });
 
 // load CSV, parse, and add rows to table
-fetch("results/final/nif_genomes.csv")
+fetch(CSV_PATH)
   .then(r => {
     if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
     return r.text();
