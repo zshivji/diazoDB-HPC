@@ -150,12 +150,39 @@ function renderScaleHTML(regionStart, regionEnd) {
   `;
 }
 
+function resolveMetadataKey(rawLabel, metadata) {
+  const rawId = String(rawLabel || "").trim().replace(/^'+|'+$/g, "");
+
+  const normalizedPipeKey = rawId
+    .replace(/\b(GB|RS)\s+(GCA|GCF)\s+(\d+\.\d+)\b/gi, "$1_$2_$3")
+    .replace(/\|([^|]+?)\s+\d+$/, "|$1");
+
+  const withoutLeafSuffix = rawId.replace(/([_\s])\d+$/, "");
+  const candidates = [rawId, withoutLeafSuffix, normalizedPipeKey];
+
+  for (const candidate of candidates) {
+    if (candidate && metadata[candidate]) return candidate;
+  }
+
+  // Legacy fallback: build accession-style keys like GB_GCA_031257675.1_nif.
+  const parts = normalizedPipeKey.split("|");
+  for (const part of parts) {
+    const match = part.trim().match(/\b(GB|RS)[ _](GCA|GCF)[ _](\d+\.\d+)\b/i);
+    if (!match) continue;
+
+    const accessionKey = `${match[1].toUpperCase()}_${match[2].toUpperCase()}_${match[3]}_nif`;
+    if (metadata[accessionKey]) return accessionKey;
+  }
+
+  return null;
+}
+
 function buildTooltipHTML(id, nodeMeta) {
   return `
     <div class="tooltip-title">${escapeHtml(id)}</div>
-    <div class="tooltip-line">${escapeHtml(nodeMeta.species || "")}</div>
+    <div class="tooltip-line">${escapeHtml(nodeMeta.organism || nodeMeta.species || "")}</div>
     <div class="tooltip-line">${escapeHtml(nodeMeta.taxonomy || "")}</div>
-    <div class="tooltip-line">${escapeHtml(nodeMeta.environment || "")}</div>
+    <div class="tooltip-line">${escapeHtml(nodeMeta.environments || nodeMeta.environment || "")}</div>
     ${renderOperonHTML(nodeMeta)}
   `;
 }
@@ -205,10 +232,9 @@ Promise.all([
 
   labels.forEach(label => {
     const rawId = label.textContent.trim().replace(/'/g, ""); // remove quotes
-    const idWithoutLeafSuffix = rawId.replace(/_\d+$/, "");
-    const id = metadata[rawId] ? rawId : idWithoutLeafSuffix;
+    const id = resolveMetadataKey(rawId, metadata);
 
-    if (!metadata[id]) return; // skip label if not in metadata
+    if (!id || !metadata[id]) return; // skip label if not in metadata
 
     // store label + metadata for search functionality
     labelData.push({
@@ -243,6 +269,8 @@ Promise.all([
       tooltip.style.display = "none";
     });
   });
+
+  console.log("metadata-linked labels:", labelData.length);
 }).catch(console.error);
 
 // add search functionality
