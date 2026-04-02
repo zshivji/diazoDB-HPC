@@ -73,7 +73,7 @@ hr.header-separator {
 .page-intro {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.75rem;
   padding: 1rem 0;
 }
@@ -86,16 +86,65 @@ hr.header-separator {
   color: #000000;
 }
 
-#downloadCsvBtn {
+#downloadCsvBtn,
+#downloadFastaBtn {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   white-space: nowrap;
 }
 
-#downloadCsvBtn svg {
+#downloadCsvBtn {
+  margin-inline-end: 0.25rem;
+}
+
+#downloadCsvBtn svg,
+#downloadFastaBtn svg {
   width: 1rem;
   height: 1rem;
+}
+
+.download-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.download-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.download-dropdown__menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  display: none;
+  min-width: 12rem;
+  padding: 0.35rem 0;
+  border: 1px solid var(--fr--color-gainsborough);
+  border-radius: 0.35rem;
+  background: #fff;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
+  z-index: 3000;
+  flex-direction: column;
+}
+
+.download-dropdown.is-open .download-dropdown__menu {
+  display: flex;
+}
+
+.download-dropdown__menu a {
+  display: block;
+  padding: 0.55rem 0.9rem;
+  color: var(--fr--color-yankees-blue);
+  font-weight: 600;
+}
+
+.download-dropdown__menu a:hover,
+.download-dropdown__menu a:focus {
+  background: var(--fr--color-platinum);
 }
 
 .database-main {

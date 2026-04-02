@@ -29,7 +29,7 @@
             <div aria-label="DiazoDB home page"></div>
           </a></div>
         <div class="header__navigation">
-          <ul class="no-bullet rZ_Xt">
+          <ul class="no-bullet">
             <li><a translate="no" href="./index.html">Phylo Tree</a></li>
             <li><a translate="no" href="./wiki.html">Nitrogenase Wiki</a></li>
           </ul>
@@ -97,25 +97,29 @@
       <main class="database-main">
         <!-- title -->
         <div class="page-intro">
-          <h1 class="">DiazoDB<small id="resultCount"> results </small></h1>
-          <button id="downloadCsvBtn" class="button tertiary" type="button" aria-label="Download table CSV"><svg
-              xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor">
-              <path d="M27.6 21h3.9v7.7H.5v-7.8h3.9v4h23.2v-4zm-3.9-9.7L16 22.9 8.2 11.3h5.9V1.6h3.8v9.7h5.9z"></path>
-            </svg>Download</button>
+          <h1 class="">    DiazoDB<small id="resultCount"> results </small></h1>
+          <div class="download-actions">
+            <button id="downloadCsvBtn" class="button tertiary" type="button" aria-label="Download table CSV"><svg
+                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor">
+                <path d="M27.6 21h3.9v7.7H.5v-7.8h3.9v4h23.2v-4zm-3.9-9.7L16 22.9 8.2 11.3h5.9V1.6h3.8v9.7h5.9z"></path>
+              </svg>Download CSV</button>
+            <div class="download-dropdown" data-download-dropdown>
+              <button id="downloadFastaBtn" class="button tertiary" type="button" aria-haspopup="menu" aria-expanded="false">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" width="1.4ch">
+                  <path d="M503 215l-46-46c-6-6-14-9-22-9h-51V80c0-27-21-48-48-48H176c-27 0-48 21-48 48v80H77c-8 0-16 3-22 9L9 215c-6 6-9 14-9 22v83h128v-16c0-9 7-16 16-16h32c9 0 16 7 16 16v16h128v-16c0-9 7-16 16-16h32c9 0 16 7 16 16v16h128v-83c0-8-3-16-9-22zm-183-55H192V96h128v64zm64 208c0 9-7 16-16 16h-32c-9 0-16-7-16-16v-16H192v16c0 9-7 16-16 16h-32c-9 0-16-7-16-16v-16H0v96c0 18 14 32 32 32h448c18 0 32-14 32-32v-96H384v16z"></path>
+                </svg>
+                Download FASTA
+              </button>
+              <div class="download-dropdown__menu" role="menu" aria-label="Download FASTA files">
+                <a role="menuitem" href="./fastas/nifH.fasta" download>nifH.fasta</a>
+                <a role="menuitem" href="./fastas/nifD.fasta" download>nifD.fasta</a>
+                <a role="menuitem" href="./fastas/nifK.fasta" download>nifK.fasta</a>
+                <a role="menuitem" href="./fastas/nifN.fasta" download>nifN.fasta</a>
+                <a role="menuitem" href="./fastas/nifE.fasta" download>nifE.fasta</a>
+              </div>
+            </div>
+          </div>
         </div>
-        <!-- fxn buttons
-        <div class="button-group GUgbz">
-          <div class="dropdown" aria-expanded="false" aria-haspopup="true"><button class="button tertiary"
-              type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"
-                width="1.4ch">
-                <path
-                  d="M503 215l-46-46c-6-6-14-9-22-9h-51V80c0-27-21-48-48-48H176c-27 0-48 21-48 48v80H77c-8 0-16 3-22 9L9 215c-6 6-9 14-9 22v83h128v-16c0-9 7-16 16-16h32c9 0 16 7 16 16v16h128v-16c0-9 7-16 16-16h32c9 0 16 7 16 16v16h128v-83c0-8-3-16-9-22zm-183-55H192V96h128v64zm64 208c0 9-7 16-16 16h-32c-9 0-16-7-16-16v-16H192v16c0 9-7 16-16 16h-32c-9 0-16-7-16-16v-16H0v96c0 18 14 32 32 32h448c18 0 32-14 32-32v-96H384v16z">
-                </path>
-              </svg>Tools</button></div><button class="button tertiary" type="button"><svg
-              xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor">
-              <path d="M27.6 21h3.9v7.7H.5v-7.8h3.9v4h23.2v-4zm-3.9-9.7L16 22.9 8.2 11.3h5.9V1.6h3.8v9.7h5.9z"></path>
-            </svg>Download</button>
-        </div> -->
         <!-- table -->
         <div class="table-viewport" id="tableViewport">
           <table id="diazoDB-table" class="hotjar-margin Anr5j data-table">

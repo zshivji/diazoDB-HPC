@@ -6,6 +6,8 @@ const topSpacer = document.getElementById("topSpacer");
 const bottomSpacer = document.getElementById("bottomSpacer");
 const resultCount = document.getElementById("resultCount");
 const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+const downloadFastaBtn = document.getElementById("downloadFastaBtn");
+const downloadFastaDropdown = document.querySelector("[data-download-dropdown]");
 const CSV_PATH = "results/final/nif_genomes.csv";
 
 const ROW_HEIGHT = 40; // must match CSS .data-row height
@@ -181,15 +183,37 @@ function isNumberLike(v) {
   return s !== "" && !Number.isNaN(Number(s));
 }
 
-function compareValues(a, b) {
+function getSortBucket(value) {
+  const normalized = String(value ?? "").trim();
+
+  if (normalized === "") return "blank";
+  if (isNumberLike(normalized)) return "number";
+  return "text";
+}
+
+function compareValues(a, b, dir) {
   const A = String(a ?? "").trim();
   const B = String(b ?? "").trim();
 
-  if (isNumberLike(A) && isNumberLike(B)) {
-    return Number(A) - Number(B);
+  const bucketOrder = { text: 0, number: 1, blank: 2 };
+  const bucketA = getSortBucket(A);
+  const bucketB = getSortBucket(B);
+
+  if (bucketA !== bucketB) {
+    return bucketOrder[bucketA] - bucketOrder[bucketB];
   }
 
-  return A.localeCompare(B, undefined, { numeric: true, sensitivity: "base" });
+  if (bucketA === "blank") {
+    return 0;
+  }
+
+  if (bucketA === "number") {
+    const cmp = Number(A) - Number(B);
+    return dir === "asc" ? cmp : -cmp;
+  }
+
+  const cmp = A.localeCompare(B, undefined, { numeric: true, sensitivity: "base" });
+  return dir === "asc" ? cmp : -cmp;
 }
 
 function sortBy(key) {
@@ -213,8 +237,7 @@ function sortBy(key) {
   });
 
   const sorted = [...visibleRows].sort((r1, r2) => {
-    const cmp = compareValues(r1[key], r2[key]);
-    return currentSort.dir === "asc" ? cmp : -cmp;
+    return compareValues(r1[key], r2[key], currentSort.dir);
   });
 
   visibleRows = sorted;
@@ -251,6 +274,40 @@ if (downloadCsvBtn) {
       console.error("Error downloading CSV:", error);
       window.location.href = CSV_PATH;
     });
+  });
+}
+
+function setFastaDropdownOpen(isOpen) {
+  if (!downloadFastaDropdown || !downloadFastaBtn) return;
+
+  downloadFastaDropdown.classList.toggle("is-open", isOpen);
+  downloadFastaBtn.setAttribute("aria-expanded", String(isOpen));
+}
+
+if (downloadFastaBtn && downloadFastaDropdown) {
+  downloadFastaBtn.addEventListener("click", event => {
+    event.stopPropagation();
+    const isOpen = !downloadFastaDropdown.classList.contains("is-open");
+    setFastaDropdownOpen(isOpen);
+  });
+
+  downloadFastaDropdown.addEventListener("click", event => {
+    const target = event.target;
+    if (target instanceof HTMLAnchorElement) {
+      setFastaDropdownOpen(false);
+    }
+  });
+
+  document.addEventListener("click", event => {
+    if (!downloadFastaDropdown.contains(event.target)) {
+      setFastaDropdownOpen(false);
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      setFastaDropdownOpen(false);
+    }
   });
 }
 

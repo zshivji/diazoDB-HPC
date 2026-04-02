@@ -214,9 +214,12 @@ Promise.all([
       id,
       text: [
         id,
-        metadata[id].species,
+        metadata[id].organism,
+        metadata[id].genome,
         metadata[id].taxonomy,
-        metadata[id].environment,
+        metadata[id].group,
+        metadata[id].environments,
+        metadata[id].regulon,
         ...(metadata[id].operon?.genes || []).map(g => g.gene_name || ""),
         ...(metadata[id].operon?.genes || []).map(g => g.product || "")
       ].join(" ").toLowerCase()
