@@ -6,7 +6,7 @@ const topSpacer = document.getElementById("topSpacer");
 const bottomSpacer = document.getElementById("bottomSpacer");
 const resultCount = document.getElementById("resultCount");
 const downloadCsvBtn = document.getElementById("downloadCsvBtn");
-const CSV_PATH = "/results/final/nif_genomes.csv";
+const CSV_PATH = "results/final/nif_genomes.csv";
 
 const ROW_HEIGHT = 40; // must match CSS .data-row height
 const BUFFER = 10;
