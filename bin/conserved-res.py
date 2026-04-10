@@ -127,18 +127,15 @@ nif.reset_index(level='Gene', inplace = True)
 nif.sort_index(inplace = True)
 
 # update residue match column in nif df
-for gene in 'HDKEN':
+for gene in 'HDKENB':
     for genome, cols in eval(f"all_genes_checked[nif{gene}].iterrows()"):
         nif.loc[(genome[0], genome[1]), 'residue_match'] = "nif" + gene
-
-# filter to get hits that passed residue matching
-nifH = nif[(nif.residue_match == 'nifH') & (nif.Gene == 'nifH') & (nif['Alignment Length'] > 200)]
-nifB = nif[(nif.residue_match == 'nifH') & (nif.Gene == 'nifB') & (nif['Alignment Length'] > 200)] # not done
-nifD = nif[((nif.residue_match == 'nifD') & (nif.Gene == 'nifD') & (nif['Alignment Length'] > 300))]
-nifK = nif[((nif.residue_match == 'nifK') & (nif.Gene == 'nifK') & (nif['Alignment Length'] > 300))]
-nifE = nif[((nif.residue_match == 'nifE') & (nif.Gene == 'nifE') & (nif['Alignment Length'] > 300) & (nif['Alignment Length'] < 500))]
-nifN = nif[((nif.residue_match == 'nifN') & (nif.Gene == 'nifN') & (nif['Alignment Length'] > 300) & (nif['Alignment Length'] < 500))]
-nifNB = nif[((nif.residue_match == 'nifN') & (nif.Gene == 'nifN') & (nif['Alignment Length'] > 500))]
+    
+    # filter to get hits that passed residue matching
+    gene = f"nif{gene}"
+    maxl = config[gene]['min-length']
+    minl = config[gene]['max-length']
+    exec(f"{gene} = nif[((nif.residue_match == '{gene}') & (nif.Gene == '{gene}') & (nif['Alignment Length'] >= {minl}) & (nif['Alignment Length'] < {maxl}))]", globals())
 
 nif = pd.concat([nifH, nifD, nifK, nifE, nifN, nifNB, nifB])
 nif.sort_index(inplace = True)

@@ -46,16 +46,16 @@ for genome in filtered_nif2.index.get_level_values(0).unique(): # iterate throug
             if no_pos < 3:
                 continue
 
-            # only keep hits that are in the cluster
-            tmp2 = tmp[tmp.Hit.isin(pos)]
+            # # only keep hits that are in the cluster --> doesn't work for nifB
+            # tmp2 = tmp[tmp.Hit.isin(pos)]
 
-            # only keep hits that are in the cluster
-            tmp2 = tmp[tmp.Hit.isin(pos)].reset_index()
+            # # only keep hits that are in the cluster
+            # tmp2 = tmp[tmp.Hit.isin(pos)].reset_index()
 
             # check if all genes are present
-            if gene_check(tmp2.residue_match.to_list()):
+            if gene_check(tmp.residue_match.to_list()):
                 # get index
-                items = [(genome, contig, hit) for hit in tmp2.Hit]
+                items = [(genome, contig, hit) for hit in tmp.Hit]
                 genomes_to_keep.extend(items)
 
 # filter for genomes to keep
