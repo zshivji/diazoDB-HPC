@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Submit this script with: sbatch <this-filename>
-#SBATCH --time=03:12:00   # walltime
+#SBATCH --time=04:12:00   # walltime
 #SBATCH --ntasks=4   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=1   # number of nodes
-#SBATCH --mem 40GB   # memory per CPU core
+#SBATCH --mem 120GB   # memory per CPU core
 #SBATCH -J download   # job name
-#SBATCH --dependency=afterok:62008737
+##SBATCH --dependency=afterok:62008737
 
 # Notify at the beginning, end of job and on failure.
 #SBATCH --mail-user=zshivji@caltech.edu   # email address
@@ -27,7 +27,7 @@ echo "Num Tasks   : $SLURM_NTASKS total [$SLURM_NNODES nodes @ $SLURM_CPUS_ON_NO
 echo "======================================================"
 echo ""
 
-calkit save -am "initial"
+calkit push
 
 echo ""
 echo "======================================================"
