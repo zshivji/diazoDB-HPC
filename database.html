@@ -22,35 +22,20 @@
 
 <body>
   <div id="root">
-    <!--load page content first-->
+
     <header>
       <div class="header">
-        <div class="header__link"><a href="/">
-            <div aria-label="DiazoDB home page"></div>
-          </a></div>
-        <div class="header__navigation">
-          <ul class="no-bullet">
-            <li><a translate="no" href="./index.html">Phylo Tree</a></li>
-            <li><a translate="no" href="./wiki.html">Nitrogenase Wiki</a></li>
-          </ul>
-        </div>
-        <div class="header__search">
-          <section role="search">
-            <form aria-label="Main search" class="main-search">
-              <div class="main-search__input-container"><input aria-label="Text query in diazoDB"
-                  style="--input-padding: 12ch;" type="search" value="nif">
-              </div><button class="button primary" type="submit">Search</button>
-            </form>
-          </section>
-        </div>
-      </div>
+        <a href="index.html" class="logo">DiazoDB <span class="logo-badge">DataBase</span></a>
+        <nav class="header__navigation">
+          <a translate="no" href="./index.html">Phylo Tree</a>
+          <a translate="no" href="./wiki.html">Nitrogenase Wiki</a>
+        </nav>
+      </div> 
     </header>
 
     <hr class="header-separator">
 
-    <!-- UniProt Table code-->
     <div class="database-layout">
-      <!-- Side panel-->
       <aside class="database-aside">
         <div class="aside-content">
           <ul class="no-bullet">
@@ -58,15 +43,12 @@
               <div>
                 <div class="aside-header">Popular organisms</div>
                 <ul class="expandable-list no-bullet">
-                  <li><a class=""
-                      href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A3702">A.
+                  <li><a href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A3702">A.
                       vinelandii (3)</a></li>
-                  <li><a class=""
-                      href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A39947">R.
+                  <li><a href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A39947">R.
                       capsulatus
                       (3)</a></li>
-                  <li><a class=""
-                      href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A9606">M.
+                  <li><a href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A9606">M.
                       acetivorans
                       (3)</a></li>
                 </ul>
@@ -75,29 +57,35 @@
             <li>
               <div>
                 <div class="aside-header">Popular Posts</div>
-                <ul class="expandable-list no-bullet">
-                </ul>
+                <ul class="expandable-list no-bullet"></ul>
               </div>
             </li>
             <li>
               <div>
                 <div class="aside-header">Nitrogenase Phylogenies</div>
                 <ul class="expandable-list no-bullet">
-                  <li><a class="" href="">NifH Phylogengy</a></li>
-                  <li><a class="" href="">NifD Phylogengy</a></li>
-                  <li><a class="" href="">NifK Phylogengy</a></li>
-                  <li><a class="" href="">NifDKEN Phylogengy</a></li>
+                  <li><a href="">NifH Phylogengy</a></li>
+                  <li><a href="">NifD Phylogengy</a></li>
+                  <li><a href="">NifK Phylogengy</a></li>
+                  <li><a href="">NifDKEN Phylogengy</a></li>
                 </ul>
               </div>
             </li>
           </ul>
         </div>
       </aside>
-      <!-- main panel-->
       <main class="database-main">
-        <!-- title -->
         <div class="page-intro">
-          <h1 class="">    DiazoDB<small id="resultCount"> results </small></h1>
+          <h1>DiazoDB<small id="resultCount"> results </small></h1>
+          <div class="table__search">
+            <section role="search">
+              <form aria-label="Table search" class="table-search" id="tableSearchForm">
+                <div class="main-search__input-container"><input id="tableSearchInput" aria-label="Search all columns in diazoDB"
+                    type="search" placeholder="Search all columns...">
+                </div><button class="button tertiary" type="submit">Search</button>
+              </form>
+            </section>
+          </div>
           <div class="download-actions">
             <button id="downloadCsvBtn" class="button tertiary" type="button" aria-label="Download table CSV"><svg
                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor">
@@ -120,9 +108,8 @@
             </div>
           </div>
         </div>
-        <!-- table -->
         <div class="table-viewport" id="tableViewport">
-          <table id="diazoDB-table" class="hotjar-margin Anr5j data-table">
+          <table id="diazoDB-table" class="data-table">
             <thead>
               <tr>
                 <th class="data-table__header-cell--checkbox">
@@ -130,7 +117,6 @@
                       aria-label="Selection control for all visible items"></label></div>
                 </th>
                 <th class="data-table__header-cell--sortable" data-column-name="Organism"><span>Organism</span></th>
-                <!--  <th class="" data-column-name="reviewed"></th> -->
                 <th class="data-table__header-cell--sortable" data-column-name="GroupNo"><span
                     data-article-id="group_number">Group Number</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="NitrogenaseSet"><span
@@ -143,29 +129,22 @@
                     data-article-id="contig_accession">Contig Accession</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="GTDBPhylo"><span
                     data-article-id="gtdb_phylogeny">GTDB Phylogeny</span></th>
-                <th class="data-table__header-cell--sortable" data-column-name="GeneCluster"><span
-                    data-article-id="gene_cluster">Gene Cluster</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="Regulon"><span
                     data-article-id="regulon">Regulon</span></th>
                 <th class="data-table__header-cell--sortable" data-column-name="PredGrowthTemp"><span
                     data-article-id="predicted_growth_temperature">Predicted Growth Temperature</span></th>
-                <!-- <th class="data-table__header-cell--sortable" data-column-name="GeneAcc"><span
-                    data-article-id="gene_accession">Gene Accession</span></th>
-                <th class="data-table__header-cell--sortable" data-column-name="NCBIPyhlo"><span
-                    data-article-id="ncbi_phylogeny">NCBI Phylogeny</span></th> -->
               </tr>
             </thead>
             <tbody id="tbody" translate="no">
               <tr id="topSpacer" class="spacer-row">
-                <td colspan="13"></td>
+                <td colspan="12"></td>
               </tr>
               <tr id="bottomSpacer" class="spacer-row">
-                <td colspan="13"></td>
+                <td colspan="12"></td>
               </tr>
             </tbody>
           </table>
         </div>
-        <!-- Create row template to populate table -->
         <template id="rowTemplate">
           <tr class="data-row">
             <td class="checkbox-cell">
@@ -174,34 +153,27 @@
             </td>
             <td class="col-Organism"></td>
             <td class="col-GroupNo"></td>
-            <!-- Uniprot gold icon for reviewed: <td><span class="entry-title__status icon--reviewed" title=""></span></td> -->
             <td class="col-NitrogenaseSet"></td>
             <td class="col-Env"></td>
             <td class="col-GenomeAcc">
-              <span class="S2LRp S9Gr5">
-                <a class="BqBnJ" href=""></a> <!-- Link to GTDB/NCBI -->
+              <span class="genome-link-wrapper">
+                <a class="genome-link" href=""></a>
               </span>
             </td>
-            <td class="col-ContigAcc"></td> <!-- Link to NCBI -->
+            <td class="col-ContigAcc"></td>
             <td class="col-GTDBPhylo"></td>
-            <td class="col-GeneCluster"></td> <!-- is it possible to add operon fig like seqhub here? -->
             <td class="col-Regulon"></td>
-            <td class="col-PredGrowthTemp"></td> <!-- Pull from bactdrive -->
-            <!-- <td class="col-GeneAcc"></td> list of gene accession or start:stop, Link to NCBI -->
-            <!-- <td class="col-NCBIPyhlo"></td> -->
+            <td class="col-PredGrowthTemp"></td>
           </tr>
         </template>
       </main>
     </div>
-      <footer>
+
+  <footer>
     <div>
-      <b>Citation:</b>
-      Shivji (2026)
+      <p><b>Citation: </b> DiazoDB, Shivji (2026) · Check out our <a href="https://github.com/yourusername/diazo-db" target="_blank" rel="noopener">GitHub!</a></p>
     </div>
   </footer>
-  
-    <button class="button primary z6fUI" type="button" title="scroll to the top of the page" aria-hidden="true"
-      tabindex="-1">⬆</button>
   </div>
 </body>
 

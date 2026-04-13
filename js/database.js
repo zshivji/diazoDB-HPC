@@ -8,13 +8,17 @@ const resultCount = document.getElementById("resultCount");
 const downloadCsvBtn = document.getElementById("downloadCsvBtn");
 const downloadFastaBtn = document.getElementById("downloadFastaBtn");
 const downloadFastaDropdown = document.querySelector("[data-download-dropdown]");
+const tableSearchInput = document.getElementById("tableSearchInput");
+const tableSearchForm = document.getElementById("tableSearchForm");
 const CSV_PATH = "results/final/nif_genomes.csv";
 
 const ROW_HEIGHT = 40; // must match CSS .data-row height
 const BUFFER = 10;
 
+let allData = []; // Store all data from CSV
 let visibleRows = [];
 let currentSort = { key: null, dir: "asc" };
+let currentSearchQuery = ""; // Store current search query
 
 const table = document.getElementById("diazoDB-table");
 if (!tbody || !tpl || !viewport || !topSpacer || !bottomSpacer || !table) {
@@ -31,7 +35,6 @@ const columnKeyMap = {
   GenomeAcc: "GenomeAcc",
   ContigAcc: "ContigAcc",
   GTDBPhylo: "GTDBPhylo",
-  GeneAcc: "GeneAcc",
   Regulon: "Regulon",
   PredGrowthTemp: "PredGrowthTemp"
 };
@@ -40,13 +43,10 @@ const rowCellMap = {
   ".col-Organism": "Organism",
   ".col-NitrogenaseSet": "NitrogenaseSet",
   ".col-Env": "Env",
-  ".col-GeneCluster": "GeneCluster",
   ".col-Regulon": "Regulon",
   ".col-PredGrowthTemp": "PredGrowthTemp",
   ".col-ContigAcc": "ContigAcc",
-  ".col-GeneAcc": "GeneAcc",
-  ".col-GTDBPhylo": "GTDBPhylo",
-  ".col-NCBIPyhlo": "NCBIPyhlo"
+  ".col-GTDBPhylo": "GTDBPhylo"
 };
 
 // parse CSV text into array of objects, using first line as keys
@@ -62,6 +62,11 @@ function parseCSVToObjects(csvText) {
       csvHeaders.forEach((header, i) => (obj[header] = (cols[i] ?? "").trim()));
       return obj;
     });
+}
+
+function cleanGTDBPhylo(value) {
+  // Remove x__ pattern where x is a single letter (d__, p__, c__, o__, f__, g__, s__)
+  return String(value || "").replace(/[a-z]__/g, "");
 }
 
 function getGroupTagClass(groupValue) {
@@ -102,7 +107,7 @@ function buildRowNode(row, idx) {
   const genomeAccRaw = genomeParts.length >= 3
     ? `${genomeParts[1]}_${genomeParts[2]}`
     : genomeAcc;
-  const genomeA = tr.querySelector(".col-GenomeAcc a.BqBnJ");
+  const genomeA = tr.querySelector(".col-GenomeAcc a.genome-link");
 
   if (genomeA) {
     genomeA.textContent = genomeAccRaw;
@@ -116,7 +121,12 @@ function buildRowNode(row, idx) {
   Object.entries(rowCellMap).forEach(([selector, key]) => {
     const cell = tr.querySelector(selector);
     if (cell) {
-      cell.textContent = row[key] || "";
+      let value = row[key] || "";
+      // Clean GTDBPhylo values to remove x__ prefixes
+      if (key === "GTDBPhylo" && value) {
+        value = cleanGTDBPhylo(value);
+      }
+      cell.textContent = value;
     }
   });
 
@@ -216,6 +226,22 @@ function compareValues(a, b, dir) {
   return dir === "asc" ? cmp : -cmp;
 }
 
+// Filter rows based on search query across all columns
+function filterRows(rows, query) {
+  if (!query.trim()) {
+    return [...rows];
+  }
+
+  const lowerQuery = query.toLowerCase();
+  return rows.filter(row => {
+    // Check if query matches any column value
+    return Object.values(row).some(value => {
+      const cellValue = String(value ?? "").toLowerCase();
+      return cellValue.includes(lowerQuery);
+    });
+  });
+}
+
 function sortBy(key) {
   if (currentSort.key === key) {
     currentSort.dir = currentSort.dir === "asc" ? "desc" : "asc";
@@ -236,6 +262,7 @@ function sortBy(key) {
     }
   });
 
+  // Apply sort to currently filtered rows
   const sorted = [...visibleRows].sort((r1, r2) => {
     return compareValues(r1[key], r2[key], currentSort.dir);
   });
@@ -244,12 +271,45 @@ function sortBy(key) {
   renderVirtualRows();
 }
 
+// Apply search filter and update display
+function applySearch(query) {
+  currentSearchQuery = query;
+  const filteredRows = filterRows(allData, query);
+  
+  // If there's a current sort, apply it to filtered results
+  if (currentSort.key) {
+    filteredRows.sort((r1, r2) => {
+      return compareValues(r1[currentSort.key], r2[currentSort.key], currentSort.dir);
+    });
+  }
+  
+  visibleRows = filteredRows;
+  viewport.scrollTop = 0;
+  renderVirtualRows();
+  updateResultCount(filteredRows.length);
+}
+
 headers.forEach(th => {
   th.addEventListener("click", () => {
     const key = columnKeyMap[th.dataset.columnName] ?? th.dataset.columnName;
     sortBy(key);
   });
 });
+
+// Add search functionality
+if (tableSearchForm && tableSearchInput) {
+  tableSearchForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const query = tableSearchInput.value;
+    applySearch(query);
+  });
+
+  // Also search on input change for real-time filtering
+  tableSearchInput.addEventListener("input", (e) => {
+    const query = e.target.value;
+    applySearch(query);
+  });
+}
 
 async function downloadCurrentCsv() {
   const response = await fetch(CSV_PATH);
@@ -331,6 +391,7 @@ fetch(CSV_PATH)
   .then(csvText => {
     const rows = parseCSVToObjects(csvText);
     console.log(`Parsed ${rows.length} rows from CSV.`);
+    allData = rows; // Store all data for filtering
     renderTable(rows);
     updateResultCount(rows.length);
   })

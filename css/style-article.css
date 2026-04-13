@@ -1,0 +1,357 @@
+/* ============================================================
+   DiazoDb — article.css
+   Styles specific to article pages. Loaded alongside main.css.
+   ============================================================ */
+
+/* --- Article layout ---------------------------------------- */
+.article-layout {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 200px;
+}
+
+/* --- Breadcrumb -------------------------------------------- */
+.breadcrumb {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  width: 100%;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 2rem;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.breadcrumb a { color: var(--green); }
+.breadcrumb a:hover { text-decoration: underline; }
+.breadcrumb span { color: var(--text-muted); }
+
+/* --- TOC column -------------------------------------------- */
+.toc-col {
+  padding: 2rem 1.25rem 2rem 1.5rem;
+  border-right: 0.5px solid var(--border);
+  position: sticky;
+  top: var(--header-h);
+  align-self: start;
+  max-height: calc(100vh - var(--header-h));
+  overflow-y: auto;
+}
+
+.toc-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.toc-item {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 0 4px 10px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  line-height: 1.45;
+  display: block;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.toc-item:hover { color: var(--green); }
+
+.toc-item.active {
+  color: var(--green);
+  border-left-color: var(--green);
+}
+
+.toc-item.sub {
+  padding-left: 20px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* --- Article body ------------------------------------------ */
+.article-body {
+  padding: 2.5rem 3rem;
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.article-eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 0.75rem;
+}
+
+.article-h1 {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.article-lead {
+  font-size: 17px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  border-left: 3px solid var(--green);
+  padding-left: 1rem;
+  margin-bottom: 1.25rem;
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+.article-meta-bar {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-bottom: 1.75rem;
+  border-bottom: 0.5px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+/* --- Body typography --------------------------------------- */
+.article-body h2 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 2.25rem 0 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.article-body h3 {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 1.75rem 0 0.5rem;
+}
+
+.article-body p {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.article-body ul,
+.article-body ol {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  margin: 0.75rem 0 1rem 1.5rem;
+}
+
+.article-body li { margin-bottom: 0.25rem; }
+
+.article-body a { color: var(--green); text-decoration: underline; }
+.article-body a:hover { color: var(--green-dark); }
+
+/* --- Figure block ------------------------------------------ */
+.figure-block {
+  background: var(--bg-subtle);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin: 2rem 0;
+}
+
+.figure-block img {
+  width: 100%;
+  border-radius: var(--radius-md);
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.figure-placeholder {
+  height: 180px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 0.5px dashed var(--border-med);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.figure-caption {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.figure-caption strong { font-weight: 500; color: var(--text-primary); }
+
+/* --- Callout box ------------------------------------------- */
+.callout {
+  background: var(--green-bg);
+  border-left: 3px solid var(--green);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 0.875rem 1rem;
+  margin: 1.75rem 0;
+}
+
+.callout-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green-dark);
+  margin-bottom: 4px;
+}
+
+.callout p {
+  font-size: 13px !important;
+  color: var(--green-deeper) !important;
+  margin-bottom: 0 !important;
+}
+
+/* --- Residue table ----------------------------------------- */
+.residue-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 1rem 0 1.5rem;
+}
+
+.residue-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-bottom: 0.5px solid var(--border-med);
+}
+
+.residue-table td {
+  padding: 9px 10px;
+  border-bottom: 0.5px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.residue-table tr:last-child td { border-bottom: none; }
+
+.r-pill {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--green-bg);
+  color: var(--green-deeper);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+}
+
+/* --- References -------------------------------------------- */
+.refs-section {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 0.5px solid var(--border);
+}
+
+.refs-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.ref-item {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 0.6rem;
+  display: flex;
+  gap: 8px;
+}
+
+.ref-num { color: var(--text-muted); flex-shrink: 0; min-width: 1.5rem; }
+
+.ref-item em { font-style: italic; }
+
+/* --- Right column ------------------------------------------ */
+.right-col {
+  padding: 2rem 1.25rem 2rem 1.25rem;
+  border-left: 0.5px solid var(--border);
+  position: sticky;
+  top: var(--header-h);
+  align-self: start;
+  max-height: calc(100vh - var(--header-h));
+  overflow-y: auto;
+}
+
+.right-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.right-section { margin-bottom: 1.75rem; }
+
+.organism-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-style: italic;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--green-bg);
+  color: var(--green-dark);
+  margin: 2px;
+  border: 0.5px solid rgba(15,110,86,0.2);
+}
+
+.related-item {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  border-bottom: 0.5px solid var(--border);
+  line-height: 1.4;
+  cursor: pointer;
+  display: block;
+}
+
+.related-item:last-child { border-bottom: none; }
+.related-item:hover { color: var(--green); }
+
+/* --- Responsive -------------------------------------------- */
+@media (max-width: 1000px) {
+  .article-layout { grid-template-columns: 1fr; }
+  .toc-col { display: none; }
+  .right-col {
+    border-left: none;
+    border-top: 0.5px solid var(--border);
+    position: static;
+    max-height: none;
+    padding: 1.5rem 1.5rem;
+  }
+  .article-body { padding: 2rem 1.5rem; }
+}
+
+@media (max-width: 600px) {
+  .article-h1 { font-size: 22px; }
+  .article-lead { font-size: 15px; }
+  .article-body { padding: 1.5rem 1rem; }
+  .breadcrumb { padding: 10px 1rem; }
+}
