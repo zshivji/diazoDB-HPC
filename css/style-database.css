@@ -19,6 +19,7 @@
   --text-primary: #1a1a18;
   --text-secondary: #4a4a47;
   --text-muted: #888780;
+  --text-white: #fbfeff;
 
   /* Nature tones */
   --green: #776C4D;
@@ -63,6 +64,17 @@ body {
   overflow: hidden;
 }
 
+a {
+  color: var(--fr--color-sapphire-blue);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a:hover {
+  color: color-mix(in srgb, var(--fr--color-sapphire-blue) 90%, white);
+}
+
+
 /* --- Site header -------------------------------------------- */
 
 .header {
@@ -90,7 +102,7 @@ body {
 .header a:active,
 .header .header__link > a {
   display: inline-block;
-  color: var(--fr--color-sky-white);
+  color: var(--text-white);
   margin-bottom: 0;
   transition: background-color 0.25s ease-out, color 0.25s ease-out;
 }
@@ -395,16 +407,6 @@ ol.no-bullet {
   float: left;
   list-style: none;
   margin-left: 0;
-}
-
-a {
-  color: var(--fr--color-sapphire-blue);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-a:hover {
-  color: color-mix(in srgb, var(--fr--color-sapphire-blue) 90%, white);
 }
 
 .topic-tabs {
