@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiazoDB</title>
+  <link rel="stylesheet" href="./css/style-database.css" />
+  <script defer src="./js/database.js"></script>
+
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-89SKEBYC49"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-89SKEBYC49');
+</script>
+
+<body>
+  <div id="root">
+
+    <header>
+      <div class="header">
+        <a href="home.html" class="logo">DiazoDB <span class="logo-badge">DataBase</span></a>
+        <nav class="header__navigation">
+          <a translate="no" href="./home.html">Phylo Tree</a>
+          <a translate="no" href="./wiki.html">Nitrogenase Wiki</a>
+        </nav>
+      </div> 
+    </header>
+
+    <hr class="header-separator">
+
+    <div class="database-layout">
+      <aside class="database-aside">
+        <div class="aside-content">
+          <ul class="no-bullet">
+            <li>
+              <div>
+                <div class="aside-header">Popular organisms</div>
+                <ul class="expandable-list no-bullet">
+                  <li><a href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A3702">A.
+                      vinelandii (3)</a></li>
+                  <li><a href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A39947">R.
+                      capsulatus
+                      (3)</a></li>
+                  <li><a href="/uniprotkb?dir=ascend&amp;query=nif&amp;sort=length&amp;facets=model_organism%3A9606">M.
+                      acetivorans
+                      (3)</a></li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div>
+                <div class="aside-header">Popular Posts</div>
+                <ul class="expandable-list no-bullet"></ul>
+              </div>
+            </li>
+            <li>
+              <div>
+                <div class="aside-header">Nitrogenase Phylogenies</div>
+                <ul class="expandable-list no-bullet">
+                  <li><a href="">NifH Phylogengy</a></li>
+                  <li><a href="">NifD Phylogengy</a></li>
+                  <li><a href="">NifK Phylogengy</a></li>
+                  <li><a href="">NifDKEN Phylogengy</a></li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </aside>
+      <main class="database-main">
+        <div class="page-intro">
+          <h1>DiazoDB<small id="resultCount"> results </small></h1>
+          <div class="table__search">
+            <section role="search">
+              <form aria-label="Table search" class="table-search" id="tableSearchForm">
+                <div class="main-search__input-container"><input id="tableSearchInput" aria-label="Search all columns in diazoDB"
+                    type="search" placeholder="Search all columns...">
+                </div><button class="button tertiary" type="submit">Search</button>
+              </form>
+            </section>
+          </div>
+          <div class="download-actions">
+            <button id="downloadCsvBtn" class="button tertiary" type="button" aria-label="Download table CSV"><svg
+                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="currentColor">
+                <path d="M27.6 21h3.9v7.7H.5v-7.8h3.9v4h23.2v-4zm-3.9-9.7L16 22.9 8.2 11.3h5.9V1.6h3.8v9.7h5.9z"></path>
+              </svg>Download CSV</button>
+            <div class="download-dropdown" data-download-dropdown>
+              <button id="downloadFastaBtn" class="button tertiary" type="button" aria-haspopup="menu" aria-expanded="false">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" width="1.4ch">
+                  <path d="M503 215l-46-46c-6-6-14-9-22-9h-51V80c0-27-21-48-48-48H176c-27 0-48 21-48 48v80H77c-8 0-16 3-22 9L9 215c-6 6-9 14-9 22v83h128v-16c0-9 7-16 16-16h32c9 0 16 7 16 16v16h128v-16c0-9 7-16 16-16h32c9 0 16 7 16 16v16h128v-83c0-8-3-16-9-22zm-183-55H192V96h128v64zm64 208c0 9-7 16-16 16h-32c-9 0-16-7-16-16v-16H192v16c0 9-7 16-16 16h-32c-9 0-16-7-16-16v-16H0v96c0 18 14 32 32 32h448c18 0 32-14 32-32v-96H384v16z"></path>
+                </svg>
+                Download FASTA
+              </button>
+              <div class="download-dropdown__menu" role="menu" aria-label="Download FASTA files">
+                <a role="menuitem" href="./fastas/nifH.fasta" download>nifH.fasta</a>
+                <a role="menuitem" href="./fastas/nifD.fasta" download>nifD.fasta</a>
+                <a role="menuitem" href="./fastas/nifK.fasta" download>nifK.fasta</a>
+                <a role="menuitem" href="./fastas/nifN.fasta" download>nifN.fasta</a>
+                <a role="menuitem" href="./fastas/nifE.fasta" download>nifE.fasta</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="table-viewport" id="tableViewport">
+          <table id="diazoDB-table" class="data-table">
+            <thead>
+              <tr>
+                <th class="data-table__header-cell--checkbox">
+                  <div class="checkbox-cell"><input id="_r_0_" type="checkbox"><label for="_r_0_"
+                      aria-label="Selection control for all visible items"></label></div>
+                </th>
+                <th class="data-table__header-cell--sortable" data-column-name="Organism"><span>Organism</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GroupNo"><span
+                    data-article-id="group_number">Group Number</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="NitrogenaseSet"><span
+                    data-article-id="nitrogenase_set">Nitrogenase Set</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="Env"><span
+                    data-article-id="environment">Environment</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GenomeAcc"><span
+                    data-article-id="genome_accession">Genome Accession</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="ContigAcc"><span
+                    data-article-id="contig_accession">Contig Accession</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="GTDBPhylo"><span
+                    data-article-id="gtdb_phylogeny">GTDB Phylogeny</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="Regulon"><span
+                    data-article-id="regulon">Regulon</span></th>
+                <th class="data-table__header-cell--sortable" data-column-name="PredGrowthTemp"><span
+                    data-article-id="predicted_growth_temperature">Predicted Growth Temperature</span></th>
+              </tr>
+            </thead>
+            <tbody id="tbody" translate="no">
+              <tr id="topSpacer" class="spacer-row">
+                <td colspan="12"></td>
+              </tr>
+              <tr id="bottomSpacer" class="spacer-row">
+                <td colspan="12"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <template id="rowTemplate">
+          <tr class="data-row">
+            <td class="checkbox-cell">
+              <input data-id="" id="" type="checkbox">
+              <label for="" aria-label="" title="click to select, shift+click for multiple selection"></label>
+            </td>
+            <td class="col-Organism"></td>
+            <td class="col-GroupNo"></td>
+            <td class="col-NitrogenaseSet"></td>
+            <td class="col-Env"></td>
+            <td class="col-GenomeAcc">
+              <span class="genome-link-wrapper">
+                <a class="genome-link" href=""></a>
+              </span>
+            </td>
+            <td class="col-ContigAcc"></td>
+            <td class="col-GTDBPhylo"></td>
+            <td class="col-Regulon"></td>
+            <td class="col-PredGrowthTemp"></td>
+          </tr>
+        </template>
+      </main>
+    </div>
+
+  <footer>
+    <div>
+      <p><b>Citation: </b> DiazoDB, Shivji (2026) · Check out our <a href="https://github.com/yourusername/diazo-db" target="_blank" rel="noopener">GitHub!</a></p>
+    </div>
+  </footer>
+  </div>
+</body>
+
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!--
+    UPDATE THESE FOUR META TAGS FOR EVERY ARTICLE:
+    - <title>
+    - description
+    - og:title / og:description (shown when shared on Slack, Twitter, etc.)
+  -->
+  <title>Article Title — DiazoDb</title>
+  <meta name="description" content="One-sentence description of this article." />
+  <meta property="og:title" content="Article Title — DiazoDb" />
+  <meta property="og:description" content="One-sentence description of this article." />
+  <meta property="og:type" content="article" />
+
+  <!--
+    Paths are relative from articles/your-slug/home.html back up to root.
+    Both stylesheets are always loaded.
+  -->
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/article.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- SITE HEADER (same on every page) -->
+  <header class="site-header">
+    <a href="../../home.html" class="logo">
+      DiazoDb <span class="logo-badge">WIKI</span>
+    </a>
+    <nav class="nav">
+      <a href="../../home.html?category=protein-structure">Proteins</a>
+      <a href="../../home.html?category=organisms">Organisms</a>
+      <a href="../../home.html?category=regulation">Regulation</a>
+      <a href="../../home.html?category=genetics">Genetics</a>
+      <a href="../../about.html">About</a>
+    </nav>
+  </header>
+
+  <!-- BREADCRUMB
+    Update category label and link, and the article title. -->
+  <div class="breadcrumb">
+    <a href="../../home.html">Home</a>
+    <span>›</span>
+    <a href="../../home.html?category=CATEGORY_ID">Category Label</a>
+    <span>›</span>
+    <span style="color: var(--text-secondary);">Article Title</span>
+  </div>
+
+  <!-- THREE-COLUMN ARTICLE LAYOUT -->
+  <div class="article-layout">
+
+    <!-- LEFT: Table of Contents
+      Add one .toc-item per h2, and .toc-item.sub per h3.
+      The JS in article.js will auto-highlight the active section. -->
+    <nav class="toc-col" aria-label="Table of contents">
+      <div class="toc-label">Contents</div>
+
+      <a class="toc-item active" href="#overview">Overview</a>
+      <a class="toc-item" href="#section-2">Section 2</a>
+      <a class="toc-item sub" href="#subsection-2a">Subsection 2a</a>
+      <a class="toc-item sub" href="#subsection-2b">Subsection 2b</a>
+      <a class="toc-item" href="#section-3">Section 3</a>
+      <a class="toc-item" href="#references">References</a>
+    </nav>
+
+    <!-- MIDDLE: Article body -->
+    <article class="article-body">
+
+      <!-- Header block -->
+      <div class="article-eyebrow">Category · Subcategory</div>
+      <h1 class="article-h1">Article Title Goes Here</h1>
+
+      <!-- Lead / abstract — italicized serif, shown before the meta bar -->
+      <p class="article-lead">
+        A one- or two-sentence summary of what this article covers and why it matters.
+        Treat this like an abstract.
+      </p>
+
+      <div class="article-meta-bar">
+        <span>Updated Month Year</span>
+        <span class="meta-dot"></span>
+        <span>XX min read</span>
+        <span class="meta-dot"></span>
+        <span>Cite as: DiazoDb / slug</span>
+      </div>
+
+      <!-- =====================================================
+           BODY CONTENT — write your article below this line
+           ===================================================== -->
+
+      <h2 id="overview">Overview</h2>
+      <p>
+        Introductory paragraph. Give the reader enough context to understand
+        what follows. You can link to related articles like
+        <a href="../femo-cofactor/home.html">FeMo-cofactor</a>.
+      </p>
+
+      <!-- FIGURE BLOCK — with real image -->
+      <!--
+      <div class="figure-block">
+        <img src="../../images/figures/your-figure.png" alt="Descriptive alt text" />
+        <p class="figure-caption">
+          <strong>Figure 1.</strong> Caption text. Include PDB accession or DOI where relevant.
+        </p>
+      </div>
+      -->
+
+      <!-- FIGURE BLOCK — placeholder (remove when you have the image) -->
+      <div class="figure-block">
+        <div class="figure-placeholder">[ Figure placeholder — replace with real image ]</div>
+        <p class="figure-caption">
+          <strong>Figure 1.</strong> Caption goes here.
+        </p>
+      </div>
+
+      <h2 id="section-2">Section 2</h2>
+      <h3 id="subsection-2a">Subsection 2a</h3>
+      <p>Body text. Use <code>&lt;em&gt;</code> for gene names like <em>nifD</em>, and
+         <code>&lt;strong&gt;</code> sparingly for key terms.</p>
+
+      <!-- CALLOUT BOX — for key findings, caveats, or definitions -->
+      <div class="callout">
+        <div class="callout-label">Key finding</div>
+        <p>Use callout boxes for important results, caveats, or definitions that
+           deserve visual emphasis.</p>
+      </div>
+
+      <h3 id="subsection-2b">Subsection 2b</h3>
+      <p>More body text.</p>
+
+      <!-- RESIDUE TABLE — standard format for all residue listings -->
+      <table class="residue-table">
+        <thead>
+          <tr>
+            <th>Residue</th>
+            <th>Subunit</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="r-pill">α-His195</span></td>
+            <td>NifD (α)</td>
+            <td>Description of functional role.</td>
+          </tr>
+          <tr>
+            <td><span class="r-pill">α-Val70</span></td>
+            <td>NifD (α)</td>
+            <td>Description of functional role.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="section-3">Section 3</h2>
+      <p>Body text.</p>
+
+      <!-- =====================================================
+           REFERENCES
+           Use this format: numbered, with journal in <em>.
+           ===================================================== -->
+      <div class="refs-section" id="references">
+        <div class="refs-label">References</div>
+
+        <div class="ref-item">
+          <span class="ref-num">1.</span>
+          <span>Author A, Author B (Year). Title of paper. <em>Journal Name</em> vol, pages. DOI.</span>
+        </div>
+        <div class="ref-item">
+          <span class="ref-num">2.</span>
+          <span>Author C et al. (Year). Title of paper. <em>Journal Name</em> vol, pages. DOI.</span>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- RIGHT: Contextual sidebar -->
+    <aside class="right-col">
+
+      <div class="right-section">
+        <div class="right-label">Found in organisms</div>
+        <!-- Add one .organism-tag per relevant organism -->
+        <span class="organism-tag">A. vinelandii</span>
+        <span class="organism-tag">K. pneumoniae</span>
+      </div>
+
+      <div class="right-section">
+        <div class="right-label">Related articles</div>
+        <!-- Add links to related articles -->
+        <a class="related-item" href="../femo-cofactor/home.html">FeMo-cofactor: the active site for N₂ reduction</a>
+        <a class="related-item" href="../mofe-protein/home.html">The MoFe protein: architecture of the α₂β₂ heterotetramer</a>
+      </div>
+
+      <div class="right-section">
+        <div class="right-label">See also</div>
+        <a class="related-item" href="../../residues.html">Residue index</a>
+        <!-- Link to PDB, UniProt, etc. -->
+        <a class="related-item" href="https://www.rcsb.org/structure/3U7Q" target="_blank" rel="noopener">PDB: 3U7Q ↗</a>
+      </div>
+
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <p>DiazoDb · <a href="../../home.html">Home</a> · <a href="../../about.html">About</a> · <a href="https://github.com/yourusername/diazo-db" target="_blank" rel="noopener">GitHub</a></p>
+  </footer>
+
+  <script src="../../js/article.js"></script>
+</body>
+</html>
