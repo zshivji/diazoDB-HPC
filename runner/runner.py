@@ -9,15 +9,17 @@ log = logging.getLogger(__name__)
 API       = os.environ["API_URL"].rstrip("/")
 HEADERS   = {"x-runner-token": os.environ["RUNNER_SECRET"]}
 JOB_BASE  = Path(os.environ["HPC_JOB_BASE"])
-INTERVAL  = int(os.environ.get("POLL_INTERVAL_SECONDS", 30))
+# INTERVAL  = int(os.environ.get("POLL_INTERVAL_SECONDS", 30))
 
-
+# runner polls API (HTTP request)
 def poll() -> list[dict]:
     r = requests.get(f"{API}/api/v1/runner/jobs", headers=HEADERS, timeout=15)
+    print(r.status_code)
+    print(r.text)
     r.raise_for_status()
     return r.json()
 
-
+# marks job as processing/failed/complete
 def mark(job_id: str, status: str, error: str = "") -> None:
     payload = {"status": status}
     if error:
@@ -29,7 +31,7 @@ def mark(job_id: str, status: str, error: str = "") -> None:
         timeout=10,
     )
 
-
+# uploads analysis output back to server
 def push_result(job_id: str, result_path: Path) -> None:
     content_type = (
         "text/csv" if result_path.suffix == ".csv" else "text/html"
@@ -76,13 +78,11 @@ def process(job: dict) -> None:
 
 
 if __name__ == '__main__':
-    log.info(f"Runner started — polling every {INTERVAL}s")
-    while True:
-        try:
-            jobs = poll()
-            log.info(f"Polled — {len(jobs)} job(s) ready")
-            for job in jobs:
-                process(job)
-        except Exception as e:
-            log.error(f"Poll error: {e}")
-        time.sleep(INTERVAL)
+    log.info(f"Runner started")
+    try:
+        jobs = poll()
+        log.info(f"Polled — {len(jobs)} job(s) ready")
+        for job in jobs:
+            process(job)
+    except Exception as e:
+        log.error(f"Poll error: {e}")

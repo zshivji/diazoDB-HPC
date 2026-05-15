@@ -49,7 +49,7 @@ def create_public_job(
         owner_id=PUBLIC_OWNER_ID,
         filename=job_in.filename,
         file_size_bytes=job_in.file_size_bytes,
-        status=JobStatus.created,
+        status=JobStatus.ready,
         # Store user email in error_message field temporarily
         # TODO: add user_email column to Job model in a future migration
         error_message=f"public:{job_in.user_email}",
