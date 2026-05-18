@@ -2,8 +2,8 @@
 Tests for Globus service — all HTTP is mocked with pytest-mock.
 Run: pytest tests/services/test_globus.py -v
 """
-import pytest
 import httpx
+import pytest
 
 
 @pytest.fixture(autouse=True)
@@ -15,6 +15,7 @@ def disable_globus_mock(monkeypatch):
     """
     from app.core.config import settings
     monkeypatch.setattr(settings, "GLOBUS_MOCK", False)
+    monkeypatch.setattr(settings, "COPY_TO_LOCAL", False)
 
 
 @pytest.mark.anyio
@@ -31,8 +32,10 @@ async def test_start_transfer_returns_task_id(mocker):
         transfer_response,
     ])
 
-    async def mock_send(self, request, **kwargs):
-        return next(responses)
+    async def mock_send(_self, request, **_kwargs):
+        response = next(responses)
+        response.request = request
+        return response
 
     mocker.patch("httpx.AsyncClient.send", mock_send)
 
@@ -48,9 +51,11 @@ async def test_get_transfer_status_returns_succeeded(mocker):
 
     call_count = {"n": 0}
 
-    async def mock_send(self, request, **kwargs):
+    async def mock_send(_self, request, **_kwargs):
         call_count["n"] += 1
-        return token_response if call_count["n"] == 1 else task_response
+        response = token_response if call_count["n"] == 1 else task_response
+        response.request = request
+        return response
 
     mocker.patch("httpx.AsyncClient.send", mock_send)
 
@@ -61,8 +66,8 @@ async def test_get_transfer_status_returns_succeeded(mocker):
 
 @pytest.mark.anyio
 async def test_globus_raises_on_auth_failure(mocker):
-    async def mock_send(self, request, **kwargs):
-        return httpx.Response(401, json={"error": "unauthorized"})
+    async def mock_send(_self, request, **_kwargs):
+        return httpx.Response(401, json={"error": "unauthorized"}, request=request)
 
     mocker.patch("httpx.AsyncClient.send", mock_send)
 

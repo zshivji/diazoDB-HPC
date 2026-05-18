@@ -2,14 +2,16 @@
 Tests for email service — SMTP is mocked.
 Run: pytest tests/services/test_email.py -v
 """
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+from app.core.config import settings
 
 
 def test_send_result_email_calls_smtp(monkeypatch):
-    monkeypatch.setenv("SMTP_HOST", "smtp.test.com")
-    monkeypatch.setenv("SMTP_USER", "user@test.com")
-    monkeypatch.setenv("SMTP_PASSWORD", "secret")
-    monkeypatch.setenv("EMAILS_FROM_ADDRESS", "noreply@lab.edu")
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.test.com")
+    monkeypatch.setattr(settings, "SMTP_USER", "user@test.com")
+    monkeypatch.setattr(settings, "SMTP_PASSWORD", "secret")
+    monkeypatch.setattr(settings, "EMAILS_FROM_EMAIL", "noreply@lab.edu")
 
     with patch("smtplib.SMTP") as mock_smtp_cls:
         mock_smtp = MagicMock()

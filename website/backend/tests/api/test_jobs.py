@@ -2,10 +2,9 @@
 Tests for user-facing job endpoints.
 Run: pytest tests/api/test_jobs.py -v
 """
-import pytest
 from unittest.mock import AsyncMock, patch
-from fastapi.testclient import TestClient
 
+from fastapi.testclient import TestClient
 
 # ── Step 1: job creation ──────────────────────────────────────────────────────
 
@@ -120,4 +119,3 @@ def test_get_job_other_user_is_404(client, superuser_token_headers, job):
     """Superuser cannot see another user's job via the regular endpoint."""
     r = client.get(f"/api/v1/jobs/{job.id}", headers=superuser_token_headers)
     assert r.status_code == 404
-    

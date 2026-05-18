@@ -355,6 +355,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
           filename: fileName ?? "sequences.fasta",
           file_size_bytes: fileSizeBytes,
           use_prodigal: useProdigal,
+          sequences,
         }),
       })
       if (!res.ok) throw new Error("Submission failed")

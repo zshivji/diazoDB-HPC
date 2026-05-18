@@ -1,8 +1,9 @@
 import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
 from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from app.core.config import settings
 
 
@@ -15,7 +16,7 @@ def send_result_email(
     data: bytes,
 ) -> None:
     msg = MIMEMultipart()
-    msg["From"] = settings.EMAILS_FROM_ADDRESS
+    msg["From"] = settings.EMAILS_FROM_EMAIL
     msg["To"] = to
     msg["Subject"] = "Your FASTA analysis is ready"
 
@@ -33,4 +34,4 @@ def send_result_email(
     with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
         server.starttls()
         server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-        server.sendmail(settings.EMAILS_FROM_ADDRESS, to, msg.as_string())
+        server.sendmail(settings.EMAILS_FROM_EMAIL, to, msg.as_string())

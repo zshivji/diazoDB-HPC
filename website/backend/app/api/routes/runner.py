@@ -1,15 +1,15 @@
 import uuid
-from pathlib import Path
-from pydantic import BaseModel
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.api.deps import get_db, verify_runner_token
 from app.core.config import settings
-from app.models import Job, JobRunnerView, JobStatus
 from app.crud import get_job, get_jobs_for_runner, update_job
-from app.services.globus import get_transfer_status
+from app.models import Job, JobRunnerView, JobStatus
 from app.services.email import send_result_email
+from app.services.globus import get_transfer_status
 
 router = APIRouter(
     prefix="/runner",
@@ -25,8 +25,9 @@ async def poll_jobs(session: Session = Depends(get_db)) -> list[dict]:
     Lazily checks Globus transfer status for 'transferring' jobs,
     promotes them to 'ready', then returns all unseen ready jobs.
     """
-    from app.models import JobStatus
     from sqlmodel import select
+
+    from app.models import JobStatus
 
     # Check all jobs still mid-transfer
     transferring = session.exec(
@@ -92,8 +93,9 @@ def post_result(
     Runner posts the result file here once processing is done.
     API stores result metadata, sends email to job owner, marks complete.
     """
-    from app.models import User
     import base64
+
+    from app.models import User
 
     job = get_job(session=session, job_id=job_id)
     if not job:

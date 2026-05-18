@@ -1,33 +1,37 @@
-from collections.abc import Generator
 import uuid
+from collections.abc import Generator
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, delete, select
 
 from app.core.config import settings
 from app.core.db import engine, init_db
-from app.main import app
-from app.models import Item, Job, JobCreate, JobStatus, User
 from app.crud import create_job
+from app.main import app
+from app.models import Item, Job, JobCreate, User
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
+
+
+def _clear_test_data(session: Session) -> None:
+    session.execute(delete(Job))
+    session.execute(delete(Item))
+    session.execute(
+        delete(User).where(
+            User.id != uuid.UUID("00000000-0000-0000-0000-000000000000")
+        )
+    )
+    session.commit()
 
 
 @pytest.fixture(scope="session", autouse=True)
 def db() -> Generator[Session, None, None]:
     with Session(engine) as session:
+        _clear_test_data(session)
         init_db(session)
         yield session
-        # Delete in FK-safe order: jobs first, then items, then users
-        session.execute(delete(Job))
-        session.execute(delete(Item))
-        # Delete all users EXCEPT the sentinel (it has no test data to clean)
-        session.execute(
-            delete(User).where(
-                User.id != uuid.UUID("00000000-0000-0000-0000-000000000000")
-            )
-        )
-        session.commit()
+        _clear_test_data(session)
 
 
 @pytest.fixture(scope="module")
@@ -48,19 +52,36 @@ def normal_user_token_headers(client: TestClient, db: Session) -> dict[str, str]
     )
 
 
+def _clear_jobs_and_items(session: Session) -> None:
+    session.execute(delete(Job))
+    session.execute(delete(Item))
+    session.commit()
+
+
+@pytest.fixture(autouse=True)
+def clean_records(db) -> Generator[None, None, None]:
+    _clear_jobs_and_items(db)
+    yield
+    _clear_jobs_and_items(db)
+
+
+@pytest.fixture(autouse=True)
+def upload_dir(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "uploads"
+    path.mkdir()
+    monkeypatch.setattr(settings, "UPLOAD_DIR", str(path))
+
+
 @pytest.fixture
-def job(db) -> Job:
-    """
-    A freshly created job owned by the superuser (always exists after init_db).
-    Avoids depending on a normal_user fixture that doesn't exist in this template.
-    """
-    superuser = db.exec(
-        select(User).where(User.email == settings.FIRST_SUPERUSER)
-    ).first()
+def job(db, request) -> Job:
+    """A freshly created job owned by the normal test user."""
+    request.getfixturevalue("normal_user_token_headers")
+    user = db.exec(select(User).where(User.email == settings.EMAIL_TEST_USER)).first()
+    assert user
     return create_job(
         session=db,
         job_in=JobCreate(filename="test.fasta", file_size_bytes=1024),
-        owner_id=superuser.id,
+        owner_id=user.id,
     )
 
 

@@ -1,17 +1,30 @@
-import os
+import logging
 import uuid
-import aiofiles
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+
+import aiofiles
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session
 
 from app.api.deps import CurrentUser, get_db
 from app.core.config import settings
-from app.models import Job, JobCreate, JobPublic, JobStatus
 from app.crud import create_job, get_job, update_job
+from app.models import Job, JobCreate, JobPublic, JobStatus
 from app.services.globus import start_transfer
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+log = logging.getLogger(__name__)
+
+
+def _parse_content_range(content_range: str) -> tuple[int, int, int]:
+    try:
+        parts = content_range.replace("bytes ", "").split("/")
+        start, end = [int(x) for x in parts[0].split("-")]
+        total = int(parts[1])
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Content-Range header")
+
+    return start, end, total
 
 
 @router.post("/", response_model=JobPublic)
@@ -50,22 +63,18 @@ async def upload_chunk(
     Supports resume: if the connection drops, the client re-sends
     from the last confirmed offset (GET /{job_id} returns bytes_received).
     """
+
     job = get_job(session=session, job_id=job_id)
     if not job or job.owner_id != current_user.id:
         raise HTTPException(status_code=404)
 
     content_range = request.headers.get("content-range", "")
-    # Expected format: "bytes 0-52428799/20000000000"
-    try:
-        parts = content_range.replace("bytes ", "").split("/")
-        start, end = [int(x) for x in parts[0].split("-")]
-        total = int(parts[1])
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid Content-Range header")
+    log.info(f"[UPLOAD] {job_id} Content-Range: {content_range}")
+    start, end, total = _parse_content_range(content_range)
 
     dest = Path(settings.UPLOAD_DIR) / str(job.id) / job.filename
+    dest.parent.mkdir(parents=True, exist_ok=True)
 
-    # Write chunk at correct offset
     chunk = await request.body()
     async with aiofiles.open(dest, "r+b" if dest.exists() else "wb") as f:
         await f.seek(start)
@@ -73,6 +82,8 @@ async def upload_chunk(
 
     new_received = end + 1
     is_complete = new_received >= total
+
+    log.info(f"[UPLOAD] {job_id} bytes_received={new_received}/{total}, complete={is_complete}")
 
     update_job(
         session=session,
@@ -83,9 +94,16 @@ async def upload_chunk(
     )
 
     if is_complete:
-        # Kick off Globus transfer asynchronously
+        log.info(f"[UPLOAD] {job_id} COMPLETE - calling start_transfer()")
         task_id = await start_transfer(str(job.id))
-        update_job(session=session, job=job, globus_task_id=task_id)
+        log.info(f"[UPLOAD] {job_id} start_transfer() returned task_id={task_id}")
+
+        update_job(
+            session=session,
+            job=job,
+            globus_task_id=task_id,
+            status=JobStatus.transferring,
+        )
 
     return {"bytes_received": new_received, "complete": is_complete}
 

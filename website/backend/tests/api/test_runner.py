@@ -2,13 +2,13 @@
 Tests for runner-facing endpoints.
 Run: pytest tests/api/test_runner.py -v
 """
-import pytest
 import base64
 from unittest.mock import AsyncMock, patch
+
 from fastapi.testclient import TestClient
+
 from app.crud import update_job
 from app.models import JobStatus
-
 
 # ── Step 4: runner auth ───────────────────────────────────────────────────────
 

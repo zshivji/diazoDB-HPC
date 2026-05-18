@@ -5,7 +5,16 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate, Job, JobCreate, JobStatus
+from app.models import (
+    Item,
+    ItemCreate,
+    Job,
+    JobCreate,
+    JobStatus,
+    User,
+    UserCreate,
+    UserUpdate,
+)
 
 # ── User CRUD ─────────────────────────────────────────────────────────────────
 
@@ -83,7 +92,6 @@ def get_job(*, session: Session, job_id: uuid.UUID) -> Job | None:
 
 
 def update_job(*, session: Session, job: Job, **fields) -> Job:
-    from datetime import datetime
     for k, v in fields.items():
         setattr(job, k, v)
     job.updated_at = datetime.utcnow()
@@ -98,6 +106,6 @@ def get_jobs_for_runner(*, session: Session) -> list[Job]:
     return session.exec(
         select(Job).where(
             Job.status == JobStatus.ready,
-            Job.seen_by_runner == False,
+            Job.seen_by_runner.is_(False),
         )
     ).all()

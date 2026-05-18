@@ -1,12 +1,10 @@
-import uuid
 import enum
+import uuid
 from datetime import datetime, timezone
-from typing import Optional
 
 from pydantic import EmailStr
-from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy import DateTime
-
+from sqlmodel import Field, Relationship, SQLModel
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -30,13 +28,13 @@ class Job(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
     filename: str
-    file_size_bytes: Optional[int] = None
+    file_size_bytes: int | None = None
     bytes_received: int = Field(default=0)
     status: JobStatus = Field(default=JobStatus.created)
-    globus_task_id: Optional[str] = None
+    globus_task_id: str | None = None
     seen_by_runner: bool = Field(default=False)
-    result_filename: Optional[str] = None
-    error_message: Optional[str] = None
+    result_filename: str | None = None
+    error_message: str | None = None
     created_at: datetime = Field(default_factory=get_datetime_utc)
     updated_at: datetime = Field(default_factory=get_datetime_utc)
 
@@ -49,7 +47,7 @@ class JobCreate(SQLModel):
 class JobPublic(SQLModel):
     id: uuid.UUID
     filename: str
-    file_size_bytes: Optional[int]
+    file_size_bytes: int | None
     bytes_received: int
     status: JobStatus
     created_at: datetime

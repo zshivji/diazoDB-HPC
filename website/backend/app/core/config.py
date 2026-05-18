@@ -123,6 +123,8 @@ class Settings(BaseSettings):
     # The transfer service returns a fake task ID that immediately
     # resolves as SUCCEEDED so the full job flow still works locally.
     GLOBUS_MOCK: bool = False
+    # If true, copy uploaded files to LOCAL_COPY_DIR instead of using Globus.
+    COPY_TO_LOCAL: bool = False
     GLOBUS_CLIENT_ID: str = ""
     GLOBUS_CLIENT_SECRET: str = ""
     # UUID of the Globus endpoint on THIS server (install Globus Connect Server)
@@ -131,6 +133,9 @@ class Settings(BaseSettings):
     GLOBUS_DEST_ENDPOINT: str = ""
     # Absolute path on HPC where Globus should drop files
     GLOBUS_DEST_BASE_PATH: str = "/scratch/yourlab/jobs"
+    # Local directory for COPY_TO_LOCAL testing
+    LOCAL_COPY_DIR: str = "/local_uploads"
+
 
     # ── File storage ─────────────────────────────────────────
     # Path INSIDE the backend container — must match the Docker volume mount
