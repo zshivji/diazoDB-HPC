@@ -32,7 +32,13 @@ def test_runner_poll_empty_when_no_ready_jobs(client, runner_headers):
 
 def test_runner_poll_returns_ready_jobs(client, runner_headers, job, db):
     """A job in 'ready' state should appear in the poll response."""
-    update_job(session=db, job=job, status=JobStatus.ready, globus_task_id=None)
+    update_job(
+        session=db,
+        job=job,
+        status=JobStatus.ready,
+        globus_task_id=None,
+        use_prodigal=True,
+    )
 
     with patch("app.api.routes.runner.get_transfer_status", new_callable=AsyncMock):
         r = client.get("/api/v1/runner/jobs", headers=runner_headers)
@@ -42,6 +48,7 @@ def test_runner_poll_returns_ready_jobs(client, runner_headers, job, db):
     assert len(jobs) == 1
     assert jobs[0]["id"] == str(job.id)
     assert "hpc_path" in jobs[0]
+    assert jobs[0]["use_prodigal"] is True
 
 
 def test_runner_poll_promotes_succeeded_globus_transfer(client, runner_headers, job, db):
@@ -101,9 +108,29 @@ def test_runner_can_mark_failed(client, runner_headers, job, db):
     assert r.status_code == 200
 
 
+def test_runner_can_download_input(client, runner_headers, job, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.core.config.settings.UPLOAD_DIR", str(tmp_path))
+    job_dir = tmp_path / str(job.id)
+    job_dir.mkdir(parents=True)
+    input_bytes = b">seq1\nMSTNPKPQR\n"
+    (job_dir / job.filename).write_bytes(input_bytes)
+
+    r = client.get(
+        f"/api/v1/runner/jobs/{job.id}/input",
+        headers=runner_headers,
+    )
+
+    assert r.status_code == 200
+    assert r.content == input_bytes
+
+
 # ── Step 7: result + email ────────────────────────────────────────────────────
 
-def test_runner_post_result_sends_email(client, runner_headers, job, db):
+def test_runner_post_result_sends_email(client, runner_headers, job, db, monkeypatch, tmp_path):
+    monkeypatch.setattr("app.core.config.settings.UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr("app.core.config.settings.SMTP_HOST", "smtp.test.com")
+    monkeypatch.setattr("app.core.config.settings.EMAILS_FROM_EMAIL", "noreply@lab.edu")
+    monkeypatch.setattr("app.core.config.settings.BACKEND_PUBLIC_URL", "https://api.example.edu")
     update_job(session=db, job=job, status=JobStatus.processing, seen_by_runner=True)
 
     csv_bytes = b"seq,score\nATCG,0.99\n"
@@ -126,3 +153,47 @@ def test_runner_post_result_sends_email(client, runner_headers, job, db):
     call_kwargs = mock_email.call_args.kwargs
     assert call_kwargs["filename"] == "output.csv"
     assert call_kwargs["data"] == csv_bytes
+    assert call_kwargs["download_url"] == (
+        f"https://api.example.edu/api/v1/classify/{job.id}/results/output.csv"
+    )
+    assert (tmp_path / str(job.id) / "results" / "output.csv").read_bytes() == csv_bytes
+
+    download = client.get(f"/api/v1/classify/{job.id}/results/output.csv")
+    assert download.status_code == 200
+    assert download.content == csv_bytes
+
+
+def test_runner_post_result_uses_public_job_email(client, runner_headers, job, db, monkeypatch, tmp_path):
+    monkeypatch.setattr("app.core.config.settings.UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr("app.core.config.settings.SMTP_HOST", "smtp.test.com")
+    monkeypatch.setattr("app.core.config.settings.EMAILS_FROM_EMAIL", "noreply@lab.edu")
+
+    from app.models import Job
+
+    public_job = Job(
+        owner_id=job.owner_id,
+        filename="public.fasta",
+        file_size_bytes=12,
+        status=JobStatus.processing,
+        seen_by_runner=True,
+        user_email="submitter@example.edu",
+    )
+    db.add(public_job)
+    db.commit()
+    db.refresh(public_job)
+
+    payload = {
+        "filename": "report.html",
+        "content_type": "text/html",
+        "data_base64": base64.b64encode(b"<html>done</html>").decode(),
+    }
+
+    with patch("app.api.routes.runner.send_result_email") as mock_email:
+        r = client.post(
+            f"/api/v1/runner/jobs/{public_job.id}/result",
+            json=payload,
+            headers=runner_headers,
+        )
+
+    assert r.status_code == 200
+    assert mock_email.call_args.kwargs["to"] == "submitter@example.edu"

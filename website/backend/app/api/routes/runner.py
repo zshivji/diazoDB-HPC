@@ -1,15 +1,22 @@
+import binascii
+import logging
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.api.deps import get_db, verify_runner_token
 from app.core.config import settings
 from app.crud import get_job, get_jobs_for_runner, update_job
-from app.models import Job, JobRunnerView, JobStatus
+from app.models import Job, JobRunnerView, JobStatus, User
 from app.services.email import send_result_email
 from app.services.globus import get_transfer_status
+from app.services.results import build_result_download_url, save_result_file
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/runner",
@@ -53,6 +60,7 @@ async def poll_jobs(session: Session = Depends(get_db)) -> list[dict]:
             "id": job.id,
             "filename": job.filename,
             "hpc_path": hpc_path,
+            "use_prodigal": job.use_prodigal,
         })
         update_job(session=session, job=job, seen_by_runner=True)
 
@@ -77,6 +85,30 @@ def update_job_status(
     return {"ok": True}
 
 
+@router.get("/jobs/{job_id}/input")
+def download_job_input(
+    job_id: uuid.UUID,
+    session: Session = Depends(get_db),
+) -> FileResponse:
+    """
+    Runner downloads submitted input directly from the API.
+    This supports HPC execution without Globus or inbound SSH/SCP to the cluster.
+    """
+    job = get_job(session=session, job_id=job_id)
+    if not job:
+        raise HTTPException(status_code=404)
+
+    input_path = Path(settings.UPLOAD_DIR) / str(job.id) / job.filename
+    if not input_path.exists() or not input_path.is_file():
+        raise HTTPException(status_code=404, detail="Input file not found")
+
+    return FileResponse(
+        path=input_path,
+        filename=job.filename,
+        media_type="application/octet-stream",
+    )
+
+
 class ResultPayload(BaseModel):
     filename: str
     content_type: str       # "text/csv" or "text/html"
@@ -91,28 +123,43 @@ def post_result(
 ) -> dict:
     """
     Runner posts the result file here once processing is done.
-    API stores result metadata, sends email to job owner, marks complete.
+    API stores the result, emails the submitter when email is configured,
+    and marks the job complete.
     """
     import base64
-
-    from app.models import User
 
     job = get_job(session=session, job_id=job_id)
     if not job:
         raise HTTPException(status_code=404)
 
-    data = base64.b64decode(payload.data_base64)
+    try:
+        data = base64.b64decode(payload.data_base64, validate=True)
+        save_result_file(job_id=job.id, filename=payload.filename, data=data)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=400, detail="Invalid result payload")
 
-    # Look up owner email
-    owner = session.get(User, job.owner_id)
-    if owner:
-        send_result_email(
-            to=owner.email,
-            job_id=str(job.id),
-            filename=payload.filename,
-            content_type=payload.content_type,
-            data=data,
-        )
+    recipient = job.user_email
+    if not recipient:
+        owner = session.get(User, job.owner_id)
+        recipient = owner.email if owner else None
+
+    if recipient and settings.emails_enabled:
+        try:
+            send_result_email(
+                to=recipient,
+                job_id=str(job.id),
+                filename=payload.filename,
+                content_type=payload.content_type,
+                data=data,
+                download_url=build_result_download_url(
+                    job_id=job.id,
+                    filename=payload.filename,
+                ),
+            )
+        except Exception:
+            log.exception("Failed to send result email for job %s", job.id)
+    elif recipient:
+        log.info("Email is not configured; skipping result email for job %s", job.id)
 
     update_job(
         session=session,

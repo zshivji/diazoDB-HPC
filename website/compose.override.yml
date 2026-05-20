@@ -84,10 +84,13 @@ services:
       - upload_data:/data/uploads
       - ./local_uploads:/local_uploads
     environment:
-      SMTP_HOST: "mailcatcher"
-      SMTP_PORT: "1025"
+      SMTP_HOST: "smtp.caltech.edu"
+      SMTP_PORT: "25"
       SMTP_TLS: "false"
-      EMAILS_FROM_EMAIL: "noreply@example.com"
+      SMTP_SSL: "false"
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
+      EMAILS_FROM_EMAIL: "diazoDB@caltech.edu"
 
   mailcatcher:
     image: schickling/mailcatcher

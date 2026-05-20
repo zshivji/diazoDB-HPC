@@ -34,6 +34,8 @@ class Job(SQLModel, table=True):
     globus_task_id: str | None = None
     seen_by_runner: bool = Field(default=False)
     result_filename: str | None = None
+    user_email: EmailStr | None = Field(default=None, max_length=255, index=True)
+    use_prodigal: bool = Field(default=False)
     error_message: str | None = None
     created_at: datetime = Field(default_factory=get_datetime_utc)
     updated_at: datetime = Field(default_factory=get_datetime_utc)
@@ -58,6 +60,7 @@ class JobRunnerView(SQLModel):
     id: uuid.UUID
     filename: str
     hpc_path: str   # absolute path on HPC after Globus transfer
+    use_prodigal: bool = False
 
 
 # ── User models ───────────────────────────────────────────────────────────────

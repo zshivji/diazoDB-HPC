@@ -1,4 +1,4 @@
-import os, time, base64, subprocess, requests, logging
+import os, base64, subprocess, requests, logging
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -9,6 +9,9 @@ log = logging.getLogger(__name__)
 API       = os.environ["API_URL"].rstrip("/")
 HEADERS   = {"x-runner-token": os.environ["RUNNER_SECRET"]}
 JOB_BASE  = Path(os.environ["HPC_JOB_BASE"])
+DUMMY_RUNNER = os.environ.get("DUMMY_RUNNER", "").lower() in {"1", "true", "yes"}
+DOWNLOAD_INPUT = os.environ.get("RUNNER_DOWNLOAD_INPUT", "true").lower() in {"1", "true", "yes"}
+SLURM_SCRIPT = os.environ.get("SLURM_SCRIPT")
 # INTERVAL  = int(os.environ.get("POLL_INTERVAL_SECONDS", 30))
 
 # runner polls API (HTTP request)
@@ -33,9 +36,13 @@ def mark(job_id: str, status: str, error: str = "") -> None:
 
 # uploads analysis output back to server
 def push_result(job_id: str, result_path: Path) -> None:
-    content_type = (
-        "text/csv" if result_path.suffix == ".csv" else "text/html"
-    )
+    content_types = {
+        ".csv": "text/csv",
+        ".html": "text/html",
+        ".htm": "text/html",
+        ".pdf": "application/pdf",
+    }
+    content_type = content_types.get(result_path.suffix.lower(), "application/octet-stream")
     data = base64.b64encode(result_path.read_bytes()).decode()
     r = requests.post(
         f"{API}/api/v1/runner/jobs/{job_id}/result",
@@ -46,27 +53,114 @@ def push_result(job_id: str, result_path: Path) -> None:
     r.raise_for_status()
 
 
-def process(job: dict) -> None:
-    job_id   = job["id"]
-    hpc_path = Path(job["hpc_path"])
-    out_dir  = hpc_path.parent
-    out_file = out_dir / "output.csv"
+def download_input(job: dict, dest: Path) -> Path:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    r = requests.get(
+        f"{API}/api/v1/runner/jobs/{job['id']}/input",
+        headers=HEADERS,
+        timeout=120,
+    )
+    r.raise_for_status()
+    dest.write_bytes(r.content)
+    return dest
 
-    if not hpc_path.exists():
-        log.error(f"[{job_id}] input not found: {hpc_path}")
+
+def workspace_for(job_id: str) -> Path:
+    return JOB_BASE / job_id
+
+
+def resolve_input_path(job: dict) -> Path:
+    job_id = job["id"]
+    filename = job["filename"]
+    preferred = workspace_for(job_id) / filename
+    if preferred.exists():
+        return preferred
+
+    hpc_path = Path(job["hpc_path"])
+    if hpc_path.exists():
+        return hpc_path
+
+    if hpc_path.is_absolute() and JOB_BASE.name in hpc_path.parts:
+        base_index = hpc_path.parts.index(JOB_BASE.name)
+        relative_parts = hpc_path.parts[base_index + 1:]
+        return JOB_BASE.joinpath(*relative_parts)
+
+    return preferred
+
+
+def run_slurm(job_id: str, input_path: Path, out_file: Path) -> None:
+    if not SLURM_SCRIPT:
+        raise RuntimeError("SLURM_SCRIPT is not set")
+
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    export_vars = ",".join([
+        "ALL",
+        f"DIAZODB_JOB_ID={job_id}",
+        f"DIAZODB_INPUT={input_path}",
+        f"DIAZODB_OUTDIR={out_file.parent}",
+        f"DIAZODB_OUTPUT={out_file}",
+        f"DIAZODB_USE_PRODIGAL={os.environ.get('DIAZODB_USE_PRODIGAL', 'false')}",
+    ])
+    subprocess.run(
+        [
+            "sbatch",
+            "--wait",
+            "--parsable",
+            "--job-name",
+            f"diazodb_{job_id[:8]}",
+            "--export",
+            export_vars,
+            SLURM_SCRIPT,
+        ],
+        check=True,
+        timeout=int(os.environ.get("SLURM_WAIT_TIMEOUT_SECONDS", "7200")),
+    )
+
+
+def run_analysis(job_id: str, input_path: Path, out_file: Path) -> None:
+    if DUMMY_RUNNER:
+        out_file.write_text(
+            "sequence_id,prediction,confidence\n"
+            f"{input_path.name},dummy_result,1.0\n",
+            encoding="utf-8",
+        )
+        return
+
+    if SLURM_SCRIPT:
+        run_slurm(job_id, input_path, out_file)
+        return
+
+    # ── Replace this command with your actual non-Slurm analysis tool ──
+    subprocess.run(
+        ["your_tool", str(input_path), "--output", str(out_file)],
+        check=True,
+        timeout=7200,
+    )
+
+
+def process(job: dict) -> None:
+    job_id = job["id"]
+    os.environ["DIAZODB_USE_PRODIGAL"] = str(job.get("use_prodigal", False)).lower()
+    input_path = resolve_input_path(job)
+    out_file = input_path.parent / "output.csv"
+
+    if DOWNLOAD_INPUT:
+        input_path = download_input(job, workspace_for(job_id) / job["filename"])
+        out_file = input_path.parent / "output.csv"
+
+    if not input_path.exists():
+        hpc_path = Path(job["hpc_path"])
+        log.error(f"[{job_id}] input not found: {hpc_path} (resolved to {input_path})")
         mark(job_id, "failed", "Input file not found on HPC")
         return
 
     mark(job_id, "processing")
-    log.info(f"[{job_id}] processing {hpc_path}")
+    log.info(f"[{job_id}] processing {input_path}")
 
     try:
-        # ── Replace this command with your actual analysis tool ──
-        subprocess.run(
-            ["your_tool", str(hpc_path), "--output", str(out_file)],
-            check=True,
-            timeout=7200,  # 2-hour hard limit
-        )
+        run_analysis(job_id, input_path, out_file)
+        if not out_file.exists():
+            raise FileNotFoundError(f"Expected result file was not created: {out_file}")
         push_result(job_id, out_file)
         log.info(f"[{job_id}] complete")
     except subprocess.CalledProcessError as e:

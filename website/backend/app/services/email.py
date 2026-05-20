@@ -14,16 +14,21 @@ def send_result_email(
     filename: str,
     content_type: str,
     data: bytes,
+    download_url: str | None = None,
 ) -> None:
+    assert settings.emails_enabled, "no provided configuration for email variables"
+
     msg = MIMEMultipart()
     msg["From"] = settings.EMAILS_FROM_EMAIL
     msg["To"] = to
-    msg["Subject"] = "Your FASTA analysis is ready"
+    msg["Subject"] = f"{settings.PROJECT_NAME} analysis results are ready"
 
-    msg.attach(MIMEText(
-        f"Your job ({job_id}) completed successfully. Results are attached.",
-        "plain",
-    ))
+    body = f"Your job ({job_id}) completed successfully."
+    if download_url:
+        body += f"\n\nDownload your result here:\n{download_url}"
+    body += "\n\nThe result file is also attached to this email."
+
+    msg.attach(MIMEText(body, "plain"))
 
     part = MIMEBase(*content_type.split("/"))
     part.set_payload(data)
@@ -31,7 +36,10 @@ def send_result_email(
     part.add_header("Content-Disposition", f'attachment; filename="{filename}"')
     msg.attach(part)
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        server.starttls()
-        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+    smtp_cls = smtplib.SMTP_SSL if settings.SMTP_SSL else smtplib.SMTP
+    with smtp_cls(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+        if settings.SMTP_TLS and not settings.SMTP_SSL:
+            server.starttls()
+        if settings.SMTP_USER:
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
         server.sendmail(settings.EMAILS_FROM_EMAIL, to, msg.as_string())

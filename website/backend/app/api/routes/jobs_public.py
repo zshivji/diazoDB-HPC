@@ -10,6 +10,8 @@ from pathlib import Path
 
 import aiofiles
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import FileResponse
+from pydantic import EmailStr
 from sqlmodel import Session, SQLModel
 
 from app.api.deps import get_db
@@ -17,13 +19,14 @@ from app.core.config import settings
 from app.crud import get_job, update_job
 from app.models import Job, JobStatus
 from app.services.globus import start_transfer
+from app.services.results import get_result_path, safe_result_filename
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/classify", tags=["classify"])
 
 
 class PublicJobCreate(SQLModel):
-    user_email: str
+    user_email: EmailStr
     filename: str
     file_size_bytes: int
     use_prodigal: bool = False
@@ -75,9 +78,8 @@ async def create_public_job(
         filename=job_in.filename,
         file_size_bytes=job_in.file_size_bytes,
         status=JobStatus.transferring if inline_sequences is not None else JobStatus.created,
-        # Store user email in error_message field temporarily
-        # TODO: add user_email column to Job model in a future migration
-        error_message=f"public:{job_in.user_email}",
+        user_email=job_in.user_email,
+        use_prodigal=job_in.use_prodigal,
     )
     session.add(job)
     session.commit()
@@ -122,6 +124,36 @@ def get_public_job_status(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
+
+
+@router.get("/{job_id}/results/{filename}")
+def download_public_job_result(
+    job_id: uuid.UUID,
+    filename: str,
+    session: Session = Depends(get_db),
+) -> FileResponse:
+    """
+    Download a completed result file by job ID.
+    Intended for links sent in completion emails.
+    """
+    job = get_job(session=session, job_id=job_id)
+    if not job or job.status != JobStatus.complete:
+        raise HTTPException(status_code=404, detail="Result not found")
+
+    try:
+        result_path = get_result_path(job_id, filename)
+        safe_name = safe_result_filename(filename)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid result filename")
+
+    if not result_path.exists() or not result_path.is_file():
+        raise HTTPException(status_code=404, detail="Result not found")
+
+    return FileResponse(
+        path=result_path,
+        filename=safe_name,
+        media_type="application/octet-stream",
+    )
 
 
 @router.patch("/{job_id}/upload", status_code=200)
