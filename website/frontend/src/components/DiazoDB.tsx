@@ -358,11 +358,27 @@ function UploadPage({ onSubmit }: UploadPageProps) {
           sequences,
         }),
       })
-      if (!res.ok) throw new Error("Submission failed")
+      if (!res.ok) {
+        const contentType = res.headers.get("content-type") || ""
+        let detail = ""
+        if (contentType.includes("application/json")) {
+          const body = await res.json()
+          if (body?.detail) {
+            detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail)
+          } else {
+            detail = JSON.stringify(body)
+          }
+        } else {
+          detail = await res.text()
+        }
+        const suffix = detail ? ` - ${detail}` : ""
+        throw new Error(`HTTP ${res.status} ${res.statusText}${suffix}`)
+      }
       const data = await res.json()
       onSubmit({ jobId: data.id, email, useProdigal })
-    } catch {
-      setError("Could not submit job. Make sure the backend is running.")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error"
+      setError(`Could not submit job: ${message}`)
     } finally {
       setLoading(false)
     }

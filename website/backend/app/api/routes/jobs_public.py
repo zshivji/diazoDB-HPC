@@ -52,7 +52,7 @@ def _parse_content_range(content_range: str) -> tuple[int, int, int]:
 
 
 def _completed_transfer_status() -> JobStatus:
-    return JobStatus.ready if settings.COPY_TO_LOCAL or settings.GLOBUS_MOCK else JobStatus.transferring
+    return JobStatus.ready if settings.COPY_TO_LOCAL or settings.GLOBUS_MOCK or settings.RUNNER_PULL_ONLY else JobStatus.transferring
 
 
 @router.post("/", response_model=PublicJobPublic)
@@ -97,16 +97,24 @@ async def create_public_job(
         bytes_written = len(inline_sequences.encode("utf-8"))
         log.info(f"[PUBLIC JOB] {job.id} Wrote {bytes_written} bytes to {file_path}")
 
-        log.info(f"[PUBLIC JOB] {job.id} Triggering start_transfer()")
-        task_id = await start_transfer(str(job.id))
-        log.info(f"[PUBLIC JOB] {job.id} start_transfer() returned task_id={task_id}")
-        update_job(
-            session=session,
-            job=job,
-            globus_task_id=task_id,
-            bytes_received=bytes_written,
-            status=_completed_transfer_status(),
-        )
+        if settings.RUNNER_PULL_ONLY:
+            update_job(
+                session=session,
+                job=job,
+                bytes_received=bytes_written,
+                status=JobStatus.ready,
+            )
+        else:
+            log.info(f"[PUBLIC JOB] {job.id} Triggering start_transfer()")
+            task_id = await start_transfer(str(job.id))
+            log.info(f"[PUBLIC JOB] {job.id} start_transfer() returned task_id={task_id}")
+            update_job(
+                session=session,
+                job=job,
+                globus_task_id=task_id,
+                bytes_received=bytes_written,
+                status=_completed_transfer_status(),
+            )
 
     return job
 
@@ -197,14 +205,21 @@ async def upload_public_file_chunk(
     )
 
     if is_complete:
-        log.info(f"[PUBLIC UPLOAD] {job_id} COMPLETE - calling start_transfer()")
-        task_id = await start_transfer(str(job.id))
-        log.info(f"[PUBLIC UPLOAD] {job_id} start_transfer() returned task_id={task_id}")
-        update_job(
-            session=session,
-            job=job,
-            globus_task_id=task_id,
-            status=_completed_transfer_status(),
-        )
+        if settings.RUNNER_PULL_ONLY:
+            update_job(
+                session=session,
+                job=job,
+                status=JobStatus.ready,
+            )
+        else:
+            log.info(f"[PUBLIC UPLOAD] {job_id} COMPLETE - calling start_transfer()")
+            task_id = await start_transfer(str(job.id))
+            log.info(f"[PUBLIC UPLOAD] {job_id} start_transfer() returned task_id={task_id}")
+            update_job(
+                session=session,
+                job=job,
+                globus_task_id=task_id,
+                status=_completed_transfer_status(),
+            )
 
     return {"bytes_received": new_received, "complete": is_complete}

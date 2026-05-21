@@ -56,3 +56,20 @@ else
     ' "$QUERY_FASTA"
   } > "$FINAL_OUTPUT"
 fi
+
+
+# ZS code
+
+module load mafft/7.505-gcc-13.2.0-nklkvtc
+
+
+eval "$(conda shell.bash hook)"
+conda activate /resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm
+
+#HMM search
+hmmsearch ../HMMs/combined_nif_03192026.hmm "$file" >> "../results/hmmsearch_results/archaea/${f%.faa}_nif.out"
+
+
+
+chgrp hpc_enviromics ../results/archaea/hmmsearch_results/*
+

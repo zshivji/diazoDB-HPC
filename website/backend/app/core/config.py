@@ -126,6 +126,8 @@ class Settings(BaseSettings):
     GLOBUS_MOCK: bool = False
     # If true, copy uploaded files to LOCAL_COPY_DIR instead of using Globus.
     COPY_TO_LOCAL: bool = False
+    # If true, skip Globus and let the runner download input from the API.
+    RUNNER_PULL_ONLY: bool = False
     GLOBUS_CLIENT_ID: str = ""
     GLOBUS_CLIENT_SECRET: str = ""
     # UUID of the Globus endpoint on THIS server (install Globus Connect Server)
@@ -133,7 +135,7 @@ class Settings(BaseSettings):
     # UUID of your university HPC Globus endpoint (ask HPC team)
     GLOBUS_DEST_ENDPOINT: str = ""
     # Absolute path on HPC where Globus should drop files
-    GLOBUS_DEST_BASE_PATH: str = "/scratch/yourlab/jobs"
+    GLOBUS_DEST_BASE_PATH: str = "/scratch/zshivji/diazoDB/jobs"
     # Local directory for COPY_TO_LOCAL testing
     LOCAL_COPY_DIR: str = "/local_uploads"
 

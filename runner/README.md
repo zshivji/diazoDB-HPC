@@ -5,7 +5,8 @@ API for ready jobs, downloads each submitted input file over HTTPS, submits the
 analysis to Slurm, and posts the final result back to the API.
 
 This avoids SSH/SCP from the web server into the cluster. The only secret shared
-between systems is `RUNNER_SECRET`.
+between systems is `RUNNER_SECRET`. Set `RUNNER_PULL_ONLY=true` in the web
+API .env to skip Globus transfers and let the runner download inputs.
 
 ## Minimal Environment
 
