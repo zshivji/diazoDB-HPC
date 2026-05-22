@@ -10,9 +10,7 @@ API       = os.environ["API_URL"].rstrip("/")
 HEADERS   = {"x-runner-token": os.environ["RUNNER_SECRET"]}
 JOB_BASE  = Path(os.environ["HPC_JOB_BASE"])
 DUMMY_RUNNER = os.environ.get("DUMMY_RUNNER", "").lower() in {"1", "true", "yes"}
-DOWNLOAD_INPUT = os.environ.get("RUNNER_DOWNLOAD_INPUT", "true").lower() in {"1", "true", "yes"}
 SLURM_SCRIPT = os.environ.get("SLURM_SCRIPT")
-# INTERVAL  = int(os.environ.get("POLL_INTERVAL_SECONDS", 30))
 
 # runner polls API (HTTP request)
 def poll() -> list[dict]:
@@ -69,23 +67,23 @@ def workspace_for(job_id: str) -> Path:
     return JOB_BASE / job_id
 
 
-def resolve_input_path(job: dict) -> Path:
-    job_id = job["id"]
-    filename = job["filename"]
-    preferred = workspace_for(job_id) / filename
-    if preferred.exists():
-        return preferred
+# def resolve_input_path(job: dict) -> Path:
+#     job_id = job["id"]
+#     filename = job["filename"]
+#     preferred = workspace_for(job_id) / filename
+#     if preferred.exists():
+#         return preferred
 
-    hpc_path = Path(job["hpc_path"])
-    if hpc_path.exists():
-        return hpc_path
+#     hpc_path = Path(job["hpc_path"])
+#     if hpc_path.exists():
+#         return hpc_path
 
-    if hpc_path.is_absolute() and JOB_BASE.name in hpc_path.parts:
-        base_index = hpc_path.parts.index(JOB_BASE.name)
-        relative_parts = hpc_path.parts[base_index + 1:]
-        return JOB_BASE.joinpath(*relative_parts)
+#     if hpc_path.is_absolute() and JOB_BASE.name in hpc_path.parts:
+#         base_index = hpc_path.parts.index(JOB_BASE.name)
+#         relative_parts = hpc_path.parts[base_index + 1:]
+#         return JOB_BASE.joinpath(*relative_parts)
 
-    return preferred
+#     return preferred
 
 
 def run_slurm(job_id: str, input_path: Path, out_file: Path) -> None:
@@ -113,12 +111,12 @@ def run_slurm(job_id: str, input_path: Path, out_file: Path) -> None:
             SLURM_SCRIPT,
         ],
         check=True,
-        timeout=int(os.environ.get("SLURM_WAIT_TIMEOUT_SECONDS", "7200")),
+        timeout=int(os.environ.get("SLURM_WAIT_TIMEOUT_SECONDS", "7200")), # currently set at 2hrs
     )
 
 
 def run_analysis(job_id: str, input_path: Path, out_file: Path) -> None:
-    if DUMMY_RUNNER:
+    if DUMMY_RUNNER: # for testing
         out_file.write_text(
             "sequence_id,prediction,confidence\n"
             f"{input_path.name},dummy_result,1.0\n",
@@ -130,23 +128,22 @@ def run_analysis(job_id: str, input_path: Path, out_file: Path) -> None:
         run_slurm(job_id, input_path, out_file)
         return
 
-    # ── Replace this command with your actual non-Slurm analysis tool ──
-    subprocess.run(
-        ["your_tool", str(input_path), "--output", str(out_file)],
-        check=True,
-        timeout=7200,
-    )
+    # # ── Replace this command with your actual non-Slurm analysis tool ──
+    # subprocess.run(
+    #     ["your_tool", str(input_path), "--output", str(out_file)],
+    #     check=True,
+    #     timeout=7200,
+    # )
 
 
 def process(job: dict) -> None:
     job_id = job["id"]
     os.environ["DIAZODB_USE_PRODIGAL"] = str(job.get("use_prodigal", False)).lower()
-    input_path = resolve_input_path(job)
-    out_file = input_path.parent / "output.csv"
+    # input_path = resolve_input_path(job)
+    # out_file = input_path.parent / "output.csv"
 
-    if DOWNLOAD_INPUT:
-        input_path = download_input(job, workspace_for(job_id) / job["filename"])
-        out_file = input_path.parent / "output.csv"
+    input_path = download_input(job, workspace_for(job_id) / job["filename"])
+    out_file = input_path.parent / "output.csv"
 
     if not input_path.exists():
         hpc_path = Path(job["hpc_path"])
@@ -154,7 +151,7 @@ def process(job: dict) -> None:
         mark(job_id, "failed", "Input file not found on HPC")
         return
 
-    mark(job_id, "processing")
+    mark(job_id, "processing") # update status
     log.info(f"[{job_id}] processing {input_path}")
 
     try:

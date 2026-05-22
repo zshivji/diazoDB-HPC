@@ -25,21 +25,21 @@ echo "Job ID/Name : $SLURM_JOBID / $SLURM_JOB_NAME"
 echo "======================================================"
 echo ""
 
-python Parse_hmm_results.py archaea
+python Parse_hmm_results.py --hits "../results/hmmsearch_results/archaea/*.out" --outdir ../results/archaea
 
 echo "Found hits!"
 
-python Parse_tophits.py archaea
+python Parse_tophits.py --hits ../results/archaea/hits.feather --outdir ../results/archaea
 
 echo "Found nif!"
 
 echo "Archaea done!"
 
-python Parse_hmm_results.py bacteria
+python Parse_hmm_results.py --hits "../results/hmmsearch_results/bacteria/*.out" --outdir ../results/bacteria
 
 echo "Found hits!"
 
-python Parse_tophits.py bacteria
+python Parse_tophits.py --hits ../results/bacteria/hits.feather --outdir ../results/bacteria
 
 echo "Found nif!"
 

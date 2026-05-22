@@ -13,8 +13,7 @@ API .env to skip Globus transfers and let the runner download inputs.
 ```bash
 API_URL=https://api.example.edu
 RUNNER_SECRET=<same value as website RUNNER_SECRET>
-HPC_JOB_BASE=/scratch/yourlab/diazodb/jobs
-RUNNER_DOWNLOAD_INPUT=true
+HPC_JOB_BASE=/scratch/zshivji/diazodb/jobs
 SLURM_SCRIPT=/path/to/diazoDB-HPC/runner/slurm/diazodb_classify.sbatch
 SLURM_WAIT_TIMEOUT_SECONDS=7200
 ```
