@@ -34,9 +34,12 @@ fi
 
 mkdir -p "$OUTDIR"
 
+HMMSEARCH_BIN="${DIAZODB_HMMSEARCH_BIN:-hmmsearch}"
+PRODIGAL_BIN="${DIAZODB_PRODIGAL_BIN:-prodigal}"
 USE_PRODIGAL="${DIAZODB_USE_PRODIGAL:-false}"
 
 QUERY_FASTA="$INPUT_FASTA"
+HMM_DB="$REPO_ROOT/HMMs/combined_nif_03192026.hmm"
 
 echo "====================================================="
 echo "Start Time  : $(date)"
@@ -63,12 +66,16 @@ module load mafft/7.505-gcc-13.2.0-nklkvtc
 # fi
 
 # HMM search
-hmmsearch ../HMMs/combined_nif_03192026.hmm "$QUERY_FASTA" > "$OUTDIR"/hmmsearch.out"
+"$HMMSEARCH_BIN" "$HMM_DB" "$QUERY_FASTA" > "$OUTDIR/hmmsearch.out"
 #chgrp hpc_enviromics ../results/archaea/hmmsearch_results/*
 
 # Parse HMM
-python Parse_hmm_results.py --hits "$OUTDIR"/hmmsearch.out --outdir "$OUTDIR"/hmmsearch_results
-python Parse_tophits.py --hits "$OUTDIR"/hmmsearch_results/hits.feather --outdir "$OUTDIR"/hmmsearch_results
+python "$SCRIPT_DIR/Parse_hmm_results.py" --hits "$OUTDIR/hmmsearch.out" --outdir "$OUTDIR/hmmsearch_results"
+python "$SCRIPT_DIR/Parse_tophits.py" --hits "$OUTDIR/hmmsearch_results/hits.feather" --outdir "$OUTDIR/hmmsearch_results"
+
+# Emit final result for the runner
+cp "$OUTDIR/hmmsearch_results/tophits.csv" "$FINAL_OUTPUT"
+test -s "$FINAL_OUTPUT"
 
 
 #SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
