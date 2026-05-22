@@ -47,8 +47,6 @@ services:
 
   db:
     restart: "no"
-    ports:
-      - "5432:5432"
 
   adminer:
     restart: "no"
@@ -106,7 +104,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - VITE_API_URL=http://localhost:8000
+        - VITE_API_URL=http://131.215.65.63:8000
         - NODE_ENV=development
 
   playwright:
