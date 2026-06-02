@@ -13,8 +13,8 @@
 #SBATCH --cpus-per-task=1 
 #SBATCH --mem=4GB
 #SBATCH -J diazodb_classify
-#SBATCH -o slurm-%x-%j.out
-#SBATCH -e slurm-%x-%j.err
+#SBATCH -o /resnick/scratch/zshivji/diazoDB-HPC/slurm/slurm-%x-%j.out
+#SBATCH -e /resnick/scratch/zshivji/diazoDB-HPC/slurm/slurm-%x-%j.err
 
 set -euo pipefail
 
@@ -33,6 +33,8 @@ if [[ -z "$DIAZODB_JOB_ID" || -z "$INPUT_FASTA" || -z "$OUTDIR" || -z "$FINAL_OU
 fi
 
 mkdir -p "$OUTDIR"
+
+cd "$REPO_ROOT"
 
 HMMSEARCH_BIN="${DIAZODB_HMMSEARCH_BIN:-hmmsearch}"
 PRODIGAL_BIN="${DIAZODB_PRODIGAL_BIN:-prodigal}"
@@ -70,13 +72,43 @@ module load mafft/7.505-gcc-13.2.0-nklkvtc
 #chgrp hpc_enviromics ../results/archaea/hmmsearch_results/*
 
 # Parse HMM
-python "$SCRIPT_DIR/Parse_hmm_results.py" --hits "$OUTDIR/hmmsearch.out" --outdir "$OUTDIR/hmmsearch_results"
-python "$SCRIPT_DIR/Parse_tophits.py" --hits "$OUTDIR/hmmsearch_results/hits.feather" --outdir "$OUTDIR/hmmsearch_results"
+python "$SCRIPT_DIR/parse_hmm.py" \
+  --hits "$OUTDIR/hmmsearch.out" \
+  --outdir "$OUTDIR/hmmsearch_results" \
+  --min_genes 3 \
+  --gene_range 15
+
+# Conserved residue matching
+python aln_nif_hits.py --reload_fasta
+python conserved-res.py
+python final-fasta-export.py
+
+# Operon org
+python get_operon.py
+
+echo "running microbeannotator"
+conda deactivate
+conda activate /groups/enviromics/miniconda3/envs/microbeannotator
+module load diamond/2.1.7-gcc-13.2.0-cfkl5pd
+
+microbeannotator \
+--input $(ls ../Zostera/operon-org/input-fastas/*11062025.fasta)  \
+--outdir ../Zostera/operon-org/microbeannotator/nifEN \
+--method diamond \
+--database /groups/enviromics/db \
+-p 8 \
+-t 4  \
+--refine \
+--no_plot
+
+python operon-org-plot.py 0
+
+# cluster with exisiting GTDB nif hits
+### TODO
 
 # Emit final result for the runner
 cp "$OUTDIR/hmmsearch_results/tophits.csv" "$FINAL_OUTPUT"
 test -s "$FINAL_OUTPUT"
-
 
 #SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #PIPELINE_SCRIPT="${DIAZODB_PIPELINE_SCRIPT:-$SCRIPT_DIR/diazodb_classify_pipeline.sh}"

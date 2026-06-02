@@ -296,7 +296,12 @@ function positionTooltip(e) {
 // load SVG + metadata + leaf labels + add tooltip interactivity
 Promise.all([
   fetch("./images/tree.svg").then((r) => r.text()),
-  fetch("./metadata.json").then((r) => r.json()),
+  fetch("./assets/metadata.json").then((r) => {
+    if (!r.ok) {
+      throw new Error(`Failed to load metadata.json: ${r.status} ${r.statusText}`)
+    }
+    return r.json()
+  }),
 ])
   .then(([svg, metadata]) => {
     document.getElementById("tree-container").innerHTML = svg

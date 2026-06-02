@@ -11,6 +11,7 @@ HEADERS   = {"x-runner-token": os.environ["RUNNER_SECRET"]}
 JOB_BASE  = Path(os.environ["HPC_JOB_BASE"])
 DUMMY_RUNNER = os.environ.get("DUMMY_RUNNER", "").lower() in {"1", "true", "yes"}
 SLURM_SCRIPT = os.environ.get("SLURM_SCRIPT")
+SLURM_LOG_DIR = os.environ.get("SLURM_LOG_DIR")
 
 # runner polls API (HTTP request)
 def poll() -> list[dict]:
@@ -91,6 +92,8 @@ def run_slurm(job_id: str, input_path: Path, out_file: Path) -> None:
         raise RuntimeError("SLURM_SCRIPT is not set")
 
     out_file.parent.mkdir(parents=True, exist_ok=True)
+    if SLURM_LOG_DIR:
+        Path(SLURM_LOG_DIR).mkdir(parents=True, exist_ok=True)
     export_vars = ",".join([
         "ALL",
         f"DIAZODB_JOB_ID={job_id}",
