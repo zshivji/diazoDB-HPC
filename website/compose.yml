@@ -30,7 +30,7 @@ services:
     environment:
       - ADMINER_DESIGN=pepa-linha-dark
     labels:
-      - traefik.enable=true
+      - traefik.enable=false
       - traefik.docker.network=traefik-public
       - traefik.constraint-label=traefik-public
       - traefik.http.routers.${STACK_NAME?Variable not set}-adminer-http.rule=Host(`adminer.${DOMAIN?Variable not set}`)
@@ -150,13 +150,15 @@ services:
 
       - traefik.http.services.${STACK_NAME?Variable not set}-backend.loadbalancer.server.port=8000
 
-      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=Host(`api.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=Host(`${DOMAIN?Variable not set}`) && PathPrefix(`/api`)
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.entrypoints=http
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.priority=100
 
-      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.rule=Host(`api.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.rule=Host(`${DOMAIN?Variable not set}`) && PathPrefix(`/api`)
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.entrypoints=https
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.tls=true
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.tls.certresolver=le
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.priority=100
 
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.middlewares=https-redirect
@@ -171,7 +173,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - VITE_API_URL=https://api.${DOMAIN?Variable not set}
+        - VITE_API_URL=https://${DOMAIN?Variable not set}
         - NODE_ENV=production
     labels:
       - traefik.enable=true
@@ -180,13 +182,15 @@ services:
 
       - traefik.http.services.${STACK_NAME?Variable not set}-frontend.loadbalancer.server.port=80
 
-      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.rule=Host(`dashboard.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.rule=Host(`${DOMAIN?Variable not set}`)
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.entrypoints=http
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.priority=10
 
-      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.rule=Host(`dashboard.${DOMAIN?Variable not set}`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.rule=Host(`${DOMAIN?Variable not set}`)
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.entrypoints=https
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.tls=true
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.tls.certresolver=le
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.priority=10
 
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect
