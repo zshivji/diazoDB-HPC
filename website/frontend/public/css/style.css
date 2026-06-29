@@ -10,6 +10,10 @@
   --top-header-margin: 3rem;
 
   --bg-page: #f7f6f2;
+  --text-white: #fbfeff;
+  --green: #776c4d;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --radius-sm: 4px;
 }
 
 html,
@@ -26,6 +30,16 @@ body {
   flex-direction: column;
   min-height: 100vh;
   margin: 0;
+}
+
+a {
+  color: var(--fr--color-sapphire-blue);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a:hover {
+  color: color-mix(in srgb, var(--fr--color-sapphire-blue) 90%, white);
 }
 
 hr.header-separator {
@@ -59,8 +73,9 @@ hr.header-separator {
 .header a:active,
 .header .header__link > a {
   display: inline-block;
-  color: var(--fr--color-sky-white);
+  color: var(--text-white);
   margin-bottom: 0;
+  text-decoration: none;
   transition:
     background-color 0.25s ease-out,
     color 0.25s ease-out;
@@ -106,6 +121,12 @@ hr.header-separator {
   border-bottom-color: currentColor;
 }
 
+.header .logo:hover {
+  border-bottom-color: transparent;
+  color: var(--text-white);
+  cursor: pointer;
+}
+
 .header__search {
   flex: 1;
 }
@@ -115,10 +136,188 @@ hr.header-separator {
   margin: 0;
 }
 
+.logo {
+  font-family: Lato, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.logo-badge {
+  background: var(--green);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+}
+
 main {
   flex: 1;
   background-color: var(--bg-page);
-  overflow: hidden;
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 1.5rem clamp(1rem, 3vw, 2.5rem);
+}
+
+.organism-page {
+  color: #1a1a18;
+}
+
+.organism-detail {
+  max-width: 1100px;
+}
+
+.organism-back-row {
+  margin-bottom: 1rem;
+}
+
+.organism-back-row a,
+.organism-empty a {
+  color: var(--fr--color-sapphire-blue);
+  text-decoration: none;
+}
+
+.organism-back-row a:hover,
+.organism-empty a:hover {
+  text-decoration: underline;
+}
+
+.organism-hero {
+  max-width: 900px;
+  margin-bottom: 1.5rem;
+}
+
+.organism-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--green);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.organism-hero h1,
+.organism-empty h1 {
+  margin: 0;
+  color: #1a1a18;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+}
+
+.organism-id {
+  margin: 0.75rem 0 0;
+  color: #4a4a47;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.organism-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  max-width: 1100px;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(30, 30, 20, 0.12);
+  background: rgba(30, 30, 20, 0.12);
+}
+
+.organism-summary div {
+  min-height: 84px;
+  padding: 1rem;
+  background: #fff;
+}
+
+.organism-summary span {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #6b6a64;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.organism-summary strong {
+  color: #1a1a18;
+  font-size: 1rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.organism-section {
+  max-width: 1100px;
+  margin-top: 1.5rem;
+}
+
+.organism-section h2 {
+  margin: 0 0 0.75rem;
+  color: #1a1a18;
+  font-size: 1.2rem;
+}
+
+.organism-taxonomy {
+  max-width: 900px;
+  margin: 0;
+  color: #3b3b37;
+  line-height: 1.55;
+}
+
+.organism-operon {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1rem;
+  border-radius: 6px;
+  background: rgba(19, 28, 46, 0.96);
+  overflow-x: auto;
+}
+
+.organism-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(30, 30, 20, 0.12);
+  background: #fff;
+}
+
+.organism-gene-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.organism-gene-table th,
+.organism-gene-table td {
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid rgba(30, 30, 20, 0.1);
+  text-align: left;
+  vertical-align: top;
+}
+
+.organism-gene-table th {
+  background: #f0efe9;
+  color: #4a4a47;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.organism-gene-table td {
+  color: #1a1a18;
+  overflow-wrap: anywhere;
+}
+
+.organism-muted,
+.organism-status,
+.organism-empty p {
+  color: #4a4a47;
 }
 
 footer {
@@ -135,6 +334,10 @@ footer {
 #tree-container svg {
   position: relative;
   display: block;
+}
+
+#tree-container {
+  margin-top: 1rem;
 }
 
 #tooltip {
