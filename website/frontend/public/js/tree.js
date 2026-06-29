@@ -4,16 +4,25 @@ console.log("tree.js is running")
 const tooltip = document.getElementById("tooltip")
 const searchInput = document.getElementById("tree-search")
 let labelData = []
+let metadataKeyLookup = new Map()
 
 // define colors for each gene
 const GENE_COLORS = {
+  nifA: "#c084fc", // purple
+  nifB: "#f472b6", // pink
   nifH: "#60a5fa", // blue
   nifD: "#f59e0b", // orange
   nifK: "#10b981", // green
+  nifE: "#f97316", // amber
+  nifN: "#14b8a6", // teal
+  nifV: "#a3e635", // lime
+  anfG: "#818cf8", // indigo
+  anfO: "#fb7185", // rose
+  vnfG: "#22d3ee", // cyan
 }
 
 const DEFAULT_GENE_COLOR = "#9ca3af"
-const SHOW_OPERON_IN_TOOLTIP = false
+const SHOW_OPERON_IN_TOOLTIP = true
 
 // helper functions
 
@@ -37,14 +46,86 @@ function formatBp(bp) {
 }
 
 function normalizeDirection(direction) {
+  if (Number(direction) < 0) return "reverse"
+
   const d = String(direction || "").toLowerCase()
-  if (d === "reverse" || d === "-" || d === "left") return "reverse"
+  if (d === "reverse" || d === "-" || d === "-1" || d === "left") {
+    return "reverse"
+  }
   return "forward"
 }
 
 function getGeneColor(geneName) {
   const key = String(geneName || "").trim()
   return GENE_COLORS[key] || DEFAULT_GENE_COLOR
+}
+
+function normalizeTreeIdentifier(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^'+|'+$/g, "")
+    .replace(/\b(GB|RS)\s+(GCA|GCF)\s+(\d+\.\d+)\b/gi, "$1_$2_$3")
+    .replace(/\b([A-Z]{2})\s+([A-Z]*\d+(?:\.\d+)?)\b/g, "$1_$2")
+    .replace(/\|([^|]+?)\s+\d+$/, "|$1")
+}
+
+function canonicalLookupKey(value) {
+  const parts = normalizeTreeIdentifier(value).split("|")
+  if (parts.length > 0) {
+    parts[0] = parts[0].replace(/_/g, " ")
+  }
+  return parts.join("|")
+}
+
+function isGenomeId(value) {
+  return /^(GB|RS)_(GCA|GCF)_\d+\.\d+$/i.test(String(value || "").trim())
+}
+
+function getGenomeContigLookupKey(value) {
+  const parts = normalizeTreeIdentifier(value).split("|")
+  const genomeIndex = parts.findIndex(isGenomeId)
+
+  if (genomeIndex === -1 || genomeIndex + 1 >= parts.length) {
+    return ""
+  }
+
+  return `${parts[genomeIndex]}|${parts[genomeIndex + 1]}`
+}
+
+function addLookupValue(lookup, key, value) {
+  if (key && !lookup.has(key)) {
+    lookup.set(key, value)
+  }
+}
+
+function createMetadataLookup(metadata) {
+  const lookup = new Map()
+
+  Object.keys(metadata).forEach((key) => {
+    addLookupValue(lookup, normalizeTreeIdentifier(key), key)
+    addLookupValue(lookup, canonicalLookupKey(key), key)
+    addLookupValue(lookup, getGenomeContigLookupKey(key), key)
+  })
+
+  return lookup
+}
+
+function findMetadataKey(candidate, metadata) {
+  if (!candidate) return null
+  if (metadata[candidate]) return candidate
+
+  const lookupKeys = [
+    normalizeTreeIdentifier(candidate),
+    canonicalLookupKey(candidate),
+    getGenomeContigLookupKey(candidate),
+  ]
+
+  for (const lookupKey of lookupKeys) {
+    const metadataKey = metadataKeyLookup.get(lookupKey)
+    if (metadataKey && metadata[metadataKey]) return metadataKey
+  }
+
+  return null
 }
 
 // render operon
@@ -160,19 +241,15 @@ function renderScaleHTML(regionStart, regionEnd) {
 }
 
 function resolveMetadataKey(rawLabel, metadata) {
-  const rawId = String(rawLabel || "")
-    .trim()
-    .replace(/^'+|'+$/g, "")
-
-  const normalizedPipeKey = rawId
-    .replace(/\b(GB|RS)\s+(GCA|GCF)\s+(\d+\.\d+)\b/gi, "$1_$2_$3")
-    .replace(/\|([^|]+?)\s+\d+$/, "|$1")
+  const rawId = normalizeTreeIdentifier(rawLabel)
+  const normalizedPipeKey = normalizeTreeIdentifier(rawId)
 
   const withoutLeafSuffix = rawId.replace(/([_\s])\d+$/, "")
   const candidates = [rawId, withoutLeafSuffix, normalizedPipeKey]
 
   for (const candidate of candidates) {
-    if (candidate && metadata[candidate]) return candidate
+    const metadataKey = findMetadataKey(candidate, metadata)
+    if (metadataKey) return metadataKey
   }
 
   // Legacy fallback: build accession-style keys like GB_GCA_031257675.1_nif.
@@ -182,7 +259,8 @@ function resolveMetadataKey(rawLabel, metadata) {
     if (!match) continue
 
     const accessionKey = `${match[1].toUpperCase()}_${match[2].toUpperCase()}_${match[3]}_nif`
-    if (metadata[accessionKey]) return accessionKey
+    const metadataKey = findMetadataKey(accessionKey, metadata)
+    if (metadataKey) return metadataKey
   }
 
   return null
@@ -305,6 +383,7 @@ Promise.all([
 ])
   .then(([svg, metadata]) => {
     document.getElementById("tree-container").innerHTML = svg
+    metadataKeyLookup = createMetadataLookup(metadata)
     console.log("SVG + metadata loaded")
 
     // grab iTOL leaf labels (<text> elements)
