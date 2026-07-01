@@ -20,7 +20,7 @@ test("Classify page is accessible and shows correct title", async ({
   await page.goto("/classify")
 
   await expect(
-    page.getByRole("heading", { name: "Classify Nitrogenase Sequences" }),
+    page.getByRole("heading", { name: "Nitrogenase Annotation and Classification" }),
   ).toBeVisible()
 })
 

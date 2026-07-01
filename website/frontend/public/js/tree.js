@@ -334,6 +334,10 @@ function buildTooltipHTML(id, nodeMeta) {
   `
 }
 
+function getOrganismDetailUrl(id) {
+  return `./organism.html?id=${encodeURIComponent(id)}`
+}
+
 function positionTooltip(e) {
   const offset = 12
 
@@ -417,6 +421,12 @@ Promise.all([
       })
 
       label.classList.add("tree-label")
+      label.setAttribute("role", "link")
+      label.setAttribute("tabindex", "0")
+      label.setAttribute(
+        "aria-label",
+        `Open organism page for ${nodeMeta.organism || nodeMeta.species || id}`,
+      )
 
       label.addEventListener("mouseover", (e) => {
         tooltip.innerHTML = buildTooltipHTML(id, metadata[id])
@@ -430,6 +440,16 @@ Promise.all([
 
       label.addEventListener("mouseout", () => {
         tooltip.style.display = "none"
+      })
+
+      label.addEventListener("click", () => {
+        window.location.href = getOrganismDetailUrl(id)
+      })
+
+      label.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return
+        e.preventDefault()
+        window.location.href = getOrganismDetailUrl(id)
       })
     })
 
