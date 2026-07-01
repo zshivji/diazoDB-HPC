@@ -4,61 +4,110 @@ import { useEffect, useRef, useState } from "react"
 const API_BASE = `${import.meta.env.VITE_API_URL}/api/v1`
 
 const theme = {
-  bg: "#0a0e0f",
-  bgCard: "#111618",
-  bgInput: "#0d1214",
-  border: "#1e2c2f",
-  borderHover: "#2e4a4f",
-  green: "#3dffa0",
-  greenDim: "#1a8c56",
-  greenGlow: "rgba(61,255,160,0.15)",
-  text: "#e8f0ed",
-  textMuted: "#5a7a6e",
-  textDim: "#8aa89e",
-  red: "#ff5c5c",
+  bg: "#f7f6f2",
+  bgCard: "#ffffff",
+  bgInput: "#fbfeff",
+  border: "rgba(30, 30, 20, 0.12)",
+  borderHover: "rgba(30, 30, 20, 0.35)",
+  green: "#776c4d",
+  greenDim: "#5f5437",
+  greenGlow: "rgba(119,108,77,0.12)",
+  text: "#1a1a18",
+  textMuted: "#888780",
+  textDim: "#4a4a47",
+  textWhite: "#fbfeff",
+  red: "#b33a3a",
   redDim: "#8c1f1f",
-  amber: "#ffb347",
+  amber: "#9a6500",
 }
 
 const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
-    background: theme.bg,
+    backgroundColor: theme.bg,
+    backgroundImage: "url('/images/header.png')",
+    backgroundPosition: "top center",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
     color: theme.text,
-    fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+    display: "flex",
+    flexDirection: "column",
+    fontFamily: "Lato, system-ui, sans-serif",
   },
   header: {
-    borderBottom: `1px solid ${theme.border}`,
-    padding: "20px 40px",
+    borderBottom: `1px solid ${theme.textWhite}`,
+    color: "rgba(255, 255, 255, 0.633)",
+    padding: "0.5em 1em",
     display: "flex",
-    alignItems: "baseline",
-    gap: "16px",
+    alignItems: "center",
+    alignContent: "center",
+    flexWrap: "wrap",
+    gap: "0.5ch",
+    minHeight: "3rem",
+    boxSizing: "border-box",
+  },
+  headerNav: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "0.5ch",
+    padding: "0 0.5ch",
+  },
+  headerLink: {
+    borderBottom: "1px solid transparent",
+    color: theme.textWhite,
+    display: "inline-block",
+    fontSize: "16px",
+    fontWeight: 600,
+    margin: "0.1rem 0.25rem",
+    textDecoration: "none",
+  },
+  headerLinkActive: {
+    borderBottom: "1px solid transparent",
+    color: theme.textWhite,
+    display: "inline-block",
+    fontSize: "16px",
+    fontWeight: 600,
+    margin: "0.1rem 0.25rem",
+    textDecoration: "none",
   },
   logo: {
-    fontSize: "22px",
-    fontWeight: 700,
-    color: theme.green,
-    letterSpacing: "-0.5px",
+    alignItems: "center",
+    color: theme.textWhite,
+    display: "flex",
+    fontSize: "20px",
+    fontWeight: 600,
+    gap: "8px",
+    marginBottom: 0,
+    textDecoration: "none",
+    whiteSpace: "nowrap",
   },
-  logoSub: {
-    fontSize: "12px",
-    color: theme.textMuted,
-    letterSpacing: "0.08em",
+  logoBadge: {
+    background: theme.green,
+    borderRadius: "4px",
+    color: "#fff",
+    fontSize: "16px",
+    fontWeight: 500,
+    letterSpacing: "0.06em",
+    padding: "2px 6px",
   },
   main: {
-    maxWidth: "860px",
-    margin: "0 auto",
-    padding: "48px 24px",
+    background: theme.bg,
+    boxSizing: "border-box",
+    flex: 1,
+    margin: 0,
+    padding: "1.5rem clamp(1rem, 3vw, 2.5rem)",
+    width: "100%",
   },
   h1: {
-    fontSize: "28px",
+    fontSize: "clamp(2rem, 4vw, 3.25rem)",
     fontWeight: 700,
     color: theme.text,
     marginBottom: "8px",
-    letterSpacing: "-0.5px",
+    lineHeight: 1.05,
   },
   lead: {
-    fontSize: "14px",
+    fontSize: "15px",
     color: theme.textDim,
     lineHeight: 1.7,
     marginBottom: "36px",
@@ -67,14 +116,14 @@ const styles: Record<string, CSSProperties> = {
   card: {
     background: theme.bgCard,
     border: `1px solid ${theme.border}`,
-    borderRadius: "8px",
+    borderRadius: "6px",
     padding: "28px",
     marginBottom: "20px",
   },
   cardTitle: {
-    fontSize: "11px",
+    fontSize: "12px",
     fontWeight: 700,
-    letterSpacing: "0.15em",
+    letterSpacing: "0.08em",
     color: theme.green,
     textTransform: "uppercase",
     marginBottom: "20px",
@@ -84,7 +133,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: "12px",
     color: theme.textDim,
     marginBottom: "8px",
-    letterSpacing: "0.05em",
+    fontWeight: 700,
   },
   input: {
     width: "100%",
@@ -92,7 +141,7 @@ const styles: Record<string, CSSProperties> = {
     border: `1px solid ${theme.border}`,
     borderRadius: "4px",
     color: theme.text,
-    fontFamily: "inherit",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
     fontSize: "13px",
     padding: "10px 14px",
     marginBottom: "20px",
@@ -105,7 +154,7 @@ const styles: Record<string, CSSProperties> = {
     border: `1px solid ${theme.border}`,
     borderRadius: "4px",
     color: theme.text,
-    fontFamily: "inherit",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
     fontSize: "12px",
     padding: "12px 14px",
     marginBottom: "8px",
@@ -142,7 +191,7 @@ const styles: Record<string, CSSProperties> = {
   },
   btn: {
     background: theme.green,
-    color: "#0a0e0f",
+    color: "#fff",
     border: "none",
     borderRadius: "4px",
     padding: "12px 28px",
@@ -163,8 +212,8 @@ const styles: Record<string, CSSProperties> = {
     cursor: "pointer",
   },
   cite: {
-    background: "rgba(61,255,160,0.04)",
-    border: `1px solid ${theme.greenDim}`,
+    background: "rgba(119,108,77,0.08)",
+    border: `1px solid rgba(119,108,77,0.28)`,
     borderRadius: "6px",
     padding: "14px 18px",
     fontSize: "12px",
@@ -174,14 +223,15 @@ const styles: Record<string, CSSProperties> = {
   },
   row: {
     display: "grid",
-    gridTemplateColumns: "1fr 340px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
     gap: "20px",
     alignItems: "start",
+    maxWidth: "1100px",
   },
   sidebar: {
     background: theme.bgCard,
     border: `1px solid ${theme.border}`,
-    borderRadius: "8px",
+    borderRadius: "6px",
     padding: "22px",
   },
   sidebarTitle: {
@@ -238,10 +288,10 @@ function alertStyle(type: "info" | "warn" | "error"): CSSProperties {
   return {
     background:
       type === "info"
-        ? "rgba(61,255,160,0.06)"
+        ? "rgba(119,108,77,0.08)"
         : type === "warn"
-          ? "rgba(255,179,71,0.08)"
-          : "rgba(255,92,92,0.08)",
+          ? "rgba(154,101,0,0.08)"
+          : "rgba(179,58,58,0.08)",
     border: `1px solid ${type === "info" ? theme.greenDim : type === "warn" ? theme.amber : theme.red}`,
     borderRadius: "6px",
     padding: "14px 18px",
@@ -265,8 +315,8 @@ function badgeStyle(type: "success" | "error"): CSSProperties {
     fontSize: "11px",
     fontWeight: 700,
     background:
-      type === "success" ? "rgba(61,255,160,0.15)" : "rgba(255,92,92,0.15)",
-    color: type === "success" ? theme.green : theme.red,
+      type === "success" ? "rgba(119,108,77,0.16)" : "rgba(179,58,58,0.14)",
+    color: type === "success" ? theme.greenDim : theme.red,
   }
 }
 
@@ -274,7 +324,7 @@ function badgeStyle(type: "success" | "error"): CSSProperties {
 interface JobData {
   jobId: string
   email: string
-  useProdigal: boolean
+  // useProdigal: boolean
 }
 
 interface UploadPageProps {
@@ -302,11 +352,11 @@ function CitingBanner() {
   return (
     <div style={styles.cite}>
       <strong style={{ color: theme.green }}>Please cite:</strong> If you use
-      DiazoDB for research, please cite our paper.{" "}
-      <span style={{ color: theme.textDim }}>
+      DiazoDB for research, please cite our Github.{" "}
+      {/* <span style={{ color: theme.textDim }}>
         Predicting and classifying nitrogenase sequences from metagenomes using
         DiazoDB.
-      </span>
+      </span> */}
     </div>
   )
 }
@@ -316,7 +366,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
   const [email, setEmail] = useState("")
   const [sequences, setSequences] = useState("")
   const [fileName, setFileName] = useState<string | null>(null)
-  const [useProdigal, setUseProdigal] = useState(false)
+  // const [useProdigal, setUseProdigal] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -354,7 +404,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
           user_email: email,
           filename: fileName ?? "sequences.fasta",
           file_size_bytes: fileSizeBytes,
-          use_prodigal: useProdigal,
+          // use_prodigal: useProdigal,
           sequences,
         }),
       })
@@ -375,7 +425,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
         throw new Error(`HTTP ${res.status} ${res.statusText}${suffix}`)
       }
       const data = await res.json()
-      onSubmit({ jobId: data.id, email, useProdigal })
+      onSubmit({ jobId: data.id, email })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error"
       setError(`Could not submit job: ${message}`)
@@ -389,8 +439,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
       <h1 style={styles.h1}>Classify Nitrogenase Sequences</h1>
       <p style={styles.lead}>
         DiazoDB provides accurate prediction and classification of nitrogenase
-        sequences from metagenomes. Supports direct sequence input and CDS
-        prediction from raw nucleotide data via Prodigal.
+        sequences from metagenomes.
       </p>
       <CitingBanner />
 
@@ -400,9 +449,8 @@ function UploadPage({ onSubmit }: UploadPageProps) {
             <div style={styles.cardTitle}>Submit sequences</div>
             {error && <div style={alertStyle("error")}>{error}</div>}
             <div style={alertStyle("info")}>
-              DiazoDB classifies catalytic subunits of nitrogenases (NifH, AnfH,
-              VnfH). Sequences that do not encode nitrogenase catalytic subunits
-              will still be classified but results may be unreliable.
+              DiazoDB annotates nitrogenase catalytic proteins (NifH, NifD,
+              NifK, NifE, NifK) and classifies them into Groups I-IV. 
             </div>
 
             <label style={styles.label}>
@@ -471,13 +519,13 @@ function UploadPage({ onSubmit }: UploadPageProps) {
               )}
             </div>
 
-            <div style={styles.divider}>
+            {/* <div style={styles.divider}>
               <div style={styles.dividerLine} />
               options
               <div style={styles.dividerLine} />
-            </div>
+            </div> */}
 
-            <label style={styles.checkbox}>
+            {/* <label style={styles.checkbox}>
               <input
                 type="checkbox"
                 checked={useProdigal}
@@ -500,7 +548,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
                   not check this for protein sequences.
                 </div>
               </div>
-            </label>
+            </label> */}
 
             <button
               style={{ ...styles.btn, opacity: loading ? 0.6 : 1 }}
@@ -519,14 +567,14 @@ function UploadPage({ onSubmit }: UploadPageProps) {
               Paste FASTA-formatted sequences or upload a <code>.fasta</code>{" "}
               file.
             </p>
-            <p style={styles.sidebarText}>
+            {/* <p style={styles.sidebarText}>
               For nucleotide input from metagenomes, enable{" "}
               <strong style={{ color: theme.textDim }}>
                 Prodigal CDS prediction
               </strong>{" "}
               to automatically predict protein-coding sequences before
               classification.
-            </p>
+            </p> */}
             <p style={styles.sidebarText}>
               Provide your email to receive a link when the job completes or
               fails.
@@ -535,8 +583,8 @@ function UploadPage({ onSubmit }: UploadPageProps) {
 
           <div style={{ ...styles.sidebar, marginTop: "16px" }}>
             <div style={styles.sidebarTitle}>Limits</div>
-            <p style={styles.sidebarText}>Max runtime: 2 hours</p>
-            <p style={styles.sidebarText}>Max sequences: 4,000</p>
+            <p style={styles.sidebarText}>Max runtime: 72 hours</p>
+            <p style={styles.sidebarText}>Max file size: 20GB</p>
             <p style={styles.sidebarText}>Results stored for: 2 weeks</p>
             <p
               style={{
@@ -881,10 +929,10 @@ function FailurePage({ jobId, onReset }: FailurePageProps) {
             "Invalid FASTA format",
             "Each sequence must start with > followed by a sequence ID on a new line.",
           ],
-          [
+          /* [
             "Non-protein sequences without Prodigal",
             "If submitting DNA/nucleotide sequences, enable the Prodigal CDS prediction option.",
-          ],
+          ], */
           [
             "Empty or corrupt file",
             "Try re-exporting your FASTA file and resubmitting.",
@@ -936,8 +984,21 @@ export default function DiazoDB() {
   return (
     <div style={styles.page}>
       <header style={styles.header}>
-        <div style={styles.logo}>DiazoDB</div>
-        <div style={styles.logoSub}>nitrogenase sequence classifier</div>
+        <a href="/home.html" style={styles.logo}>
+          DiazoDB <span style={styles.logoBadge}>Upload</span>
+        </a>
+        <nav style={styles.headerNav} aria-label="Primary navigation">
+          <a href="/home.html" style={styles.headerLink}>
+            Phylogeny
+          </a>
+          <a href="/database.html" style={styles.headerLink}>
+            DiazoDB
+          </a>
+          <a href="/classify" style={styles.headerLinkActive}>
+            Upload
+          </a>
+          {/* <a href="/wiki.html" style={styles.headerLink}>Nitrogenase Wiki</a> */}
+        </nav>
       </header>
 
       {view === "upload" && <UploadPage onSubmit={handleSubmit} />}

@@ -35,19 +35,23 @@ const columnKeyMap = {
   GenomeAcc: "GenomeAcc",
   ContigAcc: "ContigAcc",
   GTDBPhylo: "GTDBPhylo",
-  Regulon: "Regulon",
-  PredGrowthTemp: "PredGrowthTemp",
+  // Regulon: "Regulon",
+  // PredGrowthTemp: "PredGrowthTemp",
 }
 
 const rowCellMap = {
   ".col-Organism": "Organism",
   ".col-NitrogenaseSet": "NitrogenaseSet",
   ".col-Env": "Env",
-  ".col-Regulon": "Regulon",
-  ".col-PredGrowthTemp": "PredGrowthTemp",
+  // ".col-Regulon": "Regulon",
+  // ".col-PredGrowthTemp": "PredGrowthTemp",
   ".col-ContigAcc": "ContigAcc",
   ".col-GTDBPhylo": "GTDBPhylo",
 }
+
+const searchableColumnKeys = headers.map(
+  (th) => columnKeyMap[th.dataset.columnName] ?? th.dataset.columnName,
+)
 
 // parse CSV text into array of objects, using first line as keys
 function parseCSVToObjects(csvText) {
@@ -237,8 +241,9 @@ function filterRows(rows, query) {
 
   const lowerQuery = query.toLowerCase()
   return rows.filter((row) => {
-    // Check if query matches any column value
-    return Object.values(row).some((value) => {
+    // Check if query matches any visible column value.
+    return searchableColumnKeys.some((key) => {
+      const value = row[key]
       const cellValue = String(value ?? "").toLowerCase()
       return cellValue.includes(lowerQuery)
     })

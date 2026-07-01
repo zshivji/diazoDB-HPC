@@ -336,8 +336,86 @@ footer {
   display: block;
 }
 
+.tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tree-header h1 {
+  margin: 0;
+}
+
+.tree-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.tree-search label {
+  color: #4a4a47;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tree-search input {
+  box-sizing: border-box;
+  width: 300px;
+  max-width: 42vw;
+  padding: 6px 10px;
+  border: 1px solid rgba(30, 30, 20, 0.16);
+  border-radius: 4px;
+  background: #fbfeff;
+  color: #1a1a18;
+  font: inherit;
+}
+
+.page-description {
+  max-width: 640px;
+  margin: 0.35rem 0 1rem;
+  color: #4a4a47;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.tree-panel {
+  position: relative;
+}
+
 #tree-container {
   margin-top: 1rem;
+}
+
+.tree-instructions {
+  position: absolute;
+  top: 1rem;
+  right: clamp(1rem, 4vw, 3rem);
+  z-index: 5;
+  box-sizing: border-box;
+  width: min(320px, calc(100% - 2rem));
+  padding: 18px 20px;
+  border: 1px solid rgba(30, 30, 20, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #4a4a47;
+  box-shadow: 0 10px 24px rgba(30, 30, 20, 0.08);
+}
+
+.tree-instructions__title {
+  margin-bottom: 10px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tree-instructions p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 #tooltip {
@@ -529,13 +607,38 @@ footer {
 }
 
 .tree-match {
-  fill: #f0a52c;
+  fill: #f30404;
   font-weight: bold;
 }
 
 .tree-dim {
   fill: #ccc;
   opacity: 0.3;
+}
+
+@media (max-width: 900px) {
+  .tree-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tree-search {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .tree-search input {
+    flex: 1;
+    max-width: none;
+  }
+
+  .tree-instructions {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    margin-top: 1rem;
+  }
 }
 
 /* . class selctor

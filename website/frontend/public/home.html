@@ -26,7 +26,8 @@
         <a href="home.html" class="logo">DiazoDB <span class="logo-badge">Phylogeny</span></a>
         <nav class="header__navigation">
           <a translate="no" href="./database.html">DiazoDB</a>
-          <a translate="no" href="./wiki.html">Nitrogenase Wiki</a>
+          <a translate="no" href="/classify">Upload</a>
+          <!-- <a translate="no" href="./wiki.html">Nitrogenase Wiki</a> -->
         </nav>
       </div>
     </header>
@@ -35,14 +36,26 @@
 
   <main>
     <!-- <div style='position: absolute; bottom: 25px; right: 10px;'></div> -->
-    <label for="tree-search">Search:</label>
-    <input type="search" id="tree-search" placeholder="Search nodes…"
-      style="width: 300px; padding: 6px; margin-bottom: 10px;" />
-
-    <br>
-
-    <h1>Nitrogenase Phylogeny</h1>
-    <div id="tree-container"></div>
+    <div class="tree-header">
+      <h1>Nitrogenase Phylogeny</h1>
+      <div class="tree-search">
+        <label for="tree-search">Search:</label>
+        <input type="search" id="tree-search" placeholder="Search nodes…" />
+      </div>
+    </div>
+    <p class="page-description">Nitrogenase phylogeny built from nifH sequences.</p>
+    <div class="tree-panel">
+      <div id="tree-container"></div>
+      <aside class="tree-instructions" aria-label="Tree instructions">
+        <div class="tree-instructions__title">Instructions</div>
+        <p>
+          Mouse over tree labels to learn more about organisms encoding nitrogenase
+          and the genetic neighborhoods around nif genes. Click on an organism to learn
+          more about its nitrogenase cluster. Use the search bar to find specific organisms
+          or environments.
+        </p>
+      </aside>
+    </div>
 
     <div id="tooltip" class="tooltip"></div>
 
