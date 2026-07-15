@@ -7,8 +7,8 @@ Inputs:
 
 Examples:
     python bin/parse_hmm.py \
-        --hits "../results/hmmsearch_results/archaea/*.out" \
-        --outdir ../results/hmmsearch_results/hits_archaea.
+        --hits ../results/hmmsearch_results/archaea/ \
+        --outdir ../results/hmmsearch_results/archaea
 """
 
 import argparse
@@ -16,11 +16,15 @@ import glob
 import re
 import warnings
 from pathlib import Path
+import os
 
 import pandas as pd
+import numpy as np
 from Bio import SearchIO
 
-from cluster_pos import cluster_pos
+import numpy as np
+from scipy.cluster.hierarchy import linkage, fcluster
+from helper import filter_groups_by_unique_counts
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -61,85 +65,76 @@ def parse_args() -> argparse.Namespace:
 # NCBI taxonomy from metadata files
 
 def parse_hits(hits_path: Path, outdir: Path) -> pd.DataFrame:
-    gtdb_taxonomy = pd.read_csv(
-        "GTDB_taxonomy.gz",
-        header=None,
-        sep="\t",
-        names=["GenomeID", "GTDB"],
-    )
+    print(f"Parsing HMM hits...\n\t\t from {hits_path}\n\t\t saving results to {outdir}_hits.csv")
 
     # Create empty lists
     result_target = []
     query_id = []
     hit_id = []
     evalue = []
-    best_domain_evalue = []
     bitscore = []
     bias = []
+    dom_start = []
+    dom_end = []
     location = []
-    alens = []
-    slength = []
-    flag1 = []
-    flag2 = []
+    orientation = []
+    flag = []
 
-    def append_hit(genome_id: str, gene: str, item) -> None:
+    ind_map = 'ABCDEFGHIJKLM'
+    def append_hit(genome_id: str, gene: str, hit, hsp) -> None:
+        # Save hit domains and relevant metadata
         result_target.append(genome_id)
         query_id.append(gene)
-        hit_id.append(item.id)
-        evalue.append(item.evalue)
-        best_domain_evalue.append(item.hsps[0].evalue)
-        bitscore.append(item.bitscore)
-        bias.append(item.bias)
-        s = r"# ([0-9]+) # ([0-9]+)"
+        hit_id.append(hit.id + "_" + ind_map[hsp.domain_index-1]) # hit in the form of contig_geneNo_domA/B/C
+        evalue.append(hsp.evalue) # domain independent evalue
+        bitscore.append(hsp.bitscore) # domain bitscore
+        bias.append(hsp.bias) # domain bias
+        dom_start.append(hsp.env_start) 
+        dom_end.append(hsp.env_end)
+
+        # grab description parameters
+        s = r"# ([0-9]+) # ([0-9]+) # (-?1) #"
+        # location = full protein length
         location.append(
-            re.match(s, item.description).group(1)
+            re.match(s, hit.description).group(1)
             + "-"
-            + re.match(s, item.description).group(2)
+            + re.match(s, hit.description).group(2) 
         )
-        # grab full alignment length (need to sum all domains)
-        alen = 0
-        for domain in item.hsps:
-            alen += domain.aln_span
-        alens.append(alen)
-        slength.append(
-            int(re.match(s, item.description).group(2))
-            - int(re.match(s, item.description).group(1))
-        )
+        orientation.append(re.match(s, hit.description).group(3))
+ 
 
     # Parse through files in output directory
-    for file in glob.glob(str(hits_path)):
+    for file in hits_path.glob("*.domtblout"):
         # RegEx for the GenomeID (double checking that file is really a genome)
         try:
             s = r"([\w]+_[\w]+_[\d]+\.[\d])"
-            genome_id = re.search(s, file).group()
-        except Exception:
+            genome_id = re.search(s, str(file)).group()
+        except Exception as e:
+            print(f"An error occurred: {e}")
             continue
-
-        # Parse file using SearchIO/HmmerIO
-        for result in SearchIO.parse(file, "hmmer3-text"):
-            for item in result.hits:
-                # grab gene name
-                s = r"([a-zA-Z]+)"  # ex. nifHDK, pchlide
-                gene = re.findall(s, result.id)[0]
-
+            
+        # Parse file using SearchIO/HmmerIO w/ --domtblout option
+        for result in SearchIO.parse(file, "hmmsearch3-domtab"):
+            # grab gene name, ex. nifHDK, pchlide
+            gene = re.findall(r"([a-zA-Z]+)", result.id)[0]
+            
+            for hit in result.hits:
                 # Check for positive bitscore and append the data to the corresponding lists
-                if item.bitscore > 0 and item.evalue < 0.01:
-                    append_hit(genome_id, gene, item)
+                if hit.bitscore <= 0 and hit.evalue >= 0.01:
+                    continue
 
-                    # check if full seq and best domain e-val are significant
-                    if item.hsps[0].evalue < 0.01:
-                        flag1.append(0)
-                    else:
-                        # check if "full sequence Eval is sig but best domain is not"
-                        flag1.append(1)
+                for hsp in hit.hsps:
+                    if hsp.bitscore <= 0 and hsp.evalue >= 0.01:
+                        continue
+                    append_hit(genome_id, gene, hit, hsp)
 
                     # check if bitscore >> bias (same order of magnitude) as bitscore
-                    if item.bias != 0 and item.bitscore / item.bias > 10:
-                        flag2.append(0)
-                    elif item.bias == 0:
-                        flag2.append(0)
+                    if hit.bias != 0 and hit.bitscore / hit.bias > 10:
+                        flag.append(0)
+                    elif hit.bias == 0:
+                        flag.append(0)
                     else:
-                        flag2.append(1)
+                        flag.append(1)
 
     # create and store dataframe
     hits = pd.DataFrame(
@@ -148,67 +143,86 @@ def parse_hits(hits_path: Path, outdir: Path) -> pd.DataFrame:
             "Gene": query_id,
             "Hit": hit_id,
             "E-value": evalue,
-            "Best Domain E-value": best_domain_evalue,
             "Bit Score": bitscore,
             "Bias": bias,
+            "Domain Start": dom_start,
+            "Domain End": dom_end,
             "Location": location,
-            "Alignment Length": alens,
-            "Sequence Length": slength,
-            "Flag_Eval": flag1,
-            "Flag_Bias": flag2,
+            "Orientation": orientation,
+            "Flag_Bias": flag
         }
     )
 
-    # add taxonomy info
-    hits = pd.merge(hits, gtdb_taxonomy, on="GenomeID", how="left")
+    hits.drop_duplicates(inplace=True)
     return hits
 
-
 def parse_tophits(hits: pd.DataFrame, outdir: Path, min_genes: int, gene_range: int) -> None:
-    # save "contig" as col
-    hits["contig"] = hits["Hit"].str.split("_").str[:-1].str.join("_")
+    # save "contig" and "pos_num" as col
+    hits["contig"] = hits["Hit"].str.split("_").str[:-2].str.join("_")
+    hits['pos_num'] = hits["Hit"].str.split("_").str[-2].astype(int)
+    hits['operon'] = np.nan
 
-    # multi-index to cluster by genome, contig
-    hits.set_index(["GenomeID", "contig"], inplace=True)
-    hits.sort_index(inplace=True)
-    hits.drop_duplicates(inplace=True)
-
-    # filter for genome, contig with at least 3 unique genes (nifHDKENB)
-    filtered_df = hits.groupby(level=["GenomeID", "contig"]).filter(
-        lambda x: x["Gene"].nunique() >= min_genes
+    # pre-filter to remove contigs strands with less than min_genes unique nif genes
+    hits = filter_groups_by_unique_counts(
+        hits,
+        group_cols=["GenomeID", "contig", "Orientation"],
+        requirements={
+        "Gene": 3,
+        "Hit": 3
+        }
     )
 
-    # make sure these 3 unique genes are not the same hit (i.e. not the same gene in reference genome)
-    filtered_df2 = filtered_df.groupby(level=["GenomeID", "contig"]).filter(
-        lambda x: x["Hit"].nunique() >= min_genes
+    # store genomes meeting criteria in new dataframe
+    genomes_to_keep = pd.DataFrame(columns=hits.columns)
+
+    # iterate through each genome and contig to check criteria
+        # each operon has at least 3 unique nif genes within a gene range of 15 (default)
+    for (genome, contig), tmp in hits.groupby(["GenomeID", "contig"]):
+
+            # split contigs into operons when 1) strand changes or 2) distance between genes is greater than limit
+            operon_counter = 1
+            
+            # sort hits by gene position and orientation
+            # for each strand, cluster genes by distance and assign operon labels
+            for _, strand in tmp.groupby("Orientation"):
+                
+                # use hierarchical clustering to group neighboring genes
+                strand = strand.sort_values("pos_num")
+                pos = strand["pos_num"].to_numpy().reshape(-1, 1)
+
+                # cluster genes by distance
+                Z = linkage(pos, method = 'single') # try method = 'ward' but singe prob better
+                clusters = fcluster(Z, t = gene_range, criterion = 'distance')
+                clusters = clusters.astype(int) + operon_counter -1 # convert to int for easier handling
+
+                strand["operon"] = clusters
+
+                # for each cluster, only keep clusters with at least 3 unique genes
+                strand = filter_groups_by_unique_counts(
+                    strand,
+                    group_cols=["GenomeID", "contig", "operon"],
+                    requirements={
+                    "Gene": 3,
+                    "Hit": 3
+                    }
+                )
+
+                # save clusters to tmp2
+                operon_counter += clusters.max()
+                genomes_to_keep = pd.concat([genomes_to_keep, strand])
+
+    # add taxonomy info
+    gtdb_taxonomy = pd.read_csv(
+        "GTDB_taxonomy.gz",
+        header=None,
+        sep="\t",
+        names=["GenomeID", "GTDB"],
     )
-
-    genomes_to_keep = pd.DataFrame(columns=filtered_df2.columns)
-    # iterate through each genome and contig
-    for genome in filtered_df2.index.get_level_values(0).unique():
-        for contig in filtered_df2.loc[genome].index.get_level_values(0).unique():
-            tmp = filtered_df2.loc[(genome, contig)]
-
-            # only keep numbers that have clusters >= min_genes
-            pos_clusters = cluster_pos(tmp.Hit.unique(), gene_range)
-
-            # for each cluster, find the best combination of genes (min e-value)
-            for cl in pos_clusters:
-                pos = [contig + "_" + str(p) for p in cl]
-                no_pos = len(pos)
-
-                # need at least min_genes genes to continue
-                if no_pos < min_genes:
-                    continue
-
-                # only keep hits that are in the cluster
-                tmp2 = tmp[tmp.Hit.isin(pos)].reset_index()
-
-                genomes_to_keep = pd.concat([genomes_to_keep, tmp2])
+    
+    genomes_to_keep = pd.merge(genomes_to_keep, gtdb_taxonomy, on="GenomeID", how="left")
 
     # export
     outdir.mkdir(parents=True, exist_ok=True)
-    genomes_to_keep.to_feather(str(outdir) + "_hits.feather")
     genomes_to_keep.to_csv(str(outdir) + "_hits.csv", index=False)
 
 

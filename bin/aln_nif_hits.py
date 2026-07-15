@@ -28,9 +28,11 @@ nifK = nif[nif.Gene == 'nifK']
 nifB = nif[nif.Gene == 'nifB']
 nifE = nif[nif.Gene == 'nifE']
 nifN = nif[nif.Gene == 'nifN']
+anfO = nif[nif.Gene == 'anfO']
+nifG = nif[nif.Gene == 'anfG' or nif.Gene == 'vnfG']
 
-gene_list = [nifH, nifD, nifK, nifB, nifE, nifN]
-gene_names = ['nifH', 'nifD', 'nifK', 'nifB', 'nifE', 'nifN']
+gene_list = [nifH, nifD, nifK, nifB, nifE, nifN, anfO, nifG]
+gene_names = ['nifH', 'nifD', 'nifK', 'nifB', 'nifE', 'nifN', 'anfO', 'nifG']
 
 if args.reload_fasta: # should skip if fasta sequences have already been extracted
     

@@ -5,17 +5,51 @@ import glob
 import re
 import sys
 import json
+import argparse
+import warnings
+from pathlib import Path
+
+from cluster_pos import cluster_pos
+from helper import str_to_bool
 
 from Bio import SeqIO
 from pygenomeviz import GenomeViz
 
-# organize microbeannotator results
-nif = pd.read_csv('../results/final/nif_final.csv', index_col=[0,1])
+warnings.filterwarnings("ignore", category=FutureWarning)
 
-gene_abv = {'K00532': 'hydA'} # store ko2gene
-gene_data = pd.DataFrame(columns = ['genome', 'contig', 'query_id', 'gene', 'ko_number', 'start', 'end', 'orientation'])
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Organize, export, and plot nif genetic neighborhoods. "
+            "Gene annotations are derived from microbeannotator."
+        )
+    )
+    parser.add_argument(
+        "--data",
+        type=str_to_bool,
+        default=True,
+        help="Pull operon organization from Microbeannotator output.",
+    )
+    parser.add_argument(
+        "--export",
+        type=str_to_bool,
+        default=False, # way to make this default to T if above is T
+        help="Export operon org data to metadata.json for upload to DiazoDB.",
+    )
+
+    parser.add_argument(
+        "--plot",
+        type=str_to_bool,
+        default=False,
+        help="Minimum number of nif genes required to be considered a tophit cluster (default: 3)."
+    )
+    
+       
+    return parser.parse_args()
 
 def ko2gene(ko):
+    gene_abv = {'K00532': 'hydA'} # store ko2gene
+
     try:
         return gene_abv[ko]
     except:
@@ -27,73 +61,80 @@ def ko2gene(ko):
                 gene_abv[ko] = gene
                 return gene
 
-# grab annotation files
-for file in glob.glob(f"../operon-org/microbeannotator/annotation_results/*.annot"):
-    # convet ko_number to gene abv
-    annot = pd.read_csv(file, sep = '\t')
-    annot['gene'] = annot['ko_number'].apply(ko2gene)
-    
-    # grab genome and contig from file name
-    str = r'([A-Z_]+[A-Z0-9.]+)_([A-Z_]*[A-Z0-9.]+)'
-    genome = re.search(str, file).group(1)
-    annot['genome'] = genome
-    contig = re.search(str, file).group(2)
-    annot['contig'] = contig
+def get_plot_data():
+        # organize microbeannotator results
+    nif = pd.read_csv('../results/final/nif_final.csv', index_col=[0,1])
+    gene_data = pd.DataFrame(columns = ['genome', 'contig', 'query_id', 'gene', 'ko_number', 'start', 'end', 'orientation'])
 
-    # grab start, end, orientation of each gene
-    input = glob.glob(f"../operon-org/input-fastas/{genome}_{contig}_operon.fasta")[0]
-    for result in SeqIO.parse(input, "fasta"):
-        start = int(result.description.split('# ')[1])
-        end = int(result.description.split('# ')[2])
-        orientation = int(result.description.split('# ')[3])
-        if result.id in annot.index:
-            annot.loc[result.id, 'start'] = start
-            annot.loc[result.id, 'end'] = end
-            annot.loc[result.id, 'orientation'] = orientation
-    
-    for row in nif.loc[(genome, contig)].iterrows():
-        annot.loc[row[1].Hit, 'gene'] = row[1].Gene
-        annot.loc[row[1].Hit, 'start'] = int(row[1].Location.split('-')[0])
-        annot.loc[row[1].Hit, 'end'] = int(row[1].Location.split('-')[1])
-        annot.loc[row[1].Hit, 'orientation'] = 1 # BUG
-    
-    annot.reset_index(inplace=True)
-    gene_data = pd.concat([gene_data, annot[['genome', 'contig', 'query_id', 'gene', 'ko_number', 'start', 'end', 'orientation']]])
+    # grab annotation files
+    for file in glob.glob(f"../operon-org/microbeannotator/annotation_results/*.annot"):
+        # convet ko_number to gene abv
+        annot = pd.read_csv(file, sep = '\t')
+        annot['gene'] = annot['ko_number'].apply(ko2gene)
+        
+        # grab genome and contig from file name
+        str = r'([A-Z_]+[A-Z0-9.]+)_([A-Z_]*[A-Z0-9.]+)'
+        genome = re.search(str, file).group(1)
+        annot['genome'] = genome
+        contig = re.search(str, file).group(2)
+        annot['contig'] = contig
 
-gene_data.to_csv('../operon-org/operon-org-plot-data.csv')
+        # grab start, end, orientation of each gene
+
+        input = glob.glob(f"../operon-org/input-fastas/{genome}_{contig}_operon.fasta")[0]
+        for result in SeqIO.parse(input, "fasta"):
+            start = int(result.description.split('# ')[1])
+            end = int(result.description.split('# ')[2])
+            orientation = int(result.description.split('# ')[3])
+            if result.id in annot.index:
+                annot.loc[result.id, 'start'] = start
+                annot.loc[result.id, 'end'] = end
+                annot.loc[result.id, 'orientation'] = orientation
+        
+        for row in nif.loc[(genome, contig)].iterrows():
+            annot.loc[row[1].Hit, 'gene'] = row[1].Gene
+            annot.loc[row[1].Hit, 'start'] = int(row[1].Location.split('-')[0])
+            annot.loc[row[1].Hit, 'end'] = int(row[1].Location.split('-')[1])
+            annot.loc[row[1].Hit, 'orientation'] = 1 # BUG
+        
+        annot.reset_index(inplace=True)
+        gene_data = pd.concat([gene_data, annot[['genome', 'contig', 'query_id', 'gene', 'ko_number', 'start', 'end', 'orientation']]])
+
+    gene_data.to_csv('../operon-org/operon-org-plot-data.csv')
 
 # update metadata.json to store gene data
-with open('../results/final/metadata.json', 'a') as file:
-    metadata = json.load(file)
+def export_metadata():
+    gene_data = pd.read_csv('../operon-org/operon-org-plot-data.csv', index_col=[0,1])
+    print(gene_data)
+    with open('../results/final/metadata.json', 'r+') as file:
+        metadata = json.load(file)
 
-    for cluster in metadata.items():
-        print(cluster)
-        cluster_gene_data = gene_data.loc[gene_data['genome'] == cluster[1]['genome']]
-        print(cluster_gene_data)
+        for cluster in metadata.items():
+            print(cluster[1])
+            cluster_gene_data = gene_data.loc[gene_data['genome'] == cluster[1]['genome']]
+            print(cluster_gene_data)
 
-        genes = []
-        for gene in cluster_gene_data.iterrows():
-            # for each nif cluster, store surrounding gene info as list
-            genes.append({'gene_id': gene[1].query_id,
-                          'gene_name': gene[1].gene,
-                          'start': gene[1].start,
-                          'end': gene[1].end,
-                          'direction': gene[1].orientation,
-                          'product': gene[1].ko_number})
-        # add operon info to metadata for each cluster (operon start, end, and genes in operon)
-        operon = {'region_start': cluster_gene_data['start'].min(),
-                  'region_end': cluster_gene_data['end'].max(),
-                  'genes': genes}
-        
-        metadata[cluster[1]['operon']] = operon
+            genes = []
+            for gene in cluster_gene_data.iterrows():
+                # for each nif cluster, store surrounding gene info as list
+                genes.append({'gene_id': gene[1].query_id,
+                            'gene_name': gene[1].gene,
+                            'start': gene[1].start,
+                            'end': gene[1].end,
+                            'direction': gene[1].orientation,
+                            'product': gene[1].ko_number})
+            # add operon info to metadata for each cluster (operon start, end, and genes in operon)
+            operon = {'region_start': cluster_gene_data['start'].min(),
+                    'region_end': cluster_gene_data['end'].max(),
+                    'genes': genes}
+            
+            metadata[cluster[1]['operon']] = operon
 
-    # save updated metadata
-    json.dump(metadata, file)
+        # save updated metadata
+        json.dump(metadata, file)
 
-# plot operon organization
-to_plot = sys.argv[0]
 
-if to_plot:
+def plot(): # plot operon organization
     gene_data = pd.read_csv('../operon-org/operon-org-plot-data.csv', index_col=[0,1])
     genome_list = gene_data.index.get_level_values(0).unique().tolist()
 
@@ -133,3 +174,26 @@ if to_plot:
                 text_kws=dict(rotation=0, vpos="center", hpos="center"))
 
     gv.savefig("../operon-org/ALL.png")
+
+def main() -> None:
+    args = parse_args()
+
+    if args.data:
+        get_plot_data()
+    else:
+        print("Skipped pulling operon organization data. Last file update XXXX", flush=True)
+
+    if args.export:
+        print("Exporting operon organization to metadata.json")
+        export_metadata()
+    else:
+        print("Skipped metadata export. Last export XXXX", flush=True)
+
+    if args.plot:
+        plot()
+    else:
+        print("Skipped plotting operon diagrams", flush=True)
+
+
+if __name__ == "__main__":
+    main()

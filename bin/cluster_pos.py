@@ -1,20 +1,28 @@
 import numpy as np
 from scipy.cluster.hierarchy import linkage, fcluster
 
-def cluster_pos(pos, limit = 15):
-    # get gene position from hit
-    pos_num = np.array([int(p.split('_')[-1]) for p in pos])
+# switch operons when 1) strand changes or 2) distance between genes is greater than limit
+def cluster_operon(hits, limit = 15):
 
-    # use hierarchical clustering to group neighboring genes
-    Z = linkage(pos_num.reshape(-1, 1), method = 'ward')
-    clusters = fcluster(Z, t = limit, criterion = 'distance')
-
-    # only keep clusters with at least 3 genes
-    cluster_no = [item for item in set(clusters) if list(clusters).count(item) >= 3]
-
-    # store as list of lists
-    filtered = []
-    for cl in cluster_no:
-        filtered.append(list(pos_num[clusters == cl]))
+    hits = hits.copy()
     
-    return filtered
+    # sort hits by gene position and orientation
+    hits["pos_num"] = hits["Hit"].str.split("_").str[-2].astype(int)
+    # hits = hits.sort_values(["pos_num", "Orientation"])
+
+    operon_counter = 1
+    operon_labels = {}
+
+    for orient, strand_hits in hits.groupby("Orientation", sort=False):
+        
+        # use hierarchical clustering to group neighboring genes
+        strand_hits = strand_hits.sort_values("pos_num")
+        pos = strand_hits["pos_num"].to_numpy().reshape(-1, 1)
+
+        # cluster genes by distance
+        Z = linkage(pos, method = 'ward') # try method = 'single'
+        clusters = fcluster(Z, t = limit, criterion = 'distance')
+        
+        
+
+    return clusters

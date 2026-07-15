@@ -8,6 +8,7 @@ from Bio import SeqIO
 from cluster_pos import cluster_pos
 
 # make sure gene clusters have at least nifHDK
+# need an exception for vnf/anf and/or cyanos 
 def gene_check(genes):
     if genes.__contains__('nifH'):
         if genes.__contains__('nifD'):
@@ -52,6 +53,23 @@ for genome in filtered_nif2.index.get_level_values(0).unique(): # iterate throug
             # # only keep hits that are in the cluster
             # tmp2 = tmp[tmp.Hit.isin(pos)].reset_index()
 
+            # replace "nif" with alternative gene name
+            if 'anfO' in tmp.residue_match.nunique():
+                for item in tmp.iterrows():
+                    item['residue_match'] = item['residue_match'].replace('nifH', 'anfH')
+                    item['residue_match'] = item['residue_match'].replace('nifD', 'anfD')
+                    item['residue_match'] = item['residue_match'].replace('nifK', 'anfK')
+                    item['residue_match'] = item['residue_match'].replace('nifG', 'anfG')
+            elif 'vnfG' in tmp.residue_match.nunique():
+                for item in tmp.iterrows():
+                    item['residue_match'] = item['residue_match'].replace('nifH', 'vnfH')
+                    item['residue_match'] = item['residue_match'].replace('nifD', 'vnfD')
+                    item['residue_match'] = item['residue_match'].replace('nifK', 'vnfK')
+                    item['residue_match'] = item['residue_match'].replace('nifG', 'vnfG')
+                    item['residue_match'] = item['residue_match'].replace('nifE', 'vnfE')
+                    item['residue_match'] = item['residue_match'].replace('nifN', 'vnfN')
+
+
             # check if all genes are present
             if gene_check(tmp.residue_match.to_list()):
                 # get index
@@ -67,6 +85,7 @@ filtered_nif2.sort_index(inplace = True)
 filtered_nif2['Gene'] = filtered_nif2['residue_match']
 filtered_nif2 = filtered_nif2[['Gene', 'E-value', 'Bit Score', 'Location', 'Orientation', 'Alignment Length', 'Sequence Length', 'GTDB']]
 filtered_nif2.drop_duplicates(inplace = True)
+
 
 # export csv with each gene as individual rowfiltered_nif2.to_feather(f'../results/final/nif_final.feather')
 filtered_nif2.to_csv(f'../results/final/nif_final.csv')
@@ -135,7 +154,7 @@ GTDB_metadata = pd.read_csv('GTDB_metadata.gz', sep = '\t', usecols=['accession'
 
 # def for sorting gene order
 def sort_order(g):
-    order = ['H', 'D', 'K', 'B', 'E', 'N']
+    order = ['H', 'D', 'K', 'B', 'E', 'N', 'O', 'G']
     return order.index(g)
 
 # get gene set (i.e. HDKEN)
@@ -192,21 +211,22 @@ nifE = nif[(nif.Gene == 'nifE')].copy()
 nifN = nif[(nif.Gene == 'nifN')].copy()
 nifNB = nif[(nif.Gene == 'nifNB')].copy()
 
-# anfH = nif[(nif.Gene == 'anfH')].copy()
-# anfD = nif[(nif.Gene == 'anfD')].copy()
-# anfK = nif[(nif.Gene == 'anfK')].copy()
-# anfO = nif[(nif.Gene == 'anfO')].copy()
-# anfG = nif[(nif.Gene == 'anfG')].copy()
+anfH = nif[(nif.Gene == 'anfH')].copy()
+anfD = nif[(nif.Gene == 'anfD')].copy()
+anfK = nif[(nif.Gene == 'anfK')].copy()
+anfO = nif[(nif.Gene == 'anfO')].copy()
+anfG = nif[(nif.Gene == 'anfG')].copy()
 
-# vnfH = nif[(nif.Gene == 'vnfH')].copy()
-# vnfD = nif[(nif.Gene == 'vnfD')].copy()
-# vnfK = nif[(nif.Gene == 'vnfK')].copy()
-# vnfO = nif[(nif.Gene == 'vnfO')].copy()
-# vnfG = nif[(nif.Gene == 'vnfG')].copy()
+vnfH = nif[(nif.Gene == 'vnfH')].copy()
+vnfD = nif[(nif.Gene == 'vnfD')].copy()
+vnfK = nif[(nif.Gene == 'vnfK')].copy()
+vnfG = nif[(nif.Gene == 'vnfG')].copy()
+vnfE = nif[(nif.Gene == 'vnfE')].copy()
+vnfK = nif[(nif.Gene == 'vnfK')].copy()
 
 
-gene_list = [nifH, nifD, nifK, nifB, nifE, nifN, nifNB]
-gene_names = ['nifH', 'nifD', 'nifK', 'nifB', 'nifE', 'nifN', 'nifNB']
+gene_list = [nifH, nifD, nifK, nifB, nifE, nifN, nifNB, anfH, anfD, anfK, anfO, anfG, vnfH, vnfD, vnfK, vnfG, vnfE]
+gene_names = ['nifH', 'nifD', 'nifK', 'nifB', 'nifE', 'nifN', 'nifNB','anfH', 'anfD', 'anfK', 'anfO', 'anfG', 'vnfH', 'vnfD', 'vnfK', 'vnfG', 'vnfE']
 
 # get fasta sequences for each gene & export to fasta
 for gene, name in zip(gene_list, gene_names):

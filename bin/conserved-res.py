@@ -127,7 +127,7 @@ nif.reset_index(level='Gene', inplace = True)
 nif.sort_index(inplace = True)
 
 # update residue match column in nif df
-for gene in 'HDKENB':
+for gene in 'HDKENBOG':
     for genome, cols in eval(f"all_genes_checked[nif{gene}].iterrows()"):
         nif.loc[(genome[0], genome[1]), 'residue_match'] = "nif" + gene
     
@@ -137,7 +137,7 @@ for gene in 'HDKENB':
     minl = config[gene]['max-length']
     exec(f"{gene} = nif[((nif.residue_match == '{gene}') & (nif.Gene == '{gene}') & (nif['Alignment Length'] >= {minl}) & (nif['Alignment Length'] < {maxl}))]", globals())
 
-nif = pd.concat([nifH, nifD, nifK, nifE, nifN, nifNB, nifB])
+nif = pd.concat([nifH, nifD, nifK, nifE, nifN, nifNB, nifB, anfO, nifG])
 nif.sort_index(inplace = True)
 
 nif.to_csv(f'../results/tmp/nif_rescheck_nofilt.csv')

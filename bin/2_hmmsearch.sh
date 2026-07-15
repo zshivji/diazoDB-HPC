@@ -28,7 +28,10 @@ echo ""
 #HMM search on GTDB archaea
 for file in ../all_rep_proteins_aa/archaea/*; do
         f="${file##*/}"
-        hmmsearch ../HMMs/combined_nif_03192026.hmm "$file" >> "../results/hmmsearch_results/archaea/${f%.faa}_nif.out"
+        hmmsearch \
+            --domtblout "../results/hmmsearch_results/archaea/${f%.faa}_nif.domtblout" \ 
+            -o "../results/hmmsearch_results/archaea/${f%.faa}_nif.out" \
+            ../HMMs/combined_nif_03192026.hmm "$file"
 done
 
 chgrp hpc_enviromics ../results/archaea/hmmsearch_results/*
@@ -38,7 +41,10 @@ echo "Archaea completed"
 #HMM search on GTDB bacteria
 for file in ../all_rep_proteins_aa/bacteria/*; do
         f="${file##*/}"
-        hmmsearch ../HMMs/combined_nif_03192026.hmm "$file" >> "../results/hmmsearch_results/bacteria/${f%.faa}_nif.out"
+        hmmsearch \
+            --domtblout "../results/hmmsearch_results/bacteria/${f%.faa}_nif.domtblout" \
+            -o "../results/hmmsearch_results/bacteria/${f%.faa}_nif.out" \
+            ../HMMs/combined_nif_03192026.hmm "$file" 
 done
 
 for file in ../results/bacteria/hmmsearch_results/*; do
