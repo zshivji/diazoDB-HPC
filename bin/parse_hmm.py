@@ -15,14 +15,11 @@ import argparse
 import glob
 import re
 import warnings
-from pathlib import Path
 import os
-
 import pandas as pd
 import numpy as np
+from pathlib import Path
 from Bio import SearchIO
-
-import numpy as np
 from scipy.cluster.hierarchy import linkage, fcluster
 from helper import filter_groups_by_unique_counts
 
@@ -112,7 +109,7 @@ def parse_hits(hits_path: Path, outdir: Path) -> pd.DataFrame:
         except Exception as e:
             print(f"An error occurred: {e}")
             continue
-            
+
         # Parse file using SearchIO/HmmerIO w/ --domtblout option
         for result in SearchIO.parse(file, "hmmsearch3-domtab"):
             # grab gene name, ex. nifHDK, pchlide
@@ -120,11 +117,11 @@ def parse_hits(hits_path: Path, outdir: Path) -> pd.DataFrame:
             
             for hit in result.hits:
                 # Check for positive bitscore and append the data to the corresponding lists
-                if hit.bitscore <= 0 and hit.evalue >= 0.01:
+                if hit.bitscore <= 0 or hit.evalue >= 0.001:
                     continue
 
                 for hsp in hit.hsps:
-                    if hsp.bitscore <= 0 and hsp.evalue >= 0.01:
+                    if hsp.bitscore <= 0 or hsp.evalue >= 0.001:
                         continue
                     append_hit(genome_id, gene, hit, hsp)
 
@@ -202,8 +199,8 @@ def parse_tophits(hits: pd.DataFrame, outdir: Path, min_genes: int, gene_range: 
                     strand,
                     group_cols=["GenomeID", "contig", "operon"],
                     requirements={
-                    "Gene": 3,
-                    "Hit": 3
+                    "Gene": min_genes,
+                    "Hit": min_genes
                     }
                 )
 
@@ -211,14 +208,11 @@ def parse_tophits(hits: pd.DataFrame, outdir: Path, min_genes: int, gene_range: 
                 operon_counter += clusters.max()
                 genomes_to_keep = pd.concat([genomes_to_keep, strand])
 
-    # add taxonomy info
-    gtdb_taxonomy = pd.read_csv(
-        "GTDB_taxonomy.gz",
-        header=None,
-        sep="\t",
-        names=["GenomeID", "GTDB"],
-    )
-    
+    # record which gene has the highest bitscore for each protein
+    genomes_to_keep["top_hit"] = (genomes_to_keep.sort_values("Bit Score", ascending=False).groupby(["GenomeID", "contig", "Hit"])["Gene"].transform("first"))
+
+    # add taxonomy info (make sure metadata is the same release as the GTDB rep seqs)
+    gtdb_taxonomy = pd.read_csv("GTDB_metadata.gz", sep="\t", usecols=['accession', 'gtdb_taxonomy']).rename(columns={"accession": "GenomeID", "gtdb_taxonomy": "GTDB"})
     genomes_to_keep = pd.merge(genomes_to_keep, gtdb_taxonomy, on="GenomeID", how="left")
 
     # export

@@ -4,17 +4,8 @@
 #SBATCH --ntasks=4   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=1   # number of nodes
 #SBATCH --mem 4GB   # memory per CPU core
-#SBATCH -J hmmsearch.e%j   # job name
-
-# Notify at the beginning, end of job and on failure.
-#SBATCH --mail-user=zshivji@caltech.edu   # email address
-#SBATCH --mail-type=BEGIN
-#SBATCH --mail-type=END
-#SBATCH --mail-type=FAIL
-
-## /SBATCH -p general # partition (queue)
-## /SBATCH -o slurm.%N.%j.out # STDOUT
-## /SBATCH -e slurm.%N.%j.err # STDERR
+#SBATCH --job-name=hmmsearch   # job name
+#SBATCH -o logs/%x-%j.out # STDOUT
 
 eval "$(conda shell.bash hook)"
 conda activate /resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm
@@ -26,41 +17,32 @@ echo "======================================================"
 echo ""
 
 #HMM search on GTDB archaea
-for file in ../all_rep_proteins_aa/archaea/*; do
+for file in /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_232/archaea/*; do
         f="${file##*/}"
         hmmsearch \
-            --domtblout "../results/hmmsearch_results/archaea/${f%.faa}_nif.domtblout" \ 
-            -o "../results/hmmsearch_results/archaea/${f%.faa}_nif.out" \
-            ../HMMs/combined_nif_03192026.hmm "$file"
+            --domtblout "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/archaea/${f%.faa}_nif.domtblout" \
+            -o "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/archaea/${f%.faa}_nif.out" \
+            /resnick/groups/enviromics/zahra/diazoDB-HPC/HMMs/combined_nif_07202026.hmm "$file"
 done
 
-chgrp hpc_enviromics ../results/archaea/hmmsearch_results/*
+chgrp hpc_enviromics /resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/archaea/*
 
 echo "Archaea completed"
 
 #HMM search on GTDB bacteria
-for file in ../all_rep_proteins_aa/bacteria/*; do
+for file in /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_232/bacteria/*; do
         f="${file##*/}"
         hmmsearch \
-            --domtblout "../results/hmmsearch_results/bacteria/${f%.faa}_nif.domtblout" \
-            -o "../results/hmmsearch_results/bacteria/${f%.faa}_nif.out" \
-            ../HMMs/combined_nif_03192026.hmm "$file" 
+            --domtblout "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/bacteria/${f%.faa}_nif.domtblout" \
+            -o "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/bacteria/${f%.faa}_nif.out" \
+            /resnick/groups/enviromics/zahra/diazoDB-HPC/HMMs/combined_nif_07202026.hmm "$file" 
 done
 
-for file in ../results/bacteria/hmmsearch_results/*; do
-        chgrp hpc_enviromics ../results/bacteria/hmmsearch_results/"$file"
+for file in /resnick/groups/enviromics/zahra/diazoDB-HPC/results/bacteria/hmmsearch_results/*; do
+        chgrp hpc_enviromics "$file"
 done
 
 echo "Bacteria completed"
-
-#for file in ../Zostera_marina_isolates/*.faa; do # takes 2 min
-#        f="${file##*/}"
-#        hmmsearch ../HMMs/combined_nif_04012025.hmm "$file" >> "../results/Zostera/hmmsearch_results/${f%.faa}_nif.out"
-#done
-
-#chgrp hpc_enviromics ../results/Zostera/hmmsearch_results/*
-
-#echo "Zostera completed"
 
 echo ""
 echo "======================================================"

@@ -4,10 +4,10 @@ import glob
 
 def load_nif(update_index, archaea_only = False):
     if archaea_only:
-        nif = pd.read_feather('results/archaea/nif.feather')
+        nif = pd.read_csv('../results/hmmsearch_results/archaea_hits.csv')
     else:
-        nif_archaea = pd.read_feather('results/archaea/nif.feather')
-        nif_bacteria = pd.read_feather('results/bacteria/nif.feather')
+        nif_archaea = pd.read_csv('../results/hmmsearch_results/archaea_hits.csv')
+        nif_bacteria = pd.read_csv('../results/hmmsearch_results/bacteria_hits.csv')
         nif = pd.concat([nif_archaea, nif_bacteria], ignore_index=True)
 
     nif.reset_index(inplace = True)
