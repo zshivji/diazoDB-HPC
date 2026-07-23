@@ -1,64 +1,134 @@
 environments:
   cluster:
     kind: slurm
-  
+  parse_hmm:
+    kind: conda
+    path: /resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm/
+
+
 pipeline:
   stages:
-    cluster_HMM_seeds:
-      kind: sbatch
-      script_path: bin/1_cluster.sh
+    download-gtdb:
+      kind: shell-script
       environment: cluster
+      description: Download and register GTDB representative protein FASTA data.
+      script_path: bin/0_download-gtdb.sh
       inputs:
-        - path: HMM_seeds/
-          storage: dvc
+        - bin/0_download-gtdb.sh
       outputs:
-        - path: alignments/
-          storage: git
-        - path: alignments/
-          storage: git
-      # sbatch_options:
-      #   - --cpus
+        - protein_faa_reps_latest/
 
-    align_mafft:
-      kind: sbatch
+    align-and-build-hmms:
+      kind: shell-script
+      environment: cluster:parse_hmm
+      description: Cluster seed sequences, align them with MAFFT, and build combined HMM profiles.
       script_path: bin/1_align_mafft.sh
-      environment: cluster
       inputs:
-        - path: HMM_seeds/
-          storage: dvc
+        - HMM_seeds/
+        - bin/1_align_mafft.sh
       outputs:
-        - path: alignments/
-          storage: git
-      # sbatch_options:
-      #   - --cpus
-    
-    hmm_search:
-      kind: sbatch
+        - alignments/
+        - HMMs/
+
+    hmmsearch-gtdb:
+      kind: shell-script
+      environment: cluster:parse_hmm
+      description: Run hmmsearch across GTDB archaea and bacteria representative proteins.
       script_path: bin/2_hmmsearch.sh
-      environment: cluster
       inputs:
-        - all_rep_proteins_aa/
-        - HMMs/combined_nif.hmm
+        - from_stage_outputs: align-and-build-hmms
+        - protein_faa_reps_latest/
+        - bin/2_hmmsearch.sh
       outputs:
         - results/hmmsearch_results/
-    parse_hmm:
-      kind: sbatch
+
+    parse-hmm-hits:
+      kind: shell-script
+      environment: cluster:parse_hmm
+      description: Parse hmmsearch domtblout files and keep candidate nif hit clusters.
       script_path: bin/3_parse_hmm.sh
-      environment: cluster
       inputs:
-        - 
+        - from_stage_outputs: hmmsearch-gtdb
+        - bin/3_parse_hmm.sh
+        - bin/parse_hmm.py
+        - bin/helper.py
+        - bin/GTDB_metadata.gz
       outputs:
-    conserved_res:
-      kind: sbatch
-      script_path: bin/3_parse_hmm.sh
-      environment: cluster
+        - results/hmmsearch_results/archaea_hits.csv
+        - results/hmmsearch_results/bacteria_hits.csv
+
+    conserved-residue-filter:
+      kind: shell-script
+      environment: cluster:parse_hmm
+      description: Perform conserved residue checks to refine gene assignments.
+      script_path: bin/4_conserved_res.sh
       inputs:
+        - from_stage_outputs: parse-hmm-hits
+        - bin/4_conserved_res.sh
+        - bin/conserved-res.py
+        - bin/nif-config.json
+        - protein_faa_reps_latest/
       outputs:
-    export: 
-      kind: sbatch
-      script_path: bin/
-      environment: cluster
+        - results/tmp/
+
+    final-export:
+      kind: shell-script
+      environment: cluster:parse_hmm
+      description: Export final nif calls, summaries, metadata, and FASTA files.
+      script_path: bin/5_final_export.sh
       inputs:
+        - from_stage_outputs: make-trees
+        - from_stage_outputs: conserved-residue-filter
+        - bin/5_final_export.sh
+        - trees/
+        - bin/final-fasta-export.py
+        - bin/diazoDB-check.py
+        - bin/diazoDB-checks.csv
       outputs:
-        - path: results/final/
-          storage: dvc
+        - results/final/
+        - bin/diazoDB-check-log.txt
+
+    make-trees:
+      kind: shell-script
+      environment: cluster
+      description: Build phylogenetic tree inputs and run IQ-TREE.
+      script_path: bin/5_make_trees.sh
+      inputs:
+        - HMM_seeds/
+        - bin/5_make_trees.sh
+      outputs:
+        - trees/
+
+    operon-organization:
+      kind: shell-script
+      environment: cluster:parse_hmm
+      description: Run operon context annotation workflow.
+      script_path: bin/6_operon_org.sh
+      inputs:
+        - from_stage_outputs: final-export
+        - bin/6_operon_org.sh
+      outputs:
+        - operon-org/
+
+    ssn:
+      kind: shell-script
+      environment: cluster
+      description: Build sequence similarity network intermediates with MMseqs.
+      script_path: bin/7_SSN.sh
+      inputs:
+        - from_stage_outputs: final-export
+        - bin/7_SSN.sh
+      outputs:
+        - SSN/
+
+    pangenome:
+      kind: shell-script
+      environment: cluster
+      description: Run pangenome annotation using MicrobeAnnotator batches.
+      script_path: bin/8_pangenome.sh
+      inputs:
+        - from_stage_outputs: final-export
+        - protein_faa_reps_latest/
+        - bin/8_pangenome.sh
+      outputs:
+        - pangenome/

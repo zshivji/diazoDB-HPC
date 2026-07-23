@@ -22,15 +22,11 @@ python parse_hmm.py \
     --min_genes 3 \
     --gene_range 15
 
-echo "Archaea hits found!"
-
 python parse_hmm.py \
 	--hits /resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/bacteria/ \
 	--outdir /resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/bacteria \
     --min_genes 3 \
     --gene_range 15
-
-echo "Bacteria hits found!"
 
 echo ""
 echo "======================================================"

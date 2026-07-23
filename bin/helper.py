@@ -15,7 +15,7 @@ def load_nif(update_index, archaea_only = False):
 
     return nif
 
-def filter_groups_by_unique_counts(df, group_cols, requirements):
+def filter_groups_by_unique_counts(df, group_cols, requirements, exclude='nifB'):
     """
     Filter groups based on multiple unique-count requirements.
 
@@ -37,6 +37,10 @@ def filter_groups_by_unique_counts(df, group_cols, requirements):
     """
 
     def valid_group(x):
+        # If the excluded gene is present in this group, keep the group regardless
+        if exclude is not None and 'Gene' in x.columns and exclude in x['Gene'].unique():
+            return True
+
         return all(
             x[col].nunique() >= threshold
             for col, threshold in requirements.items()

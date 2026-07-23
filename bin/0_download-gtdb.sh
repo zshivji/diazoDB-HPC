@@ -16,28 +16,38 @@ echo "Num Tasks   : $SLURM_NTASKS total [$SLURM_NNODES nodes @ $SLURM_CPUS_ON_NO
 echo "======================================================"
 echo ""
 
-#curl -C - -o protein_faa_reps_232.tar.gz https://data.gtdb.aau.ecogenomic.org/releases/release232/232.0/genomic_files_reps/gtdb_proteins_aa_reps_r232.tar.gz
+# download GTDB representative protein sequences
+curl -o protein_faa_reps_latest.tar.gz https://data.gtdb.aau.ecogenomic.org/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.t
+echo "rep genomes download done"
 
-echo "download done"
+# download GTDB metadata files
+curl https://data.gtdb.aau.ecogenomic.org/releases/latest/ar53_metadata.tsv.gz
+curl https://data.gtdb.aau.ecogenomic.org/releases/latest/bac120_metadata.tsv.gz
+echo "metadata download done"
 
-#tar -xzf /resnick/groups/enviromics/zahra/diazoDB-HPC/gtdb_proteins_aa_reps_232.tar.gz
-
+# decompress the downloaded files
+tar -xzf /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_latest.tar.gz
 echo "tar done"
 
-gunzip -r /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_232/
-
+gunzip -r /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_latest/
+gunzip -r /resnick/groups/enviromics/zahra/diazoDB-HPC/ar53_metadata.tsv.gz
+gunzip -r /resnick/groups/enviromics/zahra/diazoDB-HPC/bac120_metadata.tsv.gz
 echo "gunzip done"
 
+# concatenate metadata files
+cat /resnick/groups/enviromics/zahra/diazoDB-HPC/ar53_metadata.tsv /resnick/groups/enviromics/zahra/diazoDB-HPC/bac120_metadata.tsv > /resnick/groups/enviromics/zahra/diazoDB-HPC/bin/GTDB_metadata.tsv
+gzip /resnick/groups/enviromics/zahra/diazoDB-HPC/bin/GTDB_metadata.tsv
+
 # count clusters
-num=$(ls -lh  /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_232/archaea/*.faa | wc -l)
+num=$(ls -lh  /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_latest/archaea/*.faa | wc -l)
 echo "$num files processed for archaea"
 
 # count clusters
-num=$(ls -lh  /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_232/bacteria/ | wc -l)
+num=$(ls -lh  /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_latest/bacteria/ | wc -l)
 echo "$num files processed for bacteria"
 
-calkit add /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_232/* -t dvc
-
+# add to calkit for remote storage + version control
+calkit add /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_latest/* --to dvc-zip
 echo "calkit done"
 
 echo ""

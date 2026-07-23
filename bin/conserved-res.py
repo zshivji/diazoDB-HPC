@@ -13,6 +13,15 @@ from Bio.SeqRecord import SeqRecord
 
 from helper import load_nif
 
+
+def default_proteins_dir() -> str:
+    """Resolve the GTDB protein reps directory with sensible fallbacks."""
+    if os.getenv("DIAZODB_PROTEIN_REPS_DIR"):
+        return os.environ["DIAZODB_PROTEIN_REPS_DIR"]
+    if os.path.isdir("../protein_faa_reps_latest"):
+        return "../protein_faa_reps_latest"
+    return "../protein_faa_reps_232"
+
 # get args (reload_fasta)
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -40,31 +49,40 @@ def parse_args() -> argparse.Namespace:
         default='nif-config.json'
     )
 
+    parser.add_argument(
+        "--proteins_dir",
+        help=(
+            "Path to GTDB representative protein directories. "
+            "Defaults to DIAZODB_PROTEIN_REPS_DIR, then ../protein_faa_reps_latest, "
+            "then ../protein_faa_reps_232."
+        ),
+        default=default_proteins_dir(),
+    )
+
     return parser.parse_args()
 
-# grab both archaea + bacteria hits
-hits = load_nif(update_index = ['GenomeID']) # load nif dataframe
-hits['Seq'] = ''
+# Note: runtime data (nif table, config, per-gene frames) are loaded in `main`.
+# Helper functions below accept explicit inputs and return results.
 
-# read json
-config = json.load(open('nif-config.json', 'r'))
+def write_fasta(gene_list: dict, config: dict, proteins_dir: str = "../protein_faa_reps_232", results_dir: str = "../results/tmp"):
+    """Get fasta sequences for each gene & export to fasta.
 
-# separate hits by gene
-gene_list = {gene: hits[hits.Gene == gene] for gene in config.keys()}
-print(f"checking conserved residues for: {list(gene_list)}", flush=True)
-
-def write_fasta(): # get fasta sequences for each gene & export to fasta        
+    Returns updated gene_list (with 'Seq' column filled where found).
+    """
+    os.makedirs(results_dir, exist_ok=True)
     for name, gene in gene_list.items():
         print('getting ' + name + ' fasta', flush=True)
         # filter out hits that don't meet length criteria (domain is too short, pre-filtering decreases runtime)
         minl = config[name]['min-length']
         gene = gene[abs(gene['Domain Start'] - gene['Domain End']) >= minl]
-        gene_list[name] = gene #### DOESN"T UPDATE GLOBAL DICT, also need to export w/ sequence col so that it runs even if write_fasta skipped
+        gene_list[name] = gene
 
         records = []
-        for genome,hit in gene.iterrows():
-            file = glob.glob(f"../protein_faa_reps_232/*/{genome}_protein.faa")[0]
-                
+        for genome, hit in gene.iterrows():
+            file_candidates = glob.glob(f"{proteins_dir}/*/{genome}_protein.faa")
+            if not file_candidates:
+                continue
+            file = file_candidates[0]
             for result in SeqIO.parse(file, "fasta"):
                 if result.id == hit.Hit[:-2]: # find matching hit (dropping domain suffix)
                     # store seq
@@ -73,16 +91,16 @@ def write_fasta(): # get fasta sequences for each gene & export to fasta
                     # convert to seqrecord
                     record = SeqRecord(domain_seq, id=genome, description=hit.Hit)
                     records.append(record)
-                    # exit loop once sequence is found
                     break
-        print(len(records), "records found for " + name, flush=True)            
-        # Write the records to a FASTA file
-        os.makedirs("../results/tmp", exist_ok=True)
-        with open("../results/tmp/" + name + ".fasta", "w") as output_handle:
+        print(len(records), "records found for " + name, flush=True)
+        with open(os.path.join(results_dir, name + ".fasta"), "w") as output_handle:
             SeqIO.write(records, output_handle, "fasta")
+    return gene_list
 
-def aln_fasta():
-    #align fasta files
+def aln_fasta(gene_list: dict, results_dir: str = "../results/tmp"):
+    # align fasta files
+    splits_dir = os.path.join(results_dir, 'fasta_splits')
+    os.makedirs(splits_dir, exist_ok=True)
     for name, gene in gene_list.items():
         print("aligning "+ name, flush=True)
         num = int(gene.shape[0]/200)+1 # how many splits
@@ -142,6 +160,7 @@ def check_gene(file, ref_seq, important_residues, residue_scores, passing_score,
     pssm['hit'] = hits
     pssm['contig'] = pssm['hit'].str.split('_').str[:-1].str.join('_')
 
+
     # check if cols contain correct residue for function
     def check_res(row):
         score = 0
@@ -161,17 +180,16 @@ def check_gene(file, ref_seq, important_residues, residue_scores, passing_score,
 
     return pssm
 
-def check_gene_wrapper():
+def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../results/tmp") -> dict:
     print("Checking for conserved residues...", flush=True)
 
-    # performed conserved residue matching
     all_genes_checked = {}
 
     for name, gene in gene_list.items():
         print(f'checking {name}', flush=True)
-        
-        # clear df
-        checked = pd.DataFrame()
+
+        if name=='nifH':
+            continue
 
         # load json parameters
         ref_seq = config[name]['ref_gene']
@@ -181,10 +199,14 @@ def check_gene_wrapper():
             residue_scores = [1] * len(important_residues)
         passing_score = config[name]['passing_score']
 
-        # initialize dataframe
-        checked = check_gene(f'../results/tmp/fasta_splits/{name}_split.00001.aln', ref_seq, important_residues, residue_scores, passing_score, p=True)
+        # initialize dataframe from first split
+        first_file = os.path.join(results_dir, 'fasta_splits', f"{name}_split.00001.aln")
+        if not os.path.exists(first_file):
+            all_genes_checked[name] = pd.DataFrame()
+            continue
+        checked = check_gene(first_file, ref_seq, important_residues, residue_scores, passing_score, p=True)
 
-        for file in glob.glob(f'../results/tmp/fasta_splits/{name}_split.*.aln'):
+        for file in glob.glob(os.path.join(results_dir, 'fasta_splits', f"{name}_split.*.aln")):
             if f'{name}_split.00001' in file:
                 continue
             new = check_gene(file, ref_seq, important_residues, residue_scores, passing_score)
@@ -203,38 +225,53 @@ def check_gene_wrapper():
 
 # #### EXPORT
 
-def export_results(all_genes_checked):
+def export_results(all_genes_checked: dict, config: dict, results_dir: str = "../results/tmp"):
 
-    # reload nif dataframe
-    nif = load_nif(update_index = ['GenomeID', 'Hit','Gene']) # load nif dataframe
-
-    # append updated annotation (based on conserved residue matching) to nif files
-    nif['residue_match'] = ''
-
-    nif.reset_index(level='Gene', inplace = True)
-    nif.sort_index(inplace = True)
+    # # reload nif dataframe
+    # nif = load_nif(update_index=['GenomeID', 'Hit'])
+    # nif['residue_match'] = ''
 
     # update residue match column in nif df
-    for name, gene in gene_list.items():
-        for genome, cols in eval(f"all_genes_checked[nif{gene}].iterrows()"):
+    for name, gene in all_genes_checked.items():
+        gene.to_csv(os.path.join(results_dir, f'{name}_rescheck_nofilt.csv'))
+        for genome, cols in gene.iterrows():
             nif.loc[(genome[0], genome[1]), 'residue_match'] = "nif" + gene
         
         # filter to get hits that passed residue matching
-        gene = f"nif{gene}"
-        maxl = config[gene]['max-length']
-        minl = config[gene]['min-length']
+        maxl = config[name]['max-length']
+        minl = config[name]['min-length']
         exec(f"{gene} = nif[((nif.residue_match == '{gene}') & (nif.Gene == '{gene}') & (nif['Alignment Length'] >= {minl}) & (nif['Alignment Length'] < {maxl}))]", globals())
 
-    nif = pd.concat([nifH, nifD, nifK, nifE, nifN, nifNB, nifB, anfO, nifG])
-    nif.sort_index(inplace = True)
+    to_concat = [filtered.get(g, pd.DataFrame()) for g in config.keys()]
+    nif_out = pd.concat(to_concat)
+    nif_out = pd.concat(to_concat)
+    nif_out.sort_index(inplace=True)
+    os.makedirs(results_dir, exist_ok=True)
+    nif_out.to_csv(os.path.join(results_dir, 'nif_rescheck_nofilt.csv'))
 
-    nif.to_csv(f'../results/tmp/nif_rescheck_nofilt.csv')
+#----------------------------------------------------------------
+
+    # for gene_name, checked_df in all_genes_checked.items():
+    #     for genome_idx, cols in checked_df.iterrows():
+    #         try:
+    #             nif.loc[(genome_idx[0], genome_idx[1]), 'residue_match'] = gene_name
+    #         except Exception:
+    #             continue
+
+    # # filter to get hits that passed residue matching and are within length bounds
+    # filtered = {}
+    # for gene_name, params in config.items():
+    #     maxl = params.get('max-length')
+    #     minl = params.get('min-length')
+    #     mask = (nif.residue_match == gene_name) & (nif.Gene == gene_name)
+    #     if minl is not None:
+    #         mask &= (nif['Alignment Length'] >= minl)
+    #     if maxl is not None:
+    #         mask &= (nif['Alignment Length'] < maxl)
+    #     filtered[gene_name] = nif[mask]
+
 
 #### END OF CONSERVED RESIDUE CHECKING, BELOW IS VALIDATion/BACKUP CODE ####
-
-
-
-
 
 # #backup check --> likely don't need this since we're reducing alignments to 200 seq per file
 # #get seq that failed checks
@@ -260,16 +297,31 @@ def export_results(all_genes_checked):
 def main() -> None:
     args = parse_args()
 
+    # load config and nif table at runtime
+    config_file = args.config_file
+    config = json.load(open(config_file, 'r'))
+
+    # load hits dataframe
+    hits = load_nif(update_index=['GenomeID'])
+    if 'Seq' not in hits.columns:
+        hits['Seq'] = ''
+
+    # store per-gene df in a dict
+    gene_list = {gene: hits[hits.Gene == gene].copy() for gene in config.keys()}
+    print(f"checking conserved residues for: {list(gene_list)}", flush=True)
+
     # reload + align fasta files if specified
     if args.reload_fasta:
-        write_fasta()
+        gene_list = write_fasta(gene_list, config, proteins_dir=args.proteins_dir)
         args.align_fasta = True  # Automatically align if reloading fasta
     if args.align_fasta:
-        aln_fasta()
+        aln_fasta(gene_list)
+
     # check for conserved residues
-    checked = check_gene_wrapper()
+    checked = check_gene_wrapper(gene_list, config)
+
     # export
-    export_results(checked)
+    export_results(checked, config)
 
 if __name__ == "__main__":
     main()

@@ -10,6 +10,12 @@
 eval "$(conda shell.bash hook)"
 conda activate /resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm
 
+ROOT_DIR="/resnick/groups/enviromics/zahra/diazoDB-HPC"
+GTDB_REP_DIR="${DIAZODB_PROTEIN_REPS_DIR:-$ROOT_DIR/protein_faa_reps_latest}"
+if [[ ! -d "$GTDB_REP_DIR" ]]; then
+        GTDB_REP_DIR="$ROOT_DIR/protein_faa_reps_232"
+fi
+
 echo "====================================================="
 echo "Start Time  : $(date)"
 echo "Job ID/Name : $SLURM_JOBID / $SLURM_JOB_NAME"
@@ -17,7 +23,7 @@ echo "======================================================"
 echo ""
 
 #HMM search on GTDB archaea
-for file in /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_232/archaea/*; do
+for file in "$GTDB_REP_DIR"/archaea/*; do
         f="${file##*/}"
         hmmsearch \
             --domtblout "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/archaea/${f%.faa}_nif.domtblout" \
@@ -30,7 +36,7 @@ chgrp hpc_enviromics /resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsea
 echo "Archaea completed"
 
 #HMM search on GTDB bacteria
-for file in /resnick/groups/enviromics/zahra/diazoDB-HPC/protein_faa_reps_232/bacteria/*; do
+for file in "$GTDB_REP_DIR"/bacteria/*; do
         f="${file##*/}"
         hmmsearch \
             --domtblout "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/bacteria/${f%.faa}_nif.domtblout" \

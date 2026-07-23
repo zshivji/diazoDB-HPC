@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
 # NCBI taxonomy from metadata files
 
 def parse_hits(hits_path: Path, outdir: Path) -> pd.DataFrame:
-    print(f"Parsing HMM hits...\n\t\t from {hits_path}\n\t\t saving results to {outdir}_hits.csv")
+    print(f"Parsing HMM hits...\n\t\t from {hits_path}\n\t\t saving results to {outdir}_hits.csv", flush=True)
 
     # Create empty lists
     result_target = []
@@ -107,7 +107,7 @@ def parse_hits(hits_path: Path, outdir: Path) -> pd.DataFrame:
             s = r"([\w]+_[\w]+_[\d]+\.[\d])"
             genome_id = re.search(s, str(file)).group()
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"An error occurred: {e}", flush=True)
             continue
 
         # Parse file using SearchIO/HmmerIO w/ --domtblout option
@@ -164,9 +164,10 @@ def parse_tophits(hits: pd.DataFrame, outdir: Path, min_genes: int, gene_range: 
         hits,
         group_cols=["GenomeID", "contig", "Orientation"],
         requirements={
-        "Gene": 3,
-        "Hit": 3
-        }
+        "Gene": min_genes,
+        "Hit": min_genes
+        },
+        exclude='nifB'
     )
 
     # store genomes meeting criteria in new dataframe
@@ -178,30 +179,34 @@ def parse_tophits(hits: pd.DataFrame, outdir: Path, min_genes: int, gene_range: 
 
             # split contigs into operons when 1) strand changes or 2) distance between genes is greater than limit
             operon_counter = 1
-            
+
             # sort hits by gene position and orientation
             # for each strand, cluster genes by distance and assign operon labels
             for _, strand in tmp.groupby("Orientation"):
-                
-                # use hierarchical clustering to group neighboring genes
-                strand = strand.sort_values("pos_num")
-                pos = strand["pos_num"].to_numpy().reshape(-1, 1)
 
-                # cluster genes by distance
-                Z = linkage(pos, method = 'single') # try method = 'ward' but singe prob better
-                clusters = fcluster(Z, t = gene_range, criterion = 'distance')
-                clusters = clusters.astype(int) + operon_counter -1 # convert to int for easier handling
+                if len(strand) < 2: # skip strands with only nifB (linkage clustering breaks)
+                    clusters = np.array([operon_counter])
+                else: 
+                    # use hierarchical clustering to group neighboring genes
+                    strand = strand.sort_values("pos_num")
+                    pos = strand["pos_num"].to_numpy().reshape(-1, 1)
+
+                    # cluster genes by distance
+                    Z = linkage(pos, method = 'single') # try method = 'ward' but singe prob better
+                    clusters = fcluster(Z, t = gene_range, criterion = 'distance')
+                    clusters = clusters.astype(int) + operon_counter -1 # convert to int for easier handling
 
                 strand["operon"] = clusters
 
-                # for each cluster, only keep clusters with at least 3 unique genes
+                # for each cluster, only keep clusters with at least 3 unique genes, unless a gene is excluded from the requirement (ex. nifB)
                 strand = filter_groups_by_unique_counts(
                     strand,
                     group_cols=["GenomeID", "contig", "operon"],
                     requirements={
                     "Gene": min_genes,
                     "Hit": min_genes
-                    }
+                    },
+                    exclude='nifB'
                 )
 
                 # save clusters to tmp2
@@ -218,6 +223,7 @@ def parse_tophits(hits: pd.DataFrame, outdir: Path, min_genes: int, gene_range: 
     # export
     outdir.mkdir(parents=True, exist_ok=True)
     genomes_to_keep.to_csv(str(outdir) + "_hits.csv", index=False)
+    print(f"Saved {genomes_to_keep.shape[0]} hits to {outdir}_hits.csv", flush=True)
 
 
 def main() -> None:
