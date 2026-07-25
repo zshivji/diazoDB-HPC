@@ -11,7 +11,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from helper import load_nif
+from helper import load_nif, filter_groups_by_unique_counts, get_seq
+from test import test
 
 
 def default_proteins_dir() -> str:
@@ -59,6 +60,19 @@ def parse_args() -> argparse.Namespace:
         default=default_proteins_dir(),
     )
 
+    parser.add_argument(
+        "--min_genes",
+        type=int,
+        default=3,
+        help="Minimum number of nif genes required to be considered a tophit cluster (default: 3)."
+    )
+
+    parser.add_argument(
+        "--test",
+        action='store_true',
+        help="Whether or not to run the final results against the test file."
+    )
+
     return parser.parse_args()
 
 # Note: runtime data (nif table, config, per-gene frames) are loaded in `main`.
@@ -79,22 +93,16 @@ def write_fasta(gene_list: dict, config: dict, proteins_dir: str = "../protein_f
 
         records = []
         for genome, hit in gene.iterrows():
-            file_candidates = glob.glob(f"{proteins_dir}/*/{genome}_protein.faa")
-            if not file_candidates:
-                continue
-            file = file_candidates[0]
-            for result in SeqIO.parse(file, "fasta"):
-                if result.id == hit.Hit[:-2]: # find matching hit (dropping domain suffix)
-                    # store seq
-                    domain_seq = result.seq[hit['Domain Start']:hit['Domain End']] # trim seq to match domain len
-                    gene.loc[genome, 'Seq'] = str(domain_seq)
-                    # convert to seqrecord
-                    record = SeqRecord(domain_seq, id=genome, description=hit.Hit)
-                    records.append(record)
-                    break
+            seq = get_seq(genome, hit.Hit[:-2], start=hit['Domain Start'], end=hit['Domain End'])
+            records.append(seq)
+
         print(len(records), "records found for " + name, flush=True)
         with open(os.path.join(results_dir, name + ".fasta"), "w") as output_handle:
             SeqIO.write(records, output_handle, "fasta")
+
+    gene_list = pd.concat(gene_list.values())
+    gene_list.to_csv(os.path.join(results_dir, 'hits_seq.csv'))
+
     return gene_list
 
 def aln_fasta(gene_list: dict, results_dir: str = "../results/tmp"):
@@ -185,69 +193,273 @@ def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../res
 
     all_genes_checked = {}
 
-    for name, gene in gene_list.items():
-        print(f'checking {name}', flush=True)
-
-        if name=='nifH':
-            continue
+    for gene in gene_list['Gene'].unique():
+        print(f'checking {gene}', flush=True)
 
         # load json parameters
-        ref_seq = config[name]['ref_gene']
-        important_residues = config[name]['residues']
-        residue_scores = config[name].get('residue_scores', config[name].get('reside_scores'))
+        ref_seq = config[gene]['ref_gene']
+        important_residues = config[gene]['residues']
+        residue_scores = config[gene].get('residue_scores', config[gene].get('reside_scores'))
         if residue_scores is None:
             residue_scores = [1] * len(important_residues)
-        passing_score = config[name]['passing_score']
+        passing_score = config[gene]['passing_score']
 
         # initialize dataframe from first split
-        first_file = os.path.join(results_dir, 'fasta_splits', f"{name}_split.00001.aln")
+        first_file = os.path.join(results_dir, 'fasta_splits', f"{gene}_split.00001.aln")
         if not os.path.exists(first_file):
-            all_genes_checked[name] = pd.DataFrame()
+            all_genes_checked[gene] = pd.DataFrame()
             continue
         checked = check_gene(first_file, ref_seq, important_residues, residue_scores, passing_score, p=True)
 
-        for file in glob.glob(os.path.join(results_dir, 'fasta_splits', f"{name}_split.*.aln")):
-            if f'{name}_split.00001' in file:
+        for file in glob.glob(os.path.join(results_dir, 'fasta_splits', f"{gene}_split.*.aln")):
+            if f'{gene}_split.00001' in file:
                 continue
             new = check_gene(file, ref_seq, important_residues, residue_scores, passing_score)
             checked = pd.concat([checked, new])
 
         checked.drop_duplicates(subset = ['hit'], inplace = True)
         checked.set_index(['hit'], append= True, inplace = True)
+        checked.to_csv(os.path.join(results_dir, f'{gene}_residues.csv'))
+
+        # only keep gene where residue matching passed
+        tmp = gene_list[(gene_list['Gene'] == gene) & (gene_list['Hit'].isin(checked.index.get_level_values(1)))].copy()
+        tmp['residue_match'] = gene
+        tmp.to_csv(os.path.join(results_dir, f'{gene}_rescheck_nofilt.csv'))
 
         # potentially add code for (1) keeping best hit per genome and (2) removing hits that are in other genes (e.g. remove nifD,E hits from nifK)
 
-        all_genes_checked[name] = checked
+        all_genes_checked[gene] = tmp
 
-        print(str(len(checked)) + f" {name} seqs")
+        print(f"{len(checked)} {gene} seqs \n", flush=True)
+
+    # export
+    os.makedirs(results_dir, exist_ok=True)
+    all_genes_checked = pd.concat(all_genes_checked.values())
+    all_genes_checked.to_csv(os.path.join(results_dir, 'nif_rescheck_nofilt.csv'), index=False)
 
     return all_genes_checked
 
-# #### EXPORT
+# EXPORT
+def export_results(all_genes_checked, min_genes: int, results_dir: str = "../results/final") -> None:
+    hits = all_genes_checked.copy()
+    hits.set_index(['GenomeID', 'Gene', 'Hit'], inplace=True)
+    hits['cluster'] = 'nif'
 
-def export_results(all_genes_checked: dict, config: dict, results_dir: str = "../results/tmp"):
+    # make sure nif clusters have at least nifHDK (unless it is a nifB-only operon)
+    # doesn't check anf or vnf clusters
+    def gene_check(genes):
+        if len(genes) >= 3:
+            if genes.__contains__('vnfG'):
+                return True
+            elif genes.__contains__('anfO'):
+                return True
+            elif genes.__contains__('nifH'):
+                if genes.__contains__('nifD'):
+                    if genes.__contains__('nifK'):
+                        return True
+        else:
+            if genes.__contains__('nifB'):
+                return True
 
-    # # reload nif dataframe
-    # nif = load_nif(update_index=['GenomeID', 'Hit'])
-    # nif['residue_match'] = ''
+    def relabel_operon_gene_prefix(idx, new_prefix):
+        current = hits.loc[idx, 'residue_match'].astype(str)
+        replace_mask = current.str.startswith(('nif', 'vnf', 'anf'))
+        update_idx = current[replace_mask].index
+        hits.loc[update_idx, 'residue_match'] = new_prefix + current.loc[update_idx].str[3:]
+        hits.loc[update_idx, 'cluster'] = new_prefix
 
-    # update residue match column in nif df
-    for name, gene in all_genes_checked.items():
-        gene.to_csv(os.path.join(results_dir, f'{name}_rescheck_nofilt.csv'))
-        for genome, cols in gene.iterrows():
-            nif.loc[(genome[0], genome[1]), 'residue_match'] = "nif" + gene
-        
-        # filter to get hits that passed residue matching
-        maxl = config[name]['max-length']
-        minl = config[name]['min-length']
-        exec(f"{gene} = nif[((nif.residue_match == '{gene}') & (nif.Gene == '{gene}') & (nif['Alignment Length'] >= {minl}) & (nif['Alignment Length'] < {maxl}))]", globals())
+    for _, strand in hits.groupby(['GenomeID', 'contig', 'operon']):
+        # Keep nifB unchanged while relabeling all other genes in the operon.
+        non_nifb_mask = strand.index.get_level_values(1) != 'nifB'
+        target_idx = strand.index[non_nifb_mask]
 
-    to_concat = [filtered.get(g, pd.DataFrame()) for g in config.keys()]
-    nif_out = pd.concat(to_concat)
-    nif_out = pd.concat(to_concat)
-    nif_out.sort_index(inplace=True)
-    os.makedirs(results_dir, exist_ok=True)
-    nif_out.to_csv(os.path.join(results_dir, 'nif_rescheck_nofilt.csv'))
+        # update to vnf if vnfG present, then update to anf if anfO present
+        if strand['residue_match'].isin(['anfG', 'vnfG']).any():
+            relabel_operon_gene_prefix(target_idx, 'vnf')
+
+            # then update to anf if anfO present
+            if strand['residue_match'].eq('anfO').any():
+                relabel_operon_gene_prefix(target_idx, 'anf')
+
+    # remove operons with fewer than 3 unique nif genes (except for operons that contain nifB)
+    hits.reset_index(inplace=True)
+    hits = filter_groups_by_unique_counts(
+        hits,
+        group_cols=["GenomeID", "contig", "operon"],
+        requirements={
+        "Gene": min_genes,
+        "Hit": min_genes
+        },
+        exclude='nifB'
+    )
+
+############# Need to get combined Gene and Seq Location? fixed ##############
+    # insted of Domain start/end min/max --> first/last now that it's sorted coretly (based on strand +/-1)
+
+    # assign final annotation + group domains into proteins
+    hits['protein'] = hits['Hit'].str.rsplit('_', n=1).str[0] # remove domain suffix to get protein name
+    genomes_to_keep = pd.DataFrame(columns=hits.columns).set_index('protein')
+    # assign annotation from remaining filtered seqs (now apply best hits approach)
+    for idx, cluster in hits.groupby(['GenomeID', 'contig', 'operon', 'cluster']):
+        # keep best hit per domain (of filtered domains)
+        cluster = cluster.loc[cluster.groupby('Hit')['E-value'].idxmin()]
+        # merge domains into protein, aggegrate rows
+            # expecting nifNB, nifEN, nifDG
+        if cluster['Orientation'].sum() < 0: # if all genes on negative strand, reverse order of genes
+            cluster.sort_values(by=['Hit','Domain Start'], ascending=False, inplace=True)
+        else:
+            cluster.sort_values(by=['Hit', 'Domain Start'], ascending=True, inplace=True)
+        # if 'LKPX01000013.1_53' in cluster['protein'].to_list():
+        #     print(cluster)
+        cluster = cluster.groupby('protein', group_keys=False).agg({
+            'GenomeID': 'first',
+            'contig': 'first',
+            'operon': 'first',
+            'cluster': 'first',
+            'Gene': lambda x: '_'.join(sorted(x)),
+            'Hit': lambda x: ','.join(sorted(x)),
+            'E-value': 'min',
+            'Bit Score': 'sum',
+            'Bias': 'sum',
+            'Domain Start': 'min',
+            'Domain End': 'max',
+            'Location': 'first',
+            'Orientation': 'first',
+            'Flag_Bias': 'sum',
+            'pos_num': 'first',
+            'top_hit': lambda x: ','.join(sorted(x)),
+            'residue_match':  lambda x: ''.join(
+                gene if i == 0 else gene[-1]
+                for i, gene in enumerate(sorted(x))
+            ),
+            'GTDB': 'first'
+        })
+
+        # check if all nif genes are present (skip anf, vnf)
+        if gene_check(cluster.Gene.to_list()):
+            if genomes_to_keep.empty:
+                genomes_to_keep = cluster.copy()
+            else:
+                genomes_to_keep = pd.concat([genomes_to_keep, cluster])
+
+    #clean up cols
+    genomes_to_keep['Gene'] = genomes_to_keep['residue_match']
+    #hits = hits[['Gene', 'E-value', 'Bit Score', 'Location', 'Orientation', 'Alignment Length', 'Sequence Length', 'GTDB']]
+    genomes_to_keep.drop_duplicates(inplace = True)
+    genomes_to_keep = genomes_to_keep.reset_index().set_index('GenomeID')
+
+    # export csv with each gene as individual row
+    genomes_to_keep.to_csv(os.path.join(results_dir, 'nif_final.csv'))
+
+    # get fasta sequences for each gene & export to fasta
+    os.makedirs(os.path.join(results_dir, "fastas"), exist_ok=True)
+    for gene in genomes_to_keep['Gene'].unique().tolist():
+        records = []
+
+        for genome, hit in genomes_to_keep[genomes_to_keep.Gene == gene].iterrows():
+            record = get_seq(genome, hit.protein, id=hit.protein, description=f"{genome} {hit.Gene}")
+            records.append(record)
+                    
+        # Write the records to a FASTA file
+        with open(os.path.join(results_dir, "fastas/final_" + gene + ".fasta"), "w") as output_handle:
+            SeqIO.write(records, output_handle, "fasta")
+
+        print(f"{len(records)} final {gene} hits", flush=True)
+
+    # export csv grouped by genome, contig, operon, and cluster
+    operons = genomes_to_keep.copy().set_index(['contig', 'operon', 'cluster'], append=True)
+    operons.sort_values(by=['GenomeID', 'contig', 'operon', 'cluster', 'Location'], inplace=True)
+    # Split Location by '-' and extract min/max of first and second parts
+    location_parts = operons['Location'].str.split('-', expand=True)
+    operons['_location_start'] = location_parts[0].astype(int)
+    operons['_location_end'] = location_parts[1].astype(int)
+    operons['Location_start'] = operons.groupby(['GenomeID', 'contig', 'operon', 'cluster'])['_location_start'].transform('min')
+    operons['Location_end'] = operons.groupby(['GenomeID', 'contig', 'operon', 'cluster'])['_location_end'].transform('max')
+    operons = operons.drop(columns=['_location_start', '_location_end'])
+
+    operons = operons.groupby(['GenomeID', 'contig', 'operon', 'cluster']).agg(**{
+        'Gene set': ('Gene', lambda x: ', '.join(x.astype(str))),
+        'Location_start': ('Location_start', 'first'),
+        'Location_end': ('Location_end', 'last'),
+        'GTDB': ('GTDB', 'first'),
+        'Orientation': ('Orientation', 'first')
+    })
+
+    # def get_hit(rec):
+    #     return rec.description.split(' ')[-1]
+
+    # def get_cluster(file):
+    #     clusters = {}
+    #     clusters_fasta = list(SeqIO.parse(file, 'fasta'))
+
+    #     index = 0
+    #     while index < len(clusters_fasta)-1:
+    #         rec = clusters_fasta[index]
+    #         if rec.seq == '': # cluster header
+    #             cluster = get_hit(clusters_fasta[index+1]) # hit
+    #             clause = True
+    #             members = []
+    #             i = 1
+    #             while clause & (index+i < len(clusters_fasta)): # add members (until next cluster header)
+    #                 if clusters_fasta[index+i].seq != '':
+    #                     members.append(get_hit(clusters_fasta[index+i]))
+    #                     i+=1
+    #                 elif clusters_fasta[index+i].seq == '':
+    #                     clause = False
+    #             index += i
+
+    #             clusters[cluster] = members
+
+    #     return clusters
+
+    # operons['Group'] = ''
+    # #     #genes = {'H': 'H', 'D': 'D_noOut'}
+    # genes = {'H': 'H'}
+
+    # for gene, file in genes.items():
+    #     # get clustered datapoints
+    #     clusters = get_cluster(f'../trees/nif{file}/clustered_nif{file}_all_seqs.fasta') 
+
+    #     # assign group 
+    #     for group in ['1', '2', '3', '4a', '4c', '3anfvnf']:
+    #         lines = []
+    #         hits = []
+    #         with open(f'nif_groups/nif{gene}_group{group}.txt','r') as f:
+    #             lines = f.read().splitlines()
+    #             for line in lines:
+    #                 hit = '_'.join(line.split('|')[-1].split(' '))[:-1]
+    #                 hits.append(hit) # reformat "hits" to match nif index
+    #                 hits.extend(clusters[hit]) # add clustered hits to list of hits to update
+    #         for hit in hits:
+    #             operons.loc[operons.index == hit, 'Group'] = f'Group {group}'
+
+#     # group by genome, contig and save
+#     nif = nif[['GenomeID', 'contig', 'Gene set', 'Position', 'GTDB', 'Location' ,'Orientation', 'Group']]
+#     nif = nif.groupby(['GenomeID','contig']).first()
+#     nif.reset_index(level=['GenomeID','contig'], inplace = True)
+
+    #merge dataframes to include accession, metadata, and sequences (for filtering)
+    GTDB_metadata = pd.read_csv('GTDB_metadata.gz', sep = '\t', usecols=['accession', 'gtdb_taxonomy', 'ncbi_taxonomy', 
+                                                    'ncbi_taxonomy_unfiltered', 'ncbi_country', 'ncbi_isolation_source'])
+    
+    operons = operons.join(
+        GTDB_metadata.set_index('accession'),
+        on='GenomeID',
+        how='left'
+    ).drop(columns=['GTDB'])
+
+    operons['Organism'] = operons['gtdb_taxonomy'].str.split(';').str[-1].str.split('__').str[-1]
+    operons['Regulon'] = ''
+    operons['Operon'] = ''
+    operons['Group'] = ''
+#    nif['PredGrowthTemp'] = ''
+    operons.rename(columns = {'GenomeID': 'Genome', 'contig': 'Contig', 'Gene set': 'Nitrogenase Set', 
+                        'Group':'Group No', 'gtdb_taxonomy': 'GTDB Taxonomy', 'cluster': 'Cluster', 
+                        'ncbi_taxonomy': 'NCBI Taxonomy', 'ncbi_isolation_source':'Isolation Source'}, inplace = True)
+
+    operons.to_csv(f'../results/final/nif_clusters.csv')
+
+    return genomes_to_keep
 
 #----------------------------------------------------------------
 
@@ -271,6 +483,44 @@ def export_results(all_genes_checked: dict, config: dict, results_dir: str = "..
     #     filtered[gene_name] = nif[mask]
 
 
+def main() -> None:
+    args = parse_args()
+
+    # load config and nif table at runtime
+    config_file = args.config_file
+    config = json.load(open(config_file, 'r'))
+
+    # load hits dataframe
+    hits = load_nif(update_index=['GenomeID'])
+    if 'Seq' not in hits.columns:
+        hits['Seq'] = ''
+
+    # store per-gene df in a dict
+    gene_list = {gene: hits[hits.Gene == gene].copy() for gene in config.keys()}
+    print(f"checking conserved residues for: {list(gene_list)}", flush=True)
+
+    # reload + align fasta files if specified
+    if args.reload_fasta:
+        gene_list = write_fasta(gene_list, config, proteins_dir=args.proteins_dir)
+        args.align_fasta = True  # Automatically align if reloading fasta
+    else: 
+        gene_list = pd.read_csv(os.path.join("../results/tmp", 'hits_seq.csv'))
+    if args.align_fasta:
+        aln_fasta(gene_list)
+
+    # check for conserved residues and save results
+    checked = check_gene_wrapper(gene_list, config)
+    export_results(checked, args.min_genes)
+
+    # check results against known nitrogenase
+    if args.test:
+        test(checked)
+
+if __name__ == "__main__":
+    main()
+
+
+
 #### END OF CONSERVED RESIDUE CHECKING, BELOW IS VALIDATion/BACKUP CODE ####
 
 # #backup check --> likely don't need this since we're reducing alignments to 200 seq per file
@@ -292,39 +542,6 @@ def export_results(all_genes_checked: dict, config: dict, results_dir: str = "..
 #             seqs.append(record)
 
 # print(str(len(seqs)) + " seqs failed nifDKEN checks", flush=True) # counting how many failed pre/post 2026 edits
-
-
-def main() -> None:
-    args = parse_args()
-
-    # load config and nif table at runtime
-    config_file = args.config_file
-    config = json.load(open(config_file, 'r'))
-
-    # load hits dataframe
-    hits = load_nif(update_index=['GenomeID'])
-    if 'Seq' not in hits.columns:
-        hits['Seq'] = ''
-
-    # store per-gene df in a dict
-    gene_list = {gene: hits[hits.Gene == gene].copy() for gene in config.keys()}
-    print(f"checking conserved residues for: {list(gene_list)}", flush=True)
-
-    # reload + align fasta files if specified
-    if args.reload_fasta:
-        gene_list = write_fasta(gene_list, config, proteins_dir=args.proteins_dir)
-        args.align_fasta = True  # Automatically align if reloading fasta
-    if args.align_fasta:
-        aln_fasta(gene_list)
-
-    # check for conserved residues
-    checked = check_gene_wrapper(gene_list, config)
-
-    # export
-    export_results(checked, config)
-
-if __name__ == "__main__":
-    main()
 
 # # Write the records to a FASTA file
 # with open(f"../results/fasta_splits/nifDKEN.fasta", "w") as output_handle:

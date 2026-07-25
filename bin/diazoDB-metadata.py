@@ -9,9 +9,6 @@ import argparse
 import warnings
 from pathlib import Path
 
-from cluster_pos import cluster_pos
-from helper import str_to_bool
-
 from Bio import SeqIO
 from pygenomeviz import GenomeViz
 
@@ -26,24 +23,20 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--data",
-        type=str_to_bool,
-        default=True,
+        action='store_true',
         help="Pull operon organization from Microbeannotator output.",
     )
     parser.add_argument(
         "--export",
-        type=str_to_bool,
-        default=False, # way to make this default to T if above is T
+        action='store_true',
         help="Export operon org data to metadata.json for upload to DiazoDB.",
     )
 
     parser.add_argument(
         "--plot",
-        type=str_to_bool,
-        default=False,
-        help="Minimum number of nif genes required to be considered a tophit cluster (default: 3)."
+        action='store_true',
+        help="Plot operon org data."
     )
-    
        
     return parser.parse_args()
 
@@ -62,7 +55,7 @@ def ko2gene(ko):
                 return gene
 
 def get_plot_data():
-        # organize microbeannotator results
+    # organize microbeannotator results
     nif = pd.read_csv('../results/final/nif_final.csv', index_col=[0,1])
     gene_data = pd.DataFrame(columns = ['genome', 'contig', 'query_id', 'gene', 'ko_number', 'start', 'end', 'orientation'])
 
@@ -95,71 +88,53 @@ def get_plot_data():
             annot.loc[row[1].Hit, 'gene'] = row[1].Gene
             annot.loc[row[1].Hit, 'start'] = int(row[1].Location.split('-')[0])
             annot.loc[row[1].Hit, 'end'] = int(row[1].Location.split('-')[1])
-            annot.loc[row[1].Hit, 'orientation'] = 1 # BUG
+            annot.loc[row[1].Hit, 'orientation'] = row[1].Orientation
         
         annot.reset_index(inplace=True)
         gene_data = pd.concat([gene_data, annot[['genome', 'contig', 'query_id', 'gene', 'ko_number', 'start', 'end', 'orientation']]])
 
     gene_data.to_csv('../operon-org/operon-org-plot-data.csv')
+    return gene_data
 
-# get metadata
+# export metadata.json for displaying hover info on diazoDB phylo tree
+def export_metadata(gene_data, operons = pd.read_csv('../results/final/nif_cluster.csv', index_col=[0,1, 2, 3])):
 
-    # export metadata.json for displaying hover info on diazoDB phylo tree
     metadata = {}
-
     for idx, cluster in operons.iterrows():
         genome = idx[0]
         contig = idx[1]
-        operon = idx[2]
         cl = idx[3]
         taxonomy = cluster['GTDB Taxonomy']
         environments = cluster['Isolation Source']
         regulon = cluster['Regulon']
         organism = cluster['Organism']
-        operon = cluster['Operon']
         group = cluster['Group No']
+
+        # get operon data for plotting on interactive tree
+        genes = []
+        cluster_gene_data = gene_data.loc[gene_data['genome'] == genome]
+        for gene in cluster_gene_data.iterrows():
+            # for each nif cluster, store surrounding gene info as list
+            genes.append({'gene_id': gene[1].query_id,
+                        'gene_name': gene[1].gene,
+                        'start': gene[1].start,
+                        'end': gene[1].end,
+                        'direction': gene[1].orientation,
+                        'product': gene[1].ko_number})
+
+        # add operon info to metadata for each cluster (operon start, end, and genes in operon)
+        operon = {'region_start': cluster_gene_data['start'].min(),
+                'region_end': cluster_gene_data['end'].max(),
+                'genes': genes}
 
         metadata[f"{organism} | {genome} | {contig} | {cl}"] = {'oganism': organism, 'genome': genome, 
             'taxonomy': taxonomy, 'group': group, 'environment': environments, 'regulon':regulon, 'operon': operon}
         
-    import json
     with open('../results/final/metadata.json', 'w') as f:
         json.dump(metadata, f, indent=2)
 
-# update metadata.json to store gene data
-def export_metadata():
-    gene_data = pd.read_csv('../operon-org/operon-org-plot-data.csv', index_col=[0,1])
-    print(gene_data)
-    with open('../results/final/metadata.json', 'r+') as file:
-        metadata = json.load(file)
 
-        for cluster in metadata.items():
-            print(cluster[1])
-            cluster_gene_data = gene_data.loc[gene_data['genome'] == cluster[1]['genome']]
-            print(cluster_gene_data)
-
-            genes = []
-            for gene in cluster_gene_data.iterrows():
-                # for each nif cluster, store surrounding gene info as list
-                genes.append({'gene_id': gene[1].query_id,
-                            'gene_name': gene[1].gene,
-                            'start': gene[1].start,
-                            'end': gene[1].end,
-                            'direction': gene[1].orientation,
-                            'product': gene[1].ko_number})
-            # add operon info to metadata for each cluster (operon start, end, and genes in operon)
-            operon = {'region_start': cluster_gene_data['start'].min(),
-                    'region_end': cluster_gene_data['end'].max(),
-                    'genes': genes}
-            
-            metadata[cluster[1]['operon']] = operon
-
-        # save updated metadata
-        json.dump(metadata, file)
-
-
-def plot(): # plot operon organization
-    gene_data = pd.read_csv('../operon-org/operon-org-plot-data.csv', index_col=[0,1])
+def plot(gene_data): # plot operon organization
     genome_list = gene_data.index.get_level_values(0).unique().tolist()
 
     gv = GenomeViz()
@@ -203,18 +178,19 @@ def main() -> None:
     args = parse_args()
 
     if args.data:
-        get_plot_data()
+        operon_org_data = get_plot_data()
     else:
+        operon_org_data = pd.read_csv('../operon-org/operon-org-plot-data.csv', index_col=[0,1])
         print("Skipped pulling operon organization data. Last file update XXXX", flush=True)
 
     if args.export:
         print("Exporting operon organization to metadata.json")
-        export_metadata()
+        export_metadata(operon_org_data)
     else:
         print("Skipped metadata export. Last export XXXX", flush=True)
 
     if args.plot:
-        plot()
+        plot(operon_org_data)
     else:
         print("Skipped plotting operon diagrams", flush=True)
 
