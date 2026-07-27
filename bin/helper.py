@@ -1,8 +1,17 @@
 import pandas as pd
 import argparse
 import glob
+import os
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+
+def default_proteins_dir() -> str:
+    """Resolve the GTDB protein reps directory with sensible fallbacks."""
+    if os.getenv("DIAZODB_PROTEIN_REPS_DIR"):
+        return os.environ["DIAZODB_PROTEIN_REPS_DIR"]
+    if os.path.isdir("../protein_faa_reps_latest"):
+        return "../protein_faa_reps_latest"
+    return "../protein_faa_reps_232"
 
 def load_nif(update_index, archaea_only = False):
     if archaea_only:

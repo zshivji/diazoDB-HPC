@@ -3,14 +3,17 @@ import requests
 import pandas as pd
 import glob
 import re
+import os
 import sys
 import json
+import ast
 import argparse
 import warnings
 from pathlib import Path
 
 from Bio import SeqIO
 from pygenomeviz import GenomeViz
+from helper import default_proteins_dir
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -20,6 +23,11 @@ def parse_args() -> argparse.Namespace:
             "Organize, export, and plot nif genetic neighborhoods. "
             "Gene annotations are derived from microbeannotator."
         )
+    )
+    parser.add_argument(
+        "--prepare",
+        action="store_true",
+        help="Create operon FASTA inputs for MicrobeAnnotator.",
     )
     parser.add_argument(
         "--data",
@@ -36,6 +44,16 @@ def parse_args() -> argparse.Namespace:
         "--plot",
         action='store_true',
         help="Plot operon org data."
+    )
+
+    parser.add_argument(
+        "--proteins_dir",
+        help=(
+            "Path to GTDB representative protein directories. "
+            "Defaults to DIAZODB_PROTEIN_REPS_DIR, then ../protein_faa_reps_latest, "
+            "then ../protein_faa_reps_232."
+        ),
+        default=default_proteins_dir(),
     )
        
     return parser.parse_args()
@@ -54,6 +72,35 @@ def ko2gene(ko):
                 gene_abv[ko] = gene
                 return gene
 
+# run before microbeannotator
+def get_operon_fasta(results, proteins_dir):
+    # grab fasts file for +/-5 genes around nif operon
+    output_dir = Path("../operon-org/input-fastas")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    proteins_path = Path(proteins_dir)
+
+    for _, cluster in results.iterrows(): # iterate through each genome
+        contig = cluster['contig']
+        genome = cluster['GenomeID']
+        operon = cluster['operon']
+        cl = cluster['cluster']
+        positions = cluster['pos_num']
+        if isinstance(positions, str):
+            positions = ast.literal_eval(positions)
+
+        # get positions within +/-5 genes of operon
+        start = min(positions) - 5
+        end = max(positions) + 5
+        acc = [contig + '_' + str(p) for p in range(start, end)] # get acc
+
+        # save subsets as fasta
+        file = glob.glob(f"{proteins_path}/*/{genome}_protein.faa")[0]
+
+        records = [record for record in SeqIO.parse(file, "fasta") if record.id in set(acc)]
+        output = output_dir / (f"{genome}_{contig}_{operon}_{cl}_operon.fasta")
+        SeqIO.write(records, output, "fasta")
+
+# run after mircobeannotator
 def get_plot_data():
     # organize microbeannotator results
     nif = pd.read_csv('../results/final/nif_final.csv', index_col=[0,1])
@@ -97,7 +144,11 @@ def get_plot_data():
     return gene_data
 
 # export metadata.json for displaying hover info on diazoDB phylo tree
-def export_metadata(gene_data, operons = pd.read_csv('../results/final/nif_cluster.csv', index_col=[0,1, 2, 3])):
+def export_metadata(gene_data, operons):
+    operons.set_index(['genome', 'contig', 'operon', 'cluster'], inplace=True)
+
+    # known regulon genes (in sort order)
+    reg_genes = ['nifA', 'nifL', 'nifR', 'nifI', 'nifI1', 'nifI2', 'glnB', 'glnK', 'draT', 'draG']
 
     metadata = {}
     for idx, cluster in operons.iterrows():
@@ -112,6 +163,7 @@ def export_metadata(gene_data, operons = pd.read_csv('../results/final/nif_clust
 
         # get operon data for plotting on interactive tree
         genes = []
+        regulon = []
         cluster_gene_data = gene_data.loc[gene_data['genome'] == genome]
         for gene in cluster_gene_data.iterrows():
             # for each nif cluster, store surrounding gene info as list
@@ -121,6 +173,11 @@ def export_metadata(gene_data, operons = pd.read_csv('../results/final/nif_clust
                         'end': gene[1].end,
                         'direction': gene[1].orientation,
                         'product': gene[1].ko_number})
+
+            # add gene to regulon
+            if (gene[1].gene in reg_genes or (re.fullmatch(r'([a-z]{3}[R])', gene[1].gene))):
+                    # does the 2nd statement return true if match obj found?
+                regulon.append(gene[1].gene)
 
         # add operon info to metadata for each cluster (operon start, end, and genes in operon)
         operon = {'region_start': cluster_gene_data['start'].min(),
@@ -177,22 +234,33 @@ def plot(gene_data): # plot operon organization
 def main() -> None:
     args = parse_args()
 
-    if args.data:
-        operon_org_data = get_plot_data()
-    else:
-        operon_org_data = pd.read_csv('../operon-org/operon-org-plot-data.csv', index_col=[0,1])
-        print("Skipped pulling operon organization data. Last file update XXXX", flush=True)
+    results = pd.read_csv('../results/final/nif_clusters.csv')
+    
 
-    if args.export:
-        print("Exporting operon organization to metadata.json")
-        export_metadata(operon_org_data)
-    else:
-        print("Skipped metadata export. Last export XXXX", flush=True)
+    if args.prepare:
+        print("Preparing operon FASTA inputs for MicrobeAnnotator", flush=True)
+        get_operon_fasta(results, proteins_dir=args.proteins_dir)
 
-    if args.plot:
-        plot(operon_org_data)
+    if args.data and not args.prepare:
+        print("Pulling operon organization data from MicrobeAnnotator output", flush=True)
+        gene_data = get_plot_data()
+
+        print("Exporting operon organization to metadata.json", flush=True)
+        export_metadata(gene_data, results)
+
+        if args.plot:
+            plot(gene_data)
+
     else:
-        print("Skipped plotting operon diagrams", flush=True)
+        gene_data = pd.read_csv('../operon-org/operon-org-plot-data.csv', index_col=[0,1])
+
+        if args.export:
+            print("Exporting operon organization to metadata.json", flush=True)
+            export_metadata(gene_data, results)
+
+        if args.plot:
+            print("Plotting operon organization data from existing CSV", flush=True)
+            plot(gene_data)
 
 
 if __name__ == "__main__":

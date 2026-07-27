@@ -19,7 +19,7 @@ import numpy as np
 from pathlib import Path
 from Bio import SearchIO
 from scipy.cluster.hierarchy import linkage, fcluster
-from helper import filter_groups_by_unique_counts
+from helper import filter_groups_by_unique_counts, default_proteins_dir
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -55,6 +55,16 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=3,
         help="Minimum number of nif genes required to be considered a tophit cluster (default: 3)."
+    )
+
+    parser.add_argument(
+        "--proteins_dir",
+        help=(
+            "Path to GTDB representative protein directories. "
+            "Defaults to DIAZODB_PROTEIN_REPS_DIR, then ../protein_faa_reps_latest, "
+            "then ../protein_faa_reps_232."
+        ),
+        default=default_proteins_dir(),
     )
     
     parser.add_argument(
