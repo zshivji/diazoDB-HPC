@@ -1,14 +1,16 @@
-name: Copy to gh-pages
+name: Copy results to frontend
 
 on:
   push:
     branches:
-      - main  # Set a branch name to trigger deployment
+      - main
     paths:
-      - results/final/nif_genomes.csv
+      - results/final/metadata.json
+      - results/final/nif_clusters.csv
+      - results/final/fastas/**
 
 jobs:
-  deploy:
+  copy-results:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,9 +21,35 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Copy csv to gh-pages
-        uses: planetoftheweb/copy-to-branches@v1.3
-        env:
-          key: main
-          branches: gh-pages
-          files: results/final/nif_genomes.csv
+      - name: Copy results to frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          destination="runner/frontend/public/results"
+          mkdir -p "$destination/fastas"
+
+          cp results/final/metadata.json "$destination/metadata.json"
+          cp results/final/nif_clusters.csv "$destination/nif_clusters.csv"
+
+          for source in results/final/fastas/*; do
+            filename="${source##*/}"
+            cp "$source" "$destination/fastas/${filename#final_}"
+          done
+
+      - name: Commit copied results
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add runner/frontend/public/results
+
+          if git diff --cached --quiet; then
+            echo "No copied result changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Update frontend result files"
+          git push
