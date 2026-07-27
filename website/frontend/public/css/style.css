@@ -349,9 +349,17 @@ footer {
 
 .tree-search {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  flex-direction: column;
   gap: 0.5rem;
   margin-left: auto;
+}
+
+.tree-search__field,
+.tree-search__examples {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .tree-search label {
@@ -370,6 +378,31 @@ footer {
   background: #fbfeff;
   color: #1a1a18;
   font: inherit;
+}
+
+.tree-search__examples {
+  color: #5f5f58;
+  font-size: 12px;
+}
+
+.tree-search__examples span {
+  font-weight: 700;
+}
+
+.tree-search__examples button {
+  padding: 3px 8px;
+  border: 1px solid rgba(30, 30, 20, 0.16);
+  border-radius: 4px;
+  background: #f4f7f2;
+  color: #1f4f32;
+  cursor: pointer;
+  font: inherit;
+}
+
+.tree-search__examples button:hover,
+.tree-search__examples button:focus {
+  border-color: rgba(31, 79, 50, 0.35);
+  background: #e9f2e8;
 }
 
 .page-description {
@@ -624,12 +657,22 @@ footer {
 
   .tree-search {
     width: 100%;
+    align-items: stretch;
     margin-left: 0;
+  }
+
+  .tree-search__field {
+    width: 100%;
   }
 
   .tree-search input {
     flex: 1;
     max-width: none;
+  }
+
+  .tree-search__examples {
+    flex-wrap: wrap;
+    padding-left: 50px;
   }
 
   .tree-instructions {

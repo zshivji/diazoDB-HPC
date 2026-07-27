@@ -3,6 +3,7 @@ console.log("tree.js is running")
 // define variables
 const tooltip = document.getElementById("tooltip")
 const searchInput = document.getElementById("tree-search")
+const searchExampleButtons = document.querySelectorAll("[data-search-example]")
 let labelData = []
 let metadataKeyLookup = new Map()
 
@@ -458,6 +459,14 @@ Promise.all([
   .catch(console.error)
 
 // add search functionality
+
+searchExampleButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    searchInput.value = button.dataset.searchExample
+    searchInput.dispatchEvent(new Event("input", { bubbles: true }))
+    searchInput.focus()
+  })
+})
 
 searchInput.addEventListener("input", () => {
   const query = searchInput.value.toLowerCase().trim()
