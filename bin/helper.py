@@ -13,8 +13,10 @@ def default_proteins_dir() -> str:
         return "../protein_faa_reps_latest"
     return "../protein_faa_reps_232"
 
-def load_nif(update_index, archaea_only = False):
-    if archaea_only:
+def load_nif(update_index, archaea_only=False, hits_file=None):
+    if hits_file:
+        nif = pd.read_csv(hits_file)
+    elif archaea_only:
         nif = pd.read_csv('../results/hmmsearch_results/archaea_hits.csv')
     else:
         nif_archaea = pd.read_csv('../results/hmmsearch_results/archaea_hits.csv')
@@ -26,18 +28,23 @@ def load_nif(update_index, archaea_only = False):
 
     return nif
 
-def get_seq(genome, hit, id=None, description=None, start = None, end = None, dir: str = "../protein_faa_reps_232"):
+def get_seq(genome, hit, id=None, description=None, start=None, end=None, dir: str = "../protein_faa_reps_232"):
     # get the sequence of a hit from the protein fasta file
     record_id = genome if id is None else id
-    record_description = hit if description is None else description 
-    file = glob.glob(f"{dir}/*/{genome}_protein.faa")[0]
+    record_description = hit if description is None else description
+    candidates = glob.glob(f"{dir}/*/{genome}_protein.faa")
+    if not candidates:
+        raise FileNotFoundError(
+            f"Protein FASTA not found for genome {genome!r} under {dir}"
+        )
+    file = candidates[0]
     for result in SeqIO.parse(file, "fasta"):
         if result.id == hit:
             # store seq
             seq = result.seq[start:end] # trim seq to match domain len
             # convert to seqrecord
             return SeqRecord(seq, id=record_id, description=record_description)
-    
+    raise KeyError(f"Sequence {hit!r} was not found in {file}")
 
 def filter_groups_by_unique_counts(df, group_cols, requirements, exclude='nifB'):
     """

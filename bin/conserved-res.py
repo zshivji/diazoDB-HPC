@@ -3,6 +3,7 @@ import numpy as np
 import glob
 import json
 import os
+import subprocess
 from tqdm import tqdm
 import argparse
 
@@ -11,17 +12,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from helper import load_nif, filter_groups_by_unique_counts, get_seq
+from helper import load_nif, filter_groups_by_unique_counts, get_seq, default_proteins_dir
 from test import test
-
-
-def default_proteins_dir() -> str:
-    """Resolve the GTDB protein reps directory with sensible fallbacks."""
-    if os.getenv("DIAZODB_PROTEIN_REPS_DIR"):
-        return os.environ["DIAZODB_PROTEIN_REPS_DIR"]
-    if os.path.isdir("../protein_faa_reps_latest"):
-        return "../protein_faa_reps_latest"
-    return "../protein_faa_reps_232"
 
 # get args (reload_fasta)
 def parse_args() -> argparse.Namespace:
@@ -53,9 +45,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--proteins_dir",
         help=(
-            "Path to GTDB representative protein directories. "
-            "Defaults to DIAZODB_PROTEIN_REPS_DIR, then ../protein_faa_reps_latest, "
-            "then ../protein_faa_reps_232."
+            "Root containing <group>/<genome>_protein.faa files. "
+            "The API runner supplies its uploaded proteins and packaged references."
         ),
         default=default_proteins_dir(),
     )
@@ -72,13 +63,46 @@ def parse_args() -> argparse.Namespace:
         action='store_true',
         help="Whether or not to run the final results against the test file."
     )
+    parser.add_argument(
+        "--hits_file",
+        help=(
+            "Optional parsed HMM hits CSV. Defaults to the repository-wide "
+            "archaea_hits.csv and bacteria_hits.csv files."
+        ),
+    )
+    parser.add_argument(
+        "--results_dir",
+        default="../results/tmp",
+        help="Directory for temporary FASTA, alignment, and residue-check files.",
+    )
+    parser.add_argument(
+        "--final_dir",
+        default="../results/final",
+        help="Directory for nif_final.csv, nif_clusters.csv, and final FASTAs.",
+    )
+    parser.add_argument(
+        "--ref_seq_ids",
+        default="../results/ref_seq.ids",
+        help="seqtk ID file identifying the conserved-residue reference genome.",
+    )
+    parser.add_argument(
+        "--skip_metadata",
+        action="store_true",
+        help="Do not read or join repository taxonomy metadata (used by API runner jobs).",
+    )
 
     return parser.parse_args()
 
 # Note: runtime data (nif table, config, per-gene frames) are loaded in `main`.
 # Helper functions below accept explicit inputs and return results.
 
-def write_fasta(gene_list: dict, config: dict, proteins_dir: str = "../protein_faa_reps_232", results_dir: str = "../results/tmp"):
+def write_fasta(
+    gene_list: dict,
+    config: dict,
+    proteins_dir: str = "../protein_faa_reps_232",
+    results_dir: str = "../results/tmp",
+    reference_genome: str | None = None,
+):
     """Get fasta sequences for each gene & export to fasta.
 
     Returns updated gene_list (with 'Seq' column filled where found).
@@ -93,8 +117,28 @@ def write_fasta(gene_list: dict, config: dict, proteins_dir: str = "../protein_f
 
         records = []
         for genome, hit in gene.iterrows():
-            seq = get_seq(genome, hit.Hit[:-2], start=hit['Domain Start'], end=hit['Domain End'])
+            seq = get_seq(
+                genome,
+                hit.Hit[:-2],
+                description=hit.Hit,
+                start=hit['Domain Start'],
+                end=hit['Domain End'],
+                dir=proteins_dir,
+            )
             records.append(seq)
+
+        # Each MAFFT split needs a known reference sequence. Runner jobs contain
+        # only the uploaded genome, so add the configured reference explicitly.
+        if reference_genome and not any(record.id == reference_genome for record in records):
+            records.append(
+                get_seq(
+                    reference_genome,
+                    config[name]['ref_gene'],
+                    id=reference_genome,
+                    description=config[name]['ref_gene'],
+                    dir=proteins_dir,
+                )
+            )
 
         print(len(records), "records found for " + name, flush=True)
         with open(os.path.join(results_dir, name + ".fasta"), "w") as output_handle:
@@ -105,18 +149,39 @@ def write_fasta(gene_list: dict, config: dict, proteins_dir: str = "../protein_f
 
     return gene_list
 
-def aln_fasta(gene_list: dict, results_dir: str = "../results/tmp"):
+def aln_fasta(
+    genes: dict,
+    results_dir: str = "../results/tmp",
+    ref_seq_ids: str = "../results/ref_seq.ids",
+):
     # align fasta files
     splits_dir = os.path.join(results_dir, 'fasta_splits')
     os.makedirs(splits_dir, exist_ok=True)
-    for name, gene in gene_list.items():
+    for name in genes['Gene'].unique():
         print("aligning "+ name, flush=True)
-        num = int(gene.shape[0]/200)+1 # how many splits
-        os.makedirs("../results/tmp/fasta_splits", exist_ok=True)
-        os.system(f"seqtk split -n {num} ../results/tmp/fasta_splits/{name}_split ../results/tmp/{name}.fasta") # split fasta file
+        tmp = genes[genes['Gene']==name].copy()
+        num = int(tmp.shape[0]/200)+1 # how many splits
+        fasta_path = os.path.join(results_dir, f"{name}.fasta")
+        split_prefix = os.path.join(splits_dir, f"{name}_split")
+        subprocess.run(
+            ["seqtk", "split", "-n", str(num), split_prefix, fasta_path],
+            check=True,
+        )
         for i in range(num):
-            os.system(f"seqtk subseq ../results/tmp/{name}.fasta ../results/ref_seq.ids >> ../results/tmp/fasta_splits/{name}_split.{str(i+1).zfill(5)}.fa") # add reference sequences
-            os.system(f"mafft --auto --quiet --thread 4 ../results/tmp/fasta_splits/{name}_split.{str(i+1).zfill(5)}.fa > ../results/tmp/fasta_splits/{name}_split.{str(i+1).zfill(5)}.aln")
+            split_path = f"{split_prefix}.{str(i+1).zfill(5)}.fa"
+            alignment_path = f"{split_prefix}.{str(i+1).zfill(5)}.aln"
+            with open(split_path, "ab") as split_file:
+                subprocess.run(
+                    ["seqtk", "subseq", fasta_path, ref_seq_ids],
+                    stdout=split_file,
+                    check=True,
+                )
+            with open(alignment_path, "wb") as alignment_file:
+                subprocess.run(
+                    ["mafft", "--auto", "--quiet", "--thread", "4", split_path],
+                    stdout=alignment_file,
+                    check=True,
+                )
 
 
 def check_gene(file, ref_seq, important_residues, residue_scores, passing_score, p=False):
@@ -235,14 +300,21 @@ def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../res
     # export
     os.makedirs(results_dir, exist_ok=True)
     all_genes_checked = pd.concat(all_genes_checked.values())
-    all_genes_checked.to_csv(os.path.join(results_dir, 'nif_rescheck_nofilt.csv'), index=False)
+    all_genes_checked.to_csv(os.path.join(results_dir, 'nif_rescheck_nofilt.csv')) # index = GenomeID
 
     return all_genes_checked
 
 # EXPORT
-def export_results(all_genes_checked, min_genes: int, results_dir: str = "../results/final") -> None:
+def export_results(
+    all_genes_checked,
+    min_genes: int,
+    results_dir: str = "../results/final",
+    proteins_dir: str = "../protein_faa_reps_232",
+    include_metadata: bool = True,
+) -> None:
+    os.makedirs(results_dir, exist_ok=True)
     hits = all_genes_checked.copy()
-    hits.set_index(['GenomeID', 'Gene', 'Hit'], inplace=True)
+    hits.set_index(['Gene', 'Hit'], inplace=True, append=True)
     hits['cluster'] = 'nif'
 
     # make sure nif clusters have at least nifHDK (unless it is a nifB-only operon)
@@ -292,9 +364,6 @@ def export_results(all_genes_checked, min_genes: int, results_dir: str = "../res
         },
         exclude='nifB'
     )
-
-############# Need to get combined Gene and Seq Location? fixed ##############
-    # insted of Domain start/end min/max --> first/last now that it's sorted coretly (based on strand +/-1)
 
     # assign final annotation + group domains into proteins
     hits['protein'] = hits['Hit'].str.rsplit('_', n=1).str[0] # remove domain suffix to get protein name
@@ -357,7 +426,13 @@ def export_results(all_genes_checked, min_genes: int, results_dir: str = "../res
         records = []
 
         for genome, hit in genomes_to_keep[genomes_to_keep.Gene == gene].iterrows():
-            record = get_seq(genome, hit.protein, id=hit.protein, description=f"{genome} {hit.Gene}")
+            record = get_seq(
+                genome,
+                hit.protein,
+                id=hit.protein,
+                description=f"{genome} {hit.Gene}",
+                dir=proteins_dir,
+            )
             records.append(record)
                     
         # Write the records to a FASTA file
@@ -382,7 +457,8 @@ def export_results(all_genes_checked, min_genes: int, results_dir: str = "../res
         'Location_start': ('Location_start', 'first'),
         'Location_end': ('Location_end', 'last'),
         'GTDB': ('GTDB', 'first'),
-        'Orientation': ('Orientation', 'first')
+        'Orientation': ('Orientation', 'first'),
+        'pos_num': ('pos_num', lambda x: x.astype(int).tolist())
     })
 
     # def get_hit(rec):
@@ -438,26 +514,49 @@ def export_results(all_genes_checked, min_genes: int, results_dir: str = "../res
 #     nif = nif.groupby(['GenomeID','contig']).first()
 #     nif.reset_index(level=['GenomeID','contig'], inplace = True)
 
-    #merge dataframes to include accession, metadata, and sequences (for filtering)
-    GTDB_metadata = pd.read_csv('GTDB_metadata.gz', sep = '\t', usecols=['accession', 'gtdb_taxonomy', 'ncbi_taxonomy', 
-                                                    'ncbi_taxonomy_unfiltered', 'ncbi_country', 'ncbi_isolation_source'])
-    
-    operons = operons.join(
-        GTDB_metadata.set_index('accession'),
-        on='GenomeID',
-        how='left'
-    ).drop(columns=['GTDB'])
+    if include_metadata:
+        # Database-build mode enriches representative genomes with taxonomy.
+        gtdb_metadata = pd.read_csv(
+            "GTDB_metadata.gz",
+            sep="\t",
+            usecols=[
+                "accession",
+                "gtdb_taxonomy",
+                "ncbi_taxonomy",
+                "ncbi_taxonomy_unfiltered",
+                "ncbi_country",
+                "ncbi_isolation_source",
+            ],
+        )
 
-    operons['Organism'] = operons['gtdb_taxonomy'].str.split(';').str[-1].str.split('__').str[-1]
-    operons['Regulon'] = ''
-    operons['Operon'] = ''
-    operons['Group'] = ''
-#    nif['PredGrowthTemp'] = ''
-    operons.rename(columns = {'GenomeID': 'Genome', 'contig': 'Contig', 'Gene set': 'Nitrogenase Set', 
-                        'Group':'Group No', 'gtdb_taxonomy': 'GTDB Taxonomy', 'cluster': 'Cluster', 
-                        'ncbi_taxonomy': 'NCBI Taxonomy', 'ncbi_isolation_source':'Isolation Source'}, inplace = True)
+        operons = operons.join(
+            gtdb_metadata.set_index("accession"),
+            on="GenomeID",
+            how="left",
+        ).drop(columns=["GTDB"])
 
-    operons.to_csv(f'../results/final/nif_clusters.csv')
+        operons["Organism"] = (
+            operons["gtdb_taxonomy"].str.split(";").str[-1].str.split("__").str[-1]
+        )
+        operons["Regulon"] = ""
+        operons["Operon"] = ""
+        operons["Group"] = ""
+        operons.rename(
+            columns={
+                "Gene set": "Nitrogenase Set",
+                "Group": "Group No",
+                "gtdb_taxonomy": "GTDB Taxonomy",
+                "ncbi_taxonomy": "NCBI Taxonomy",
+                "ncbi_isolation_source": "Isolation Source",
+            },
+            inplace=True,
+        )
+    else:
+        # Uploaded genomes do not need database taxonomy enrichment.
+        operons.drop(columns=["GTDB"], errors="ignore", inplace=True)
+        operons.rename(columns={"Gene set": "Nitrogenase Set"}, inplace=True)
+
+    operons.to_csv(os.path.join(results_dir, 'nif_clusters.csv'))
 
     return genomes_to_keep
 
@@ -491,9 +590,36 @@ def main() -> None:
     config = json.load(open(config_file, 'r'))
 
     # load hits dataframe
-    hits = load_nif(update_index=['GenomeID'])
+    hits = load_nif(update_index=['GenomeID'], hits_file=args.hits_file)
     if 'Seq' not in hits.columns:
         hits['Seq'] = ''
+    if hits.empty:
+        os.makedirs(args.final_dir, exist_ok=True)
+        hits.reset_index().to_csv(
+            os.path.join(args.final_dir, 'nif_final.csv'),
+            index=False,
+        )
+        result_columns = [
+            "GenomeID",
+            "contig",
+            "operon",
+            "cluster",
+            "Nitrogenase Set",
+            "Location_start",
+            "Location_end",
+            "Orientation",
+            "pos_num",
+        ]
+        if not args.skip_metadata:
+            result_columns.extend(
+                ["GTDB Taxonomy", "NCBI Taxonomy", "Isolation Source"]
+            )
+        pd.DataFrame(columns=result_columns).to_csv(
+            os.path.join(args.final_dir, 'nif_clusters.csv'),
+            index=False,
+        )
+        print("No qualifying HMM hits; wrote empty final result files.", flush=True)
+        return
 
     # store per-gene df in a dict
     gene_list = {gene: hits[hits.Gene == gene].copy() for gene in config.keys()}
@@ -501,16 +627,33 @@ def main() -> None:
 
     # reload + align fasta files if specified
     if args.reload_fasta:
-        gene_list = write_fasta(gene_list, config, proteins_dir=args.proteins_dir)
+        with open(args.ref_seq_ids, encoding="utf-8") as ref_file:
+            reference_genome = next(
+                (line.strip() for line in ref_file if line.strip()),
+                None,
+            )
+        gene_list = write_fasta(
+            gene_list,
+            config,
+            proteins_dir=args.proteins_dir,
+            results_dir=args.results_dir,
+            reference_genome=reference_genome,
+        )
         args.align_fasta = True  # Automatically align if reloading fasta
     else: 
-        gene_list = pd.read_csv(os.path.join("../results/tmp", 'hits_seq.csv'))
+        gene_list = pd.read_csv(os.path.join(args.results_dir, 'hits_seq.csv'))
     if args.align_fasta:
-        aln_fasta(gene_list)
+        aln_fasta(gene_list, results_dir=args.results_dir, ref_seq_ids=args.ref_seq_ids)
 
     # check for conserved residues and save results
-    checked = check_gene_wrapper(gene_list, config)
-    export_results(checked, args.min_genes)
+    checked = check_gene_wrapper(gene_list, config, results_dir=args.results_dir)
+    export_results(
+        checked,
+        args.min_genes,
+        results_dir=args.final_dir,
+        proteins_dir=args.proteins_dir,
+        include_metadata=not args.skip_metadata,
+    )
 
     # check results against known nitrogenase
     if args.test:

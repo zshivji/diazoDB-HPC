@@ -332,7 +332,7 @@ async function initOrganismPage() {
   }
 
   try {
-    const metadata = await fetchJson(["./metadata.json", "../metadata.json"])
+    const metadata = await fetchJson(["./metadata.json", "../results/metadata.json"])
     const record = findOrganismRecord(metadata, requestedId)
 
     if (!record) {

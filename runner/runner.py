@@ -11,7 +11,6 @@ HEADERS   = {"x-runner-token": os.environ["RUNNER_SECRET"]}
 JOB_BASE  = Path(os.environ["HPC_JOB_BASE"])
 DUMMY_RUNNER = os.environ.get("DUMMY_RUNNER", "").lower() in {"1", "true", "yes"}
 SLURM_SCRIPT = os.environ.get("SLURM_SCRIPT")
-SLURM_LOG_DIR = os.environ.get("SLURM_LOG_DIR")
 
 # runner polls API (HTTP request)
 def poll() -> list[dict]:
@@ -54,13 +53,17 @@ def push_result(job_id: str, result_path: Path) -> None:
 
 def download_input(job: dict, dest: Path) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    r = requests.get(
+    with requests.get(
         f"{API}/api/v1/runner/jobs/{job['id']}/input",
         headers=HEADERS,
-        timeout=120,
-    )
-    r.raise_for_status()
-    dest.write_bytes(r.content)
+        stream=True,
+        timeout=(15, 3600),
+    ) as r:
+        r.raise_for_status()
+        with dest.open("wb") as output:
+            for chunk in r.iter_content(chunk_size=8 * 1024 * 1024):
+                if chunk:
+                    output.write(chunk)
     return dest
 
 
@@ -68,38 +71,25 @@ def workspace_for(job_id: str) -> Path:
     return JOB_BASE / job_id
 
 
-# def resolve_input_path(job: dict) -> Path:
-#     job_id = job["id"]
-#     filename = job["filename"]
-#     preferred = workspace_for(job_id) / filename
-#     if preferred.exists():
-#         return preferred
-
-#     hpc_path = Path(job["hpc_path"])
-#     if hpc_path.exists():
-#         return hpc_path
-
-#     if hpc_path.is_absolute() and JOB_BASE.name in hpc_path.parts:
-#         base_index = hpc_path.parts.index(JOB_BASE.name)
-#         relative_parts = hpc_path.parts[base_index + 1:]
-#         return JOB_BASE.joinpath(*relative_parts)
-
-#     return preferred
-
-
-def run_slurm(job_id: str, input_path: Path, out_file: Path) -> None:
+def run_slurm(
+    job_id: str,
+    input_path: Path,
+    intermediate_dir: Path,
+    result_path: Path,
+    log_dir: Path,
+) -> None:
     if not SLURM_SCRIPT:
         raise RuntimeError("SLURM_SCRIPT is not set")
 
-    out_file.parent.mkdir(parents=True, exist_ok=True)
-    if SLURM_LOG_DIR:
-        Path(SLURM_LOG_DIR).mkdir(parents=True, exist_ok=True)
+    intermediate_dir.mkdir(parents=True, exist_ok=True)
+    result_path.parent.mkdir(parents=True, exist_ok=True)
+    log_dir.mkdir(parents=True, exist_ok=True)
     export_vars = ",".join([
         "ALL",
         f"DIAZODB_JOB_ID={job_id}",
         f"DIAZODB_INPUT={input_path}",
-        f"DIAZODB_OUTDIR={out_file.parent}",
-        f"DIAZODB_OUTPUT={out_file}",
+        f"DIAZODB_OUTDIR={intermediate_dir}",
+        f"DIAZODB_OUTPUT={result_path}",
         f"DIAZODB_USE_PRODIGAL={os.environ.get('DIAZODB_USE_PRODIGAL', 'false')}",
     ])
     subprocess.run(
@@ -109,18 +99,29 @@ def run_slurm(job_id: str, input_path: Path, out_file: Path) -> None:
             "--parsable",
             "--job-name",
             f"diazodb_{job_id[:8]}",
+            "--output",
+            str(log_dir / "slurm-%x-%j.out"),
+            "--error",
+            str(log_dir / "slurm-%x-%j.err"),
             "--export",
             export_vars,
             SLURM_SCRIPT,
         ],
         check=True,
-        timeout=int(os.environ.get("SLURM_WAIT_TIMEOUT_SECONDS", "7200")), # currently set at 2hrs
+        timeout=int(os.environ.get("SLURM_WAIT_TIMEOUT_SECONDS", "32400")),
     )
 
 
-def run_analysis(job_id: str, input_path: Path, out_file: Path) -> None:
+def run_analysis(
+    job_id: str,
+    input_path: Path,
+    intermediate_dir: Path,
+    result_path: Path,
+    log_dir: Path,
+) -> None:
     if DUMMY_RUNNER: # for testing
-        out_file.write_text(
+        result_path.parent.mkdir(parents=True, exist_ok=True)
+        result_path.write_text(
             "sequence_id,prediction,confidence\n"
             f"{input_path.name},dummy_result,1.0\n",
             encoding="utf-8",
@@ -128,7 +129,7 @@ def run_analysis(job_id: str, input_path: Path, out_file: Path) -> None:
         return
 
     if SLURM_SCRIPT:
-        run_slurm(job_id, input_path, out_file)
+        run_slurm(job_id, input_path, intermediate_dir, result_path, log_dir)
         return
 
     # # ── Replace this command with your actual non-Slurm analysis tool ──
@@ -142,11 +143,15 @@ def run_analysis(job_id: str, input_path: Path, out_file: Path) -> None:
 def process(job: dict) -> None:
     job_id = job["id"]
     os.environ["DIAZODB_USE_PRODIGAL"] = str(job.get("use_prodigal", False)).lower()
-    # input_path = resolve_input_path(job)
-    # out_file = input_path.parent / "output.csv"
 
-    input_path = download_input(job, workspace_for(job_id) / job["filename"])
-    out_file = input_path.parent / "output.csv"
+    workspace = workspace_for(job_id)
+    safe_filename = Path(job["filename"].replace("\\", "/")).name
+    if not safe_filename or safe_filename in {".", ".."}:
+        raise ValueError("Job filename is invalid")
+    input_path = download_input(job, workspace / "input" / safe_filename)
+    intermediate_dir = workspace / "intermediate"
+    result_path = workspace / "results" / "nif_clusters.csv"
+    log_dir = workspace / "logs"
 
     if not input_path.exists():
         hpc_path = Path(job["hpc_path"])
@@ -158,10 +163,10 @@ def process(job: dict) -> None:
     log.info(f"[{job_id}] processing {input_path}")
 
     try:
-        run_analysis(job_id, input_path, out_file)
-        if not out_file.exists():
-            raise FileNotFoundError(f"Expected result file was not created: {out_file}")
-        push_result(job_id, out_file)
+        run_analysis(job_id, input_path, intermediate_dir, result_path, log_dir)
+        if not result_path.exists():
+            raise FileNotFoundError(f"Expected result file was not created: {result_path}")
+        push_result(job_id, result_path)
         log.info(f"[{job_id}] complete")
     except subprocess.CalledProcessError as e:
         mark(job_id, "failed", str(e))

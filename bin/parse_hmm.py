@@ -19,13 +19,13 @@ import numpy as np
 from pathlib import Path
 from Bio import SearchIO
 from scipy.cluster.hierarchy import linkage, fcluster
-from helper import filter_groups_by_unique_counts, default_proteins_dir
+from helper import filter_groups_by_unique_counts
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 def genome_id_from_path(file: Path) -> str | None:
-    """Extract a GTDB accession or runner input name from a domtblout path."""
+    """Extract a recognized accession or runner input name from a domtblout path."""
     accession_match = re.search(r"([\w]+_[\w]+_[\d]+\.[\d])", str(file))
     if accession_match:
         return accession_match.group()
@@ -49,6 +49,13 @@ def parse_args() -> argparse.Namespace:
         "--outdir",
         help="Output directory for hmm hits that meet the following criteria (1) significant evalue, (2) have at least x nif genes within a y gene range.",
     )
+    parser.add_argument(
+        "--output_file",
+        help=(
+            "Optional exact CSV output path. If omitted, the historical "
+            "<outdir>_hits.csv naming convention is used."
+        ),
+    )
 
     parser.add_argument(
         "--min_genes",
@@ -58,20 +65,15 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--proteins_dir",
-        help=(
-            "Path to GTDB representative protein directories. "
-            "Defaults to DIAZODB_PROTEIN_REPS_DIR, then ../protein_faa_reps_latest, "
-            "then ../protein_faa_reps_232."
-        ),
-        default=default_proteins_dir(),
-    )
-    
-    parser.add_argument(
         "--gene_range",
         type=int,
         default=15,
         help="Maximum gene range (+/- from gene of interest) for nif genes to be considered a cluster (default: 15).")
+    parser.add_argument(
+        "--skip_taxonomy",
+        action="store_true",
+        help="Do not read or join repository taxonomy metadata (used by API runner jobs).",
+    )
     
     return parser.parse_args()
 
@@ -172,7 +174,14 @@ def parse_hits(hits_path: Path, outdir: Path) -> pd.DataFrame:
     hits.drop_duplicates(inplace=True)
     return hits
 
-def parse_tophits(hits: pd.DataFrame, outdir: Path, min_genes: int, gene_range: int) -> None:
+def parse_tophits(
+    hits: pd.DataFrame,
+    outdir: Path,
+    min_genes: int,
+    gene_range: int,
+    output_file: Path | None = None,
+    include_taxonomy: bool = True,
+) -> None:
     # save "contig" and "pos_num" as col
     hits["contig"] = hits["Hit"].str.split("_").str[:-2].str.join("_")
     hits['pos_num'] = hits["Hit"].str.split("_").str[-2].astype(int)
@@ -234,15 +243,29 @@ def parse_tophits(hits: pd.DataFrame, outdir: Path, min_genes: int, gene_range: 
     # record which gene has the highest bitscore for each protein
     genomes_to_keep["top_hit"] = (genomes_to_keep.sort_values("Bit Score", ascending=False).groupby(["GenomeID", "contig", "Hit"])["Gene"].transform("first"))
 
-    # add taxonomy info (make sure metadata is the same release as the GTDB rep seqs)
-    ### NNED TP UPDATE GTDB INPUT PATH
-    gtdb_taxonomy = pd.read_csv("GTDB_metadata.gz", sep="\t", usecols=['accession', 'gtdb_taxonomy']).rename(columns={"accession": "GenomeID", "gtdb_taxonomy": "GTDB"})
-    genomes_to_keep = pd.merge(genomes_to_keep, gtdb_taxonomy, on="GenomeID", how="left")
+    if include_taxonomy:
+        # Database-build mode enriches representative genomes with taxonomy.
+        gtdb_taxonomy = pd.read_csv(
+            "GTDB_metadata.gz",
+            sep="\t",
+            usecols=["accession", "gtdb_taxonomy"],
+        ).rename(columns={"accession": "GenomeID", "gtdb_taxonomy": "GTDB"})
+        genomes_to_keep = pd.merge(
+            genomes_to_keep,
+            gtdb_taxonomy,
+            on="GenomeID",
+            how="left",
+        )
+    else:
+        # Keep the downstream schema stable without requiring repository metadata.
+        genomes_to_keep["GTDB"] = ""
 
     # export
     outdir.mkdir(parents=True, exist_ok=True)
-    genomes_to_keep.to_csv(str(outdir) + "_hits.csv", index=False)
-    print(f"Saved {genomes_to_keep.shape[0]} hits to {outdir}_hits.csv", flush=True)
+    output_path = output_file or Path(str(outdir) + "_hits.csv")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    genomes_to_keep.to_csv(output_path, index=False)
+    print(f"Saved {genomes_to_keep.shape[0]} hits to {output_path}", flush=True)
 
 
 def main() -> None:
@@ -250,7 +273,14 @@ def main() -> None:
 
     if args.hits and args.outdir:
         hits = parse_hits(Path(args.hits), Path(args.outdir))
-        parse_tophits(hits, Path(args.outdir), args.min_genes, args.gene_range)
+        parse_tophits(
+            hits,
+            Path(args.outdir),
+            args.min_genes,
+            args.gene_range,
+            Path(args.output_file) if args.output_file else None,
+            include_taxonomy=not args.skip_taxonomy,
+        )
     elif args.hits or args.outdir:
         raise SystemExit("Both --hits and --outdir are required to parse HMM hits."
                          "Please provide both arguments and try again." )
