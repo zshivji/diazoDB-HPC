@@ -13,13 +13,12 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=40GB
 #SBATCH -J diazodb_classify
-#SBATCH -o /resnick/scratch/zshivji/diazoDB-HPC/slurm/slurm-%x-%j.out
-#SBATCH -e /resnick/scratch/zshivji/diazoDB-HPC/slurm/slurm-%x-%j.err
+#SBATCH -o /resnick/scratch/zshivji/diazoDB-HPC/logs/%x-%j.out
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="/resnick/groups/enviromics/zahra/diazoDB-HPC/"
+SCRIPT_DIR="/resnick/groups/enviromics/zahra/diazoDB-HPC/bin"
 
 # Prefer env vars injected by runner; fall back to positional args if provided.
 DIAZODB_JOB_ID="${DIAZODB_JOB_ID:-${1:-}}"
@@ -40,7 +39,7 @@ USE_PRODIGAL="${DIAZODB_USE_PRODIGAL:-false}"
 DIAZODB_CONDA_ENV="${DIAZODB_CONDA_ENV:-/resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm}"
 
 QUERY_FASTA="$INPUT_FASTA"
-HMM_DB="${DIAZODB_HMM_PROFILE:-$REPO_ROOT/HMMs/combined_nif_07202026.hmm}"
+HMM_DB="${REPO_ROOT}/HMMs/combined_nif_07202026.hmm"
 JOB_HMM_DIR="$OUTDIR/hmmsearch_results/hmm_out"
 JOB_PARSE_DIR="$OUTDIR/hmmsearch_results"
 JOB_PARSED_HITS="$JOB_PARSE_DIR/hits.csv"

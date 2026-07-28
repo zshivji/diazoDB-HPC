@@ -96,6 +96,8 @@ def test_runner_can_mark_processing(client, runner_headers, job, db):
     )
     assert r.status_code == 200
     assert r.json()["ok"] is True
+    assert r.json()["email_sent"] is True
+    assert r.json()["email_status"] == "sent"
 
 
 def test_runner_can_mark_failed(client, runner_headers, job, db):
@@ -197,3 +199,46 @@ def test_runner_post_result_uses_public_job_email(client, runner_headers, job, d
 
     assert r.status_code == 200
     assert mock_email.call_args.kwargs["to"] == "submitter@example.edu"
+
+
+def test_runner_post_result_reports_email_failure(
+    client, runner_headers, job, db, monkeypatch, tmp_path
+):
+    monkeypatch.setattr("app.core.config.settings.UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr("app.core.config.settings.SMTP_HOST", "smtp.test.com")
+    monkeypatch.setattr(
+        "app.core.config.settings.EMAILS_FROM_EMAIL",
+        "noreply@lab.edu",
+    )
+    update_job(
+        session=db,
+        job=job,
+        status=JobStatus.processing,
+        seen_by_runner=True,
+    )
+
+    payload = {
+        "filename": "output.csv",
+        "content_type": "text/csv",
+        "data_base64": base64.b64encode(b"seq,score\nATCG,0.99\n").decode(),
+    }
+
+    with patch(
+        "app.api.routes.runner.send_result_email",
+        side_effect=OSError("SMTP unavailable"),
+    ):
+        r = client.post(
+            f"/api/v1/runner/jobs/{job.id}/result",
+            json=payload,
+            headers=runner_headers,
+        )
+
+    assert r.status_code == 200
+    assert r.json() == {
+        "ok": True,
+        "email_sent": False,
+        "email_status": "failed: OSError",
+    }
+    db.refresh(job)
+    assert job.status == JobStatus.complete
+    assert (tmp_path / str(job.id) / "results" / "output.csv").exists()

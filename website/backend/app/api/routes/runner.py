@@ -143,6 +143,8 @@ def post_result(
         owner = session.get(User, job.owner_id)
         recipient = owner.email if owner else None
 
+    email_sent = False
+    email_status = "recipient_missing"
     if recipient and settings.emails_enabled:
         try:
             send_result_email(
@@ -156,10 +158,17 @@ def post_result(
                     filename=payload.filename,
                 ),
             )
-        except Exception:
+            email_sent = True
+            email_status = "sent"
+            log.info("Sent result email for job %s", job.id)
+        except Exception as exc:
+            email_status = f"failed: {type(exc).__name__}"
             log.exception("Failed to send result email for job %s", job.id)
     elif recipient:
-        log.info("Email is not configured; skipping result email for job %s", job.id)
+        email_status = "smtp_not_configured"
+        log.warning("Email is not configured; skipping result email for job %s", job.id)
+    else:
+        log.warning("No result-email recipient is available for job %s", job.id)
 
     update_job(
         session=session,
@@ -167,4 +176,8 @@ def post_result(
         status=JobStatus.complete,
         result_filename=payload.filename,
     )
-    return {"ok": True}
+    return {
+        "ok": True,
+        "email_sent": email_sent,
+        "email_status": email_status,
+    }

@@ -33,7 +33,7 @@ def mark(job_id: str, status: str, error: str = "") -> None:
     )
 
 # uploads analysis output back to server
-def push_result(job_id: str, result_path: Path) -> None:
+def push_result(job_id: str, result_path: Path) -> dict:
     content_types = {
         ".csv": "text/csv",
         ".html": "text/html",
@@ -49,6 +49,14 @@ def push_result(job_id: str, result_path: Path) -> None:
         timeout=60,
     )
     r.raise_for_status()
+    response = r.json()
+    if not response.get("email_sent"):
+        log.error(
+            "[%s] result stored by API, but notification email was not sent: %s",
+            job_id,
+            response.get("email_status", "unknown"),
+        )
+    return response
 
 
 def download_input(job: dict, dest: Path) -> Path:
