@@ -30,3 +30,27 @@ def test_send_result_email_calls_smtp(monkeypatch):
     mock_smtp.sendmail.assert_called_once()
     args = mock_smtp.sendmail.call_args[0]
     assert args[1] == "user@university.edu"   # recipient
+
+
+def test_send_failure_email_calls_smtp(monkeypatch):
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.test.com")
+    monkeypatch.setattr(settings, "SMTP_USER", "user@test.com")
+    monkeypatch.setattr(settings, "SMTP_PASSWORD", "secret")
+    monkeypatch.setattr(settings, "EMAILS_FROM_EMAIL", "noreply@lab.edu")
+
+    with patch("smtplib.SMTP") as mock_smtp_cls:
+        mock_smtp = MagicMock()
+        mock_smtp_cls.return_value.__enter__ = lambda s: mock_smtp
+        mock_smtp_cls.return_value.__exit__ = MagicMock(return_value=False)
+
+        from app.services.email import send_failure_email
+        send_failure_email(
+            to="user@university.edu",
+            job_id="abc-123",
+            error_message="tool crashed",
+        )
+
+    mock_smtp.sendmail.assert_called_once()
+    args = mock_smtp.sendmail.call_args[0]
+    assert args[1] == "user@university.edu"
+    assert "tool crashed" in args[2]

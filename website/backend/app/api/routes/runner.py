@@ -12,7 +12,7 @@ from app.api.deps import get_db, verify_runner_token
 from app.core.config import settings
 from app.crud import get_job, get_jobs_for_runner, update_job
 from app.models import Job, JobRunnerView, JobStatus, User
-from app.services.email import send_result_email
+from app.services.email import send_failure_email, send_result_email
 from app.services.globus import get_transfer_status
 from app.services.results import build_result_download_url, save_result_file
 
@@ -23,6 +23,13 @@ router = APIRouter(
     tags=["runner"],
     dependencies=[Depends(verify_runner_token)],
 )
+
+
+def _job_recipient(*, session: Session, job: Job) -> str | None:
+    if job.user_email:
+        return job.user_email
+    owner = session.get(User, job.owner_id)
+    return owner.email if owner else None
 
 
 @router.get("/jobs", response_model=list[JobRunnerView])
@@ -82,7 +89,35 @@ def update_job_status(
     if "error_message" in payload:
         kw["error_message"] = payload["error_message"]
     update_job(session=session, job=job, **kw)
-    return {"ok": True}
+
+    email_sent = False
+    email_status = "not_applicable"
+    if status_val == JobStatus.failed:
+        recipient = _job_recipient(session=session, job=job)
+        email_status = "recipient_missing"
+        if recipient and settings.emails_enabled:
+            try:
+                send_failure_email(
+                    to=recipient,
+                    job_id=str(job.id),
+                    error_message=payload.get("error_message"),
+                )
+                email_sent = True
+                email_status = "sent"
+                log.info("Sent failure email for job %s", job.id)
+            except Exception as exc:
+                email_status = f"failed: {type(exc).__name__}"
+                log.exception("Failed to send failure email for job %s", job.id)
+        elif recipient:
+            email_status = "smtp_not_configured"
+            log.warning(
+                "Email is not configured; skipping failure email for job %s",
+                job.id,
+            )
+        else:
+            log.warning("No failure-email recipient is available for job %s", job.id)
+
+    return {"ok": True, "email_sent": email_sent, "email_status": email_status}
 
 
 @router.get("/jobs/{job_id}/input")
@@ -138,10 +173,7 @@ def post_result(
     except (binascii.Error, ValueError):
         raise HTTPException(status_code=400, detail="Invalid result payload")
 
-    recipient = job.user_email
-    if not recipient:
-        owner = session.get(User, job.owner_id)
-        recipient = owner.email if owner else None
+    recipient = _job_recipient(session=session, job=job)
 
     email_sent = False
     email_status = "recipient_missing"

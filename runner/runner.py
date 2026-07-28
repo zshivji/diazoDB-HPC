@@ -21,16 +21,25 @@ def poll() -> list[dict]:
     return r.json()
 
 # marks job as processing/failed/complete
-def mark(job_id: str, status: str, error: str = "") -> None:
+def mark(job_id: str, status: str, error: str = "") -> dict:
     payload = {"status": status}
     if error:
         payload["error_message"] = error
-    requests.patch(
+    r = requests.patch(
         f"{API}/api/v1/runner/jobs/{job_id}",
         json=payload,
         headers=HEADERS,
         timeout=10,
     )
+    r.raise_for_status()
+    response = r.json()
+    if status == "failed" and not response.get("email_sent"):
+        log.error(
+            "[%s] job marked failed, but failure email was not sent: %s",
+            job_id,
+            response.get("email_status", "unknown"),
+        )
+    return response
 
 # uploads analysis output back to server
 def push_result(job_id: str, result_path: Path) -> dict:

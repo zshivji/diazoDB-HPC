@@ -96,18 +96,25 @@ def test_runner_can_mark_processing(client, runner_headers, job, db):
     )
     assert r.status_code == 200
     assert r.json()["ok"] is True
+    assert r.json()["email_sent"] is False
+    assert r.json()["email_status"] == "not_applicable"
+
+
+def test_runner_can_mark_failed(client, runner_headers, job, db, monkeypatch):
+    monkeypatch.setattr("app.core.config.settings.SMTP_HOST", "smtp.test.com")
+    monkeypatch.setattr("app.core.config.settings.EMAILS_FROM_EMAIL", "noreply@lab.edu")
+    update_job(session=db, job=job, status=JobStatus.processing, seen_by_runner=True)
+    with patch("app.api.routes.runner.send_failure_email") as mock_email:
+        r = client.patch(
+            f"/api/v1/runner/jobs/{job.id}",
+            json={"status": "failed", "error_message": "tool crashed"},
+            headers=runner_headers,
+        )
+    assert r.status_code == 200
     assert r.json()["email_sent"] is True
     assert r.json()["email_status"] == "sent"
-
-
-def test_runner_can_mark_failed(client, runner_headers, job, db):
-    update_job(session=db, job=job, status=JobStatus.processing, seen_by_runner=True)
-    r = client.patch(
-        f"/api/v1/runner/jobs/{job.id}",
-        json={"status": "failed", "error_message": "tool crashed"},
-        headers=runner_headers,
-    )
-    assert r.status_code == 200
+    mock_email.assert_called_once()
+    assert mock_email.call_args.kwargs["error_message"] == "tool crashed"
 
 
 def test_runner_can_download_input(client, runner_headers, job, tmp_path, monkeypatch):
@@ -137,7 +144,7 @@ def test_runner_post_result_sends_email(client, runner_headers, job, db, monkeyp
 
     csv_bytes = b"seq,score\nATCG,0.99\n"
     payload = {
-        "filename": "output.csv",
+        "filename": "nif_clusters.csv",
         "content_type": "text/csv",
         "data_base64": base64.b64encode(csv_bytes).decode(),
     }
@@ -151,16 +158,18 @@ def test_runner_post_result_sends_email(client, runner_headers, job, db, monkeyp
 
     assert r.status_code == 200
     assert r.json()["ok"] is True
+    assert r.json()["email_sent"] is True
+    assert r.json()["email_status"] == "sent"
     mock_email.assert_called_once()
     call_kwargs = mock_email.call_args.kwargs
-    assert call_kwargs["filename"] == "output.csv"
+    assert call_kwargs["filename"] == "nif_clusters.csv"
     assert call_kwargs["data"] == csv_bytes
     assert call_kwargs["download_url"] == (
-        f"https://api.example.edu/api/v1/classify/{job.id}/results/output.csv"
+        f"https://api.example.edu/api/v1/classify/{job.id}/results/nif_clusters.csv"
     )
-    assert (tmp_path / str(job.id) / "results" / "output.csv").read_bytes() == csv_bytes
+    assert (tmp_path / str(job.id) / "results" / "nif_clusters.csv").read_bytes() == csv_bytes
 
-    download = client.get(f"/api/v1/classify/{job.id}/results/output.csv")
+    download = client.get(f"/api/v1/classify/{job.id}/results/nif_clusters.csv")
     assert download.status_code == 200
     assert download.content == csv_bytes
 

@@ -7,6 +7,16 @@ from email.mime.text import MIMEText
 from app.core.config import settings
 
 
+def _send_message(msg: MIMEMultipart) -> None:
+    smtp_cls = smtplib.SMTP_SSL if settings.SMTP_SSL else smtplib.SMTP
+    with smtp_cls(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+        if settings.SMTP_TLS and not settings.SMTP_SSL:
+            server.starttls()
+        if settings.SMTP_USER:
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+        server.sendmail(settings.EMAILS_FROM_EMAIL, msg["To"], msg.as_string())
+
+
 def send_result_email(
     *,
     to: str,
@@ -36,10 +46,25 @@ def send_result_email(
     part.add_header("Content-Disposition", f'attachment; filename="{filename}"')
     msg.attach(part)
 
-    smtp_cls = smtplib.SMTP_SSL if settings.SMTP_SSL else smtplib.SMTP
-    with smtp_cls(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        if settings.SMTP_TLS and not settings.SMTP_SSL:
-            server.starttls()
-        if settings.SMTP_USER:
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-        server.sendmail(settings.EMAILS_FROM_EMAIL, to, msg.as_string())
+    _send_message(msg)
+
+
+def send_failure_email(
+    *,
+    to: str,
+    job_id: str,
+    error_message: str | None = None,
+) -> None:
+    assert settings.emails_enabled, "no provided configuration for email variables"
+
+    msg = MIMEMultipart()
+    msg["From"] = settings.EMAILS_FROM_EMAIL
+    msg["To"] = to
+    msg["Subject"] = f"{settings.PROJECT_NAME} analysis failed"
+
+    body = f"Your job ({job_id}) did not complete successfully."
+    if error_message:
+        body += f"\n\nError:\n{error_message}"
+
+    msg.attach(MIMEText(body, "plain"))
+    _send_message(msg)
