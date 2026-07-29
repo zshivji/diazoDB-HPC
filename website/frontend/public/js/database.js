@@ -10,7 +10,7 @@ const downloadFastaBtn = document.getElementById("downloadFastaBtn")
 const downloadFastaDropdown = document.querySelector("[data-download-dropdown]")
 const tableSearchInput = document.getElementById("tableSearchInput")
 const tableSearchForm = document.getElementById("tableSearchForm")
-const CSV_PATH = "results/final/nif_genomes.csv"
+const CSV_PATH = "../results/nif_clusters.csv"
 
 const ROW_HEIGHT = 40 // must match CSS .data-row height
 const BUFFER = 10
@@ -27,51 +27,59 @@ if (!tbody || !tpl || !viewport || !topSpacer || !bottomSpacer || !table) {
 
 const headers = Array.from(table.querySelectorAll("thead th[data-column-name]"))
 
-const columnKeyMap = {
-  Organism: "Organism",
-  GroupNo: "GroupNo",
-  NitrogenaseSet: "NitrogenaseSet",
-  Env: "Env",
-  GenomeAcc: "GenomeAcc",
-  ContigAcc: "ContigAcc",
-  GTDBPhylo: "GTDBPhylo",
-  // Regulon: "Regulon",
-  // PredGrowthTemp: "PredGrowthTemp",
-}
-
 const rowCellMap = {
   ".col-Organism": "Organism",
-  ".col-NitrogenaseSet": "NitrogenaseSet",
-  ".col-Env": "Env",
+  ".col-NitrogenaseSet": "Nitrogenase Set",
+  ".col-Env": "Isolation Source",
   // ".col-Regulon": "Regulon",
   // ".col-PredGrowthTemp": "PredGrowthTemp",
-  ".col-ContigAcc": "ContigAcc",
-  ".col-GTDBPhylo": "GTDBPhylo",
+  ".col-ContigAcc": "contig",
+  ".col-GTDBPhylo": "GTDB Taxonomy",
+  ".col-Cluster": "cluster",
+}
+
+const sortKeyMap = {
+  "Organism": "Organism",
+  "NitrogenaseSet": "Nitrogenase Set",
+  "Env": "Isolation Source",
+  "GenomeID": "GenomeID",
+  // "Regulon": "Regulon",
+  // "PredGrowthTemp": "PredGrowthTemp",
+  "ContigAcc": "contig",
+  "GTDBPhylo": "GTDB Taxonomy",
+  "Cluster": "cluster",
 }
 
 const searchableColumnKeys = headers.map(
-  (th) => columnKeyMap[th.dataset.columnName] ?? th.dataset.columnName,
+  (th) => sortKeyMap[th.dataset.columnName] ?? th.dataset.columnName,
 )
 
 // parse CSV text into array of objects, using first line as keys
-function parseCSVToObjects(csvText) {
-  const lines = csvText.trim().split(/\r?\n/)
-  const csvHeaders = lines[0].split(",").map((h) => h.trim())
+// function parseCSVToObjects(csvText) {
+//   const lines = csvText.trim().split(/\r?\n/)
+//   const csvHeaders = lines[0].split(",").map((h) => h.trim())
 
-  return lines
-    .slice(1)
-    .filter((line) => line.trim().length > 0)
-    .map((line) => {
-      const cols = line.split(",")
-      const obj = {}
-      csvHeaders.forEach((header, i) => (obj[header] = (cols[i] ?? "").trim()))
-      return obj
-    })
+//   return lines
+//     .slice(1)
+//     .filter((line) => line.trim().length > 0)
+//     .map((line) => {
+//       const cols = line.split(",")
+//       const obj = {}
+//       csvHeaders.forEach((header, i) => (obj[header] = (cols[i] ?? "").trim()))
+//       return obj
+//     })
+// }
+
+function parseCSVToObjects(csvText) {
+    return Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true
+    }).data
 }
 
-function cleanGTDBPhylo(value) {
+function cleanGTDBPhylo(taxonomy) {
   // Remove x__ pattern where x is a single letter (d__, p__, c__, o__, f__, g__, s__)
-  return String(value || "").replace(/[a-z]__/g, "")
+  return String(taxonomy || "").replace(/[a-z]__/g, "").replace(/;/g, " → ");
 }
 
 function getGroupTagClass(groupValue) {
@@ -83,6 +91,8 @@ function getGroupTagClass(groupValue) {
   if (/^(1|i)$/.test(normalized)) return "group-tag--g1"
   if (/^(2|ii)$/.test(normalized)) return "group-tag--g2"
   if (/^(3|iii)$/.test(normalized)) return "group-tag--g3"
+  if (/^(3-vnf|iii-vnf)$/.test(normalized)) return "group-tag--g3vnf"
+  if (/^(3-anf|iii-anf)$/.test(normalized)) return "group-tag--g3anf"
   if (/^(4|iv)$/.test(normalized)) return "group-tag--g4"
   if (/^(4a|iva)$/.test(normalized)) return "group-tag--g4a"
   if (/^(4b|ivb)$/.test(normalized)) return "group-tag--g4b"
@@ -100,23 +110,23 @@ function buildRowNode(row, idx) {
   const label = tr.querySelector("label")
   const checkboxId = `_r_${idx}`
 
-  input.dataset.id = row.GeneAcc || row.GenomeAcc || String(idx)
+  input.dataset.id = row.GeneAcc || row.GenomeID || String(idx)
   input.id = checkboxId
 
   label.htmlFor = checkboxId
   label.setAttribute("aria-label", input.dataset.id)
 
   // accession link
-  const genomeAcc = String(row.GenomeAcc || "")
-  const genomeParts = genomeAcc.split("_")
-  const genomeAccRaw =
-    genomeParts.length >= 3 ? `${genomeParts[1]}_${genomeParts[2]}` : genomeAcc
-  const genomeA = tr.querySelector(".col-GenomeAcc a.genome-link")
+  const GenomeID = String(row.GenomeID || "")
+  const genomeParts = GenomeID.split("_")
+  const GenomeIDRaw =
+    genomeParts.length >= 3 ? `${genomeParts[1]}_${genomeParts[2]}` : GenomeID
+  const genomeA = tr.querySelector(".col-GenomeID a.genome-link")
 
   if (genomeA) {
-    genomeA.textContent = genomeAccRaw
-    genomeA.href = genomeAccRaw
-      ? `https://gtdb.ecogenomic.org/genome?gid=${encodeURIComponent(genomeAccRaw)}`
+    genomeA.textContent = GenomeIDRaw
+    genomeA.href = GenomeIDRaw
+      ? `https://gtdb.ecogenomic.org/genome?gid=${encodeURIComponent(GenomeIDRaw)}`
       : "#"
     genomeA.setAttribute("translate", "no")
   }
@@ -124,14 +134,15 @@ function buildRowNode(row, idx) {
   // Fill row text cells using a selector-to-key map to keep field wiring centralized.
   Object.entries(rowCellMap).forEach(([selector, key]) => {
     const cell = tr.querySelector(selector)
-    if (cell) {
-      let value = row[key] || ""
-      // Clean GTDBPhylo values to remove x__ prefixes
-      if (key === "GTDBPhylo" && value) {
+    if (!cell) return;
+
+    let value = row[key] || "";
+    // Clean GTDBPhylo values to remove x__ prefixes
+    if (selector === ".col-GTDBPhylo") {
         value = cleanGTDBPhylo(value)
-      }
-      cell.textContent = value
-    }
+    }    
+      
+    cell.textContent = value
   })
 
   const groupCell = tr.querySelector(".col-GroupNo")
@@ -263,7 +274,7 @@ function sortBy(key) {
       "data-table__header-cell--ascend",
       "data-table__header-cell--descend",
     )
-    const thKey = columnKeyMap[th.dataset.columnName] ?? th.dataset.columnName
+    const thKey = sortKeyMap[th.dataset.columnName] ?? th.dataset.columnName
     if (thKey === key) {
       th.classList.add(
         currentSort.dir === "asc"
@@ -306,7 +317,7 @@ function applySearch(query) {
 
 headers.forEach((th) => {
   th.addEventListener("click", () => {
-    const key = columnKeyMap[th.dataset.columnName] ?? th.dataset.columnName
+    const key = sortKeyMap[th.dataset.columnName] ?? th.dataset.columnName
     sortBy(key)
   })
 })
@@ -336,7 +347,7 @@ async function downloadCurrentCsv() {
   const blobUrl = URL.createObjectURL(blob)
   const tempLink = document.createElement("a")
   tempLink.href = blobUrl
-  tempLink.download = "nif_genomes.csv"
+  tempLink.download = "nif_clusters.csv"
   document.body.appendChild(tempLink)
   tempLink.click()
   tempLink.remove()

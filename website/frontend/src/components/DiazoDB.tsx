@@ -307,18 +307,18 @@ function alertStyle(type: "info" | "warn" | "error"): CSSProperties {
   }
 }
 
-function badgeStyle(type: "success" | "error"): CSSProperties {
-  return {
-    display: "inline-block",
-    padding: "2px 8px",
-    borderRadius: "3px",
-    fontSize: "11px",
-    fontWeight: 700,
-    background:
-      type === "success" ? "rgba(119,108,77,0.16)" : "rgba(179,58,58,0.14)",
-    color: type === "success" ? theme.greenDim : theme.red,
-  }
-}
+// function badgeStyle(type: "success" | "error"): CSSProperties {
+//   return {
+//     display: "inline-block",
+//     padding: "2px 8px",
+//     borderRadius: "3px",
+//     fontSize: "11px",
+//     fontWeight: 700,
+//     background:
+//       type === "success" ? "rgba(119,108,77,0.16)" : "rgba(179,58,58,0.14)",
+//     color: type === "success" ? theme.greenDim : theme.red,
+//   }
+// }
 
 // --- Types ---
 interface JobData {
@@ -337,8 +337,15 @@ interface WaitingPageProps {
   onFailure: () => void
 }
 
+//  change this to add real results from the API when available
 interface ResultsPageProps {
   jobId: string
+  // results: any[]
+  // summary: {
+  //   total: number
+  //   classified: number
+  //   nonNitrogenase: number
+  // }
   onReset: () => void
 }
 
@@ -620,9 +627,13 @@ function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
         if (res.ok) {
           setLastUpdated(new Date().toLocaleTimeString())
           // When you add a status field, check it here:
-          // const data = await res.json()
-          // if (data.status === "SUCCESS") onSuccess()
-          // if (data.status === "FAILURE") onFailure()
+          const data = await res.json()
+          if (data.status === "complete") {
+            // setResults(data.results)
+            // setSummary(data.summary)
+            onSuccess()
+          }
+          if (data.status === "FAILURE") onFailure()
         }
       } catch {}
     }, 3000)
@@ -717,73 +728,12 @@ function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
         </p>
       </div>
 
-      {/* Demo buttons — remove when you have a real status endpoint */}
-      <div
-        style={{
-          textAlign: "center",
-          marginTop: "16px",
-          display: "flex",
-          gap: "12px",
-          justifyContent: "center",
-        }}
-      >
-        <button style={styles.btnSecondary} onClick={onSuccess}>
-          Simulate success →
-        </button>
-        <button
-          style={{
-            ...styles.btnSecondary,
-            borderColor: theme.redDim,
-            color: theme.red,
-          }}
-          onClick={onFailure}
-        >
-          Simulate failure →
-        </button>
-      </div>
     </div>
   )
 }
 
 // --- Results page ---
 function ResultsPage({ jobId, onReset }: ResultsPageProps) {
-  const mockResults = [
-    {
-      id: "seq1",
-      prediction: "NifH Group I",
-      confidence: "0.97",
-      evalue: "1e-142",
-      status: "success" as const,
-    },
-    {
-      id: "seq2",
-      prediction: "NifH Group III",
-      confidence: "0.88",
-      evalue: "2e-98",
-      status: "success" as const,
-    },
-    {
-      id: "seq3",
-      prediction: "AnfH",
-      confidence: "0.91",
-      evalue: "4e-117",
-      status: "success" as const,
-    },
-    {
-      id: "seq4",
-      prediction: "Non-nitrogenase",
-      confidence: "—",
-      evalue: "0.43",
-      status: "error" as const,
-    },
-    {
-      id: "seq5",
-      prediction: "VnfH",
-      confidence: "0.84",
-      evalue: "6e-89",
-      status: "success" as const,
-    },
-  ]
 
   return (
     <div style={styles.main}>
@@ -817,10 +767,11 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
             marginBottom: "20px",
           }}
         >
-          <div style={styles.cardTitle}>Classification output</div>
+          <div style={styles.cardTitle}>Classification Results</div>
           <button
             style={styles.btn}
-            onClick={() => alert("Connect to your CSV download endpoint")}
+            onClick={() => 
+              window.open(`${API_BASE}/classify/${jobId}/download`, "_blank")}
           >
             Download CSV ↓
           </button>
@@ -843,7 +794,7 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
             </tr>
           </thead>
           <tbody>
-            {mockResults.map((row) => (
+            {/* {results.map((row) => (
               <tr
                 key={row.id}
                 style={{
@@ -872,7 +823,7 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
                   </span>
                 </td>
               </tr>
-            ))}
+            ))} */}
           </tbody>
         </table>
       </div>
@@ -972,9 +923,17 @@ function FailurePage({ jobId, onReset }: FailurePageProps) {
 // --- App shell ---
 type View = "upload" | "waiting" | "results" | "failure"
 
+
+// update to real results
 export default function DiazoDB() {
   const [view, setView] = useState<View>("upload")
   const [jobData, setJobData] = useState<JobData | null>(null)
+  // const [results, setResults] = useState<any[]>([])
+  // const [summary, setSummary] = useState({
+  //   total: 0,
+  //   classified: 0,
+  //   nonNitrogenase: 0,
+  // })
 
   const handleSubmit = (data: JobData) => {
     setJobData(data)
