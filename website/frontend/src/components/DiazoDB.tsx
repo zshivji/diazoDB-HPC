@@ -417,6 +417,20 @@ function parseCsv(text: string): ResultsData {
   return { headers, rows: bodyRows }
 }
 
+function jobIdFromUrl() {
+  return new URLSearchParams(window.location.search).get("job")
+}
+
+function setJobUrl(jobId: string | null) {
+  const url = new URL(window.location.href)
+  if (jobId) {
+    url.searchParams.set("job", jobId)
+  } else {
+    url.searchParams.delete("job")
+  }
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
+}
+
 // --- Citing banner ---
 function CitingBanner() {
   return (
@@ -677,6 +691,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
 function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const [elapsed, setElapsed] = useState(0)
+  const [jobStatus, setJobStatus] = useState("checking")
 
   useEffect(() => {
     const start = Date.now()
@@ -690,10 +705,13 @@ function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
         if (res.ok) {
           setLastUpdated(new Date().toLocaleTimeString())
           const data = (await res.json()) as JobStatusResponse
+          setJobStatus(data.status)
           if (data.status === "complete") {
             onSuccess(data.result_filename ?? "nif_clusters.csv")
           }
           if (data.status === "failed") onFailure()
+        } else if (res.status === 404) {
+          setJobStatus("not found")
         }
       } catch {}
     }
@@ -750,7 +768,7 @@ function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
             [
               ["Elapsed", `${mins}m ${secs < 10 ? "0" : ""}${secs}s`],
               ["Last checked", lastUpdated ?? "—"],
-              ["Status", "processing"],
+              ["Status", jobStatus],
             ] as [string, string][]
           ).map(([k, v]) => (
             <div
@@ -1003,19 +1021,26 @@ type View = "upload" | "waiting" | "results" | "failure"
 
 
 export default function DiazoDB() {
-  const [view, setView] = useState<View>("upload")
-  const [jobData, setJobData] = useState<JobData | null>(null)
+  const [initialJobId] = useState(() => jobIdFromUrl())
+  const [view, setView] = useState<View>(() =>
+    initialJobId ? "waiting" : "upload",
+  )
+  const [jobData, setJobData] = useState<JobData | null>(() =>
+    initialJobId ? { jobId: initialJobId, email: "" } : null,
+  )
   const [resultFilename, setResultFilename] = useState("nif_clusters.csv")
 
   const handleSubmit = (data: JobData) => {
     setJobData(data)
     setResultFilename("nif_clusters.csv")
+    setJobUrl(data.jobId)
     setView("waiting")
   }
 
   const handleReset = () => {
     setJobData(null)
     setResultFilename("nif_clusters.csv")
+    setJobUrl(null)
     setView("upload")
   }
 
