@@ -36,6 +36,7 @@ class Job(SQLModel, table=True):
     user_email: EmailStr | None = Field(default=None, max_length=255, index=True)
     use_prodigal: bool = Field(default=False)
     error_message: str | None = None
+    email_status: str | None = None
     created_at: datetime = Field(default_factory=get_datetime_utc)
     updated_at: datetime = Field(default_factory=get_datetime_utc)
 
@@ -51,6 +52,7 @@ class JobPublic(SQLModel):
     file_size_bytes: int | None
     bytes_received: int
     status: JobStatus
+    email_status: str | None = None
     created_at: datetime
 
 

@@ -50,7 +50,7 @@ class Settings(BaseSettings):
             self.FRONTEND_HOST
         ]
 
-    PROJECT_NAME: "DiazoDB"
+    PROJECT_NAME: str = "DiazoDB"
     SENTRY_DSN: HttpUrl | None = None
 
     # ── Postgres ─────────────────────────────────────────────

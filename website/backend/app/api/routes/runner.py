@@ -96,6 +96,8 @@ def update_job_status(
         else:
             log.warning("No failure-email recipient is available for job %s", job.id)
 
+        update_job(session=session, job=job, email_status=email_status)
+
     return {"ok": True, "email_sent": email_sent, "email_status": email_status}
 
 
@@ -186,6 +188,7 @@ def post_result(
         job=job,
         status=JobStatus.complete,
         result_filename=payload.filename,
+        email_status=email_status,
     )
     return {
         "ok": True,

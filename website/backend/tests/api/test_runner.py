@@ -90,6 +90,8 @@ def test_runner_can_mark_failed(client, runner_headers, job, db, monkeypatch):
     assert r.json()["email_status"] == "sent"
     mock_email.assert_called_once()
     assert mock_email.call_args.kwargs["error_message"] == "tool crashed"
+    db.refresh(job)
+    assert job.email_status == "sent"
 
 
 def test_runner_can_download_input(client, runner_headers, job, tmp_path, monkeypatch):
@@ -135,6 +137,8 @@ def test_runner_post_result_sends_email(client, runner_headers, job, db, monkeyp
     assert r.json()["ok"] is True
     assert r.json()["email_sent"] is True
     assert r.json()["email_status"] == "sent"
+    db.refresh(job)
+    assert job.email_status == "sent"
     mock_email.assert_called_once()
     call_kwargs = mock_email.call_args.kwargs
     assert call_kwargs["filename"] == "nif_clusters.csv"
@@ -225,4 +229,5 @@ def test_runner_post_result_reports_email_failure(
     }
     db.refresh(job)
     assert job.status == JobStatus.complete
+    assert job.email_status == "failed: OSError"
     assert (tmp_path / str(job.id) / "results" / "output.csv").exists()

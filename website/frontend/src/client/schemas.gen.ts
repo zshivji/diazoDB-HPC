@@ -241,6 +241,17 @@ export const JobPublicSchema = {
         status: {
             '$ref': '#/components/schemas/JobStatus'
         },
+        email_status: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Email Status'
+        },
         created_at: {
             type: 'string',
             format: 'date-time',
@@ -395,6 +406,17 @@ export const PublicJobPublicSchema = {
                 }
             ],
             title: 'Result Filename'
+        },
+        email_status: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Email Status'
         }
     },
     type: 'object',

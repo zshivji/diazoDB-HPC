@@ -47,6 +47,7 @@ export type JobPublic = {
     file_size_bytes: (number | null);
     bytes_received: number;
     status: JobStatus;
+    email_status?: (string | null);
     created_at: string;
 };
 
@@ -90,6 +91,7 @@ export type PublicJobPublic = {
     file_size_bytes: (number | null);
     status: JobStatus;
     result_filename?: (string | null);
+    email_status?: (string | null);
 };
 
 export type ResultPayload = {
