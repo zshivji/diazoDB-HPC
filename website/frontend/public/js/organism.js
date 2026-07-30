@@ -274,7 +274,7 @@ function renderOrganismPage(id, nodeMeta) {
 
   return `
     <div class="organism-back-row">
-      <a href="./home.html">Back to phylogeny</a>
+      <a href="/">Back to phylogeny</a>
     </div>
 
     <section class="organism-hero">
@@ -325,7 +325,7 @@ async function initOrganismPage() {
       <div class="organism-empty">
         <h1>No organism selected</h1>
         <p>Choose a node from the phylogeny tree to open an organism page.</p>
-        <a href="./home.html">Back to phylogeny</a>
+        <a href="/">Back to phylogeny</a>
       </div>
     `
     return
@@ -340,7 +340,7 @@ async function initOrganismPage() {
         <div class="organism-empty">
           <h1>Organism not found</h1>
           <p>No metadata record matched <code>${escapeHtml(requestedId)}</code>.</p>
-          <a href="./home.html">Back to phylogeny</a>
+          <a href="/">Back to phylogeny</a>
         </div>
       `
       return
@@ -353,7 +353,7 @@ async function initOrganismPage() {
       <div class="organism-empty">
         <h1>Unable to load organism</h1>
         <p>Metadata could not be loaded for this organism page.</p>
-        <a href="./home.html">Back to phylogeny</a>
+        <a href="/">Back to phylogeny</a>
       </div>
     `
   }

@@ -89,7 +89,7 @@ const KEY_RESIDUES = ["α-HisXXX", "β-CysXXX"]
    ============================================================ */
 
 function articleURL(slug) {
-  return `articles/${slug}/home.html`
+  return `/articles/${slug}`
 }
 
 function renderThumb(article) {

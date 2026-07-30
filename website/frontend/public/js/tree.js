@@ -336,7 +336,7 @@ function buildTooltipHTML(id, nodeMeta) {
 }
 
 function getOrganismDetailUrl(id) {
-  return `./organism.html?id=${encodeURIComponent(id)}`
+  return `/organism?id=${encodeURIComponent(id)}`
 }
 
 function positionTooltip(e) {

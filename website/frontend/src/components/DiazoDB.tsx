@@ -1022,20 +1022,20 @@ export default function DiazoDB() {
   return (
     <div style={styles.page}>
       <header style={styles.header}>
-        <a href="/home.html" style={styles.logo}>
+        <a href="/" style={styles.logo}>
           DiazoDB <span style={styles.logoBadge}>Upload</span>
         </a>
         <nav style={styles.headerNav} aria-label="Primary navigation">
-          <a href="/home.html" style={styles.headerLink}>
+          <a href="/" style={styles.headerLink}>
             Phylogeny
           </a>
-          <a href="/database.html" style={styles.headerLink}>
+          <a href="/database" style={styles.headerLink}>
             DiazoDB
           </a>
           <a href="/classify" style={styles.headerLinkActive}>
             Upload
           </a>
-          {/* <a href="/wiki.html" style={styles.headerLink}>Nitrogenase Wiki</a> */}
+          {/* <a href="/wiki" style={styles.headerLink}>Nitrogenase Wiki</a> */}
         </nav>
       </header>
 
