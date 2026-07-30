@@ -406,6 +406,7 @@ export const PublicJobPublicSchema = {
                 }
             ],
             title: 'Result Filename'
+<<<<<<< HEAD
         },
         email_status: {
             anyOf: [
@@ -417,6 +418,8 @@ export const PublicJobPublicSchema = {
                 }
             ],
             title: 'Email Status'
+=======
+>>>>>>> 32bb35b65 (remove globus calls from website, fix upload page to show results)
         }
     },
     type: 'object',

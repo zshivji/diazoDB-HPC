@@ -38,8 +38,6 @@ class PublicJobPublic(SQLModel):
     file_size_bytes: int | None
     status: JobStatus
     result_filename: str | None = None
-    email_status: str | None = None
-
 
 def _parse_content_range(content_range: str) -> tuple[int, int, int]:
     try:
