@@ -152,6 +152,21 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.tls.certresolver=le
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.priority=100
 
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-http.rule=Host(`${DOMAIN?Variable not set}`) && (PathPrefix(`/api/v1/docs`) || PathPrefix(`/api/v1/redoc`) || Path(`/api/v1/openapi.json`))
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-http.entrypoints=http
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-http.priority=200
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-http.middlewares=https-redirect
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-http.service=${STACK_NAME?Variable not set}-backend
+
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-https.rule=Host(`${DOMAIN?Variable not set}`) && (PathPrefix(`/api/v1/docs`) || PathPrefix(`/api/v1/redoc`) || Path(`/api/v1/openapi.json`))
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-https.entrypoints=https
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-https.tls=true
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-https.tls.certresolver=le
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-https.priority=200
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-https.middlewares=${STACK_NAME?Variable not set}-docs-auth
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-docs-https.service=${STACK_NAME?Variable not set}-backend
+      - traefik.http.middlewares.${STACK_NAME?Variable not set}-docs-auth.basicauth.users=${DOCS_BASIC_AUTH_USERS?Variable not set}
+
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.middlewares=https-redirect
 
