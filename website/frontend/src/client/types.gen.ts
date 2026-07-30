@@ -91,10 +91,7 @@ export type PublicJobPublic = {
     file_size_bytes: (number | null);
     status: JobStatus;
     result_filename?: (string | null);
-<<<<<<< HEAD
     email_status?: (string | null);
-=======
->>>>>>> 32bb35b65 (remove globus calls from website, fix upload page to show results)
 };
 
 export type ResultPayload = {
