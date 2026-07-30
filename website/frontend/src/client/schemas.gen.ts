@@ -384,6 +384,17 @@ export const PublicJobPublicSchema = {
         },
         status: {
             '$ref': '#/components/schemas/JobStatus'
+        },
+        result_filename: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Result Filename'
         }
     },
     type: 'object',

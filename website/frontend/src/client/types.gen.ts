@@ -89,6 +89,7 @@ export type PublicJobPublic = {
     filename: string;
     file_size_bytes: (number | null);
     status: JobStatus;
+    result_filename?: (string | null);
 };
 
 export type ResultPayload = {

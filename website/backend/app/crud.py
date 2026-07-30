@@ -102,7 +102,7 @@ def update_job(*, session: Session, job: Job, **fields) -> Job:
 
 
 def get_jobs_for_runner(*, session: Session) -> list[Job]:
-    """Jobs where Globus has finished and runner hasn't seen yet."""
+    """Ready jobs the runner hasn't seen yet."""
     return session.exec(
         select(Job).where(
             Job.status == JobStatus.ready,

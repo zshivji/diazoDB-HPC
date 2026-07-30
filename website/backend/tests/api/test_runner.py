@@ -3,7 +3,7 @@ Tests for runner-facing endpoints.
 Run: pytest tests/api/test_runner.py -v
 """
 import base64
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -36,12 +36,10 @@ def test_runner_poll_returns_ready_jobs(client, runner_headers, job, db):
         session=db,
         job=job,
         status=JobStatus.ready,
-        globus_task_id=None,
         use_prodigal=True,
     )
 
-    with patch("app.api.routes.runner.get_transfer_status", new_callable=AsyncMock):
-        r = client.get("/api/v1/runner/jobs", headers=runner_headers)
+    r = client.get("/api/v1/runner/jobs", headers=runner_headers)
 
     assert r.status_code == 200
     jobs = r.json()
@@ -51,35 +49,12 @@ def test_runner_poll_returns_ready_jobs(client, runner_headers, job, db):
     assert jobs[0]["use_prodigal"] is True
 
 
-def test_runner_poll_promotes_succeeded_globus_transfer(client, runner_headers, job, db):
-    """
-    A job stuck in 'transferring' should be promoted to 'ready'
-    when Globus reports SUCCEEDED.
-    """
-    update_job(
-        session=db, job=job,
-        status=JobStatus.transferring,
-        globus_task_id="fake-task-id",
-    )
-
-    with patch(
-        "app.api.routes.runner.get_transfer_status",
-        new_callable=AsyncMock,
-        return_value="SUCCEEDED",
-    ):
-        r = client.get("/api/v1/runner/jobs", headers=runner_headers)
-
-    assert r.status_code == 200
-    assert len(r.json()) == 1
-
-
 def test_runner_poll_marks_jobs_seen(client, runner_headers, job, db):
     """After one poll, the same job must not appear in the next poll."""
     update_job(session=db, job=job, status=JobStatus.ready)
 
-    with patch("app.api.routes.runner.get_transfer_status", new_callable=AsyncMock):
-        r1 = client.get("/api/v1/runner/jobs", headers=runner_headers)
-        r2 = client.get("/api/v1/runner/jobs", headers=runner_headers)
+    r1 = client.get("/api/v1/runner/jobs", headers=runner_headers)
+    r2 = client.get("/api/v1/runner/jobs", headers=runner_headers)
 
     assert len(r1.json()) == 1
     assert len(r2.json()) == 0   # already seen

@@ -18,7 +18,6 @@ from app.api.deps import get_db
 from app.core.config import settings
 from app.crud import get_job, update_job
 from app.models import Job, JobStatus
-from app.services.globus import start_transfer
 from app.services.results import get_result_path, safe_result_filename
 
 log = logging.getLogger(__name__)
@@ -38,6 +37,7 @@ class PublicJobPublic(SQLModel):
     filename: str
     file_size_bytes: int | None
     status: JobStatus
+    result_filename: str | None = None
 
 
 def _parse_content_range(content_range: str) -> tuple[int, int, int]:
@@ -49,10 +49,6 @@ def _parse_content_range(content_range: str) -> tuple[int, int, int]:
         raise HTTPException(status_code=400, detail="Invalid Content-Range header")
 
     return start, end, total
-
-
-def _completed_transfer_status() -> JobStatus:
-    return JobStatus.ready if settings.COPY_TO_LOCAL or settings.GLOBUS_MOCK or settings.RUNNER_PULL_ONLY else JobStatus.transferring
 
 
 @router.post("/", response_model=PublicJobPublic)
@@ -77,7 +73,7 @@ async def create_public_job(
         owner_id=PUBLIC_OWNER_ID,
         filename=job_in.filename,
         file_size_bytes=job_in.file_size_bytes,
-        status=JobStatus.transferring if inline_sequences is not None else JobStatus.created,
+        status=JobStatus.ready if inline_sequences is not None else JobStatus.created,
         user_email=job_in.user_email,
         use_prodigal=job_in.use_prodigal,
     )
@@ -89,7 +85,7 @@ async def create_public_job(
     job_dir = Path(settings.UPLOAD_DIR) / str(job.id)
     job_dir.mkdir(parents=True, exist_ok=True)
 
-    # If file content is included in the create request, write it and transfer it now.
+    # If file content is included in the create request, write it now.
     # Otherwise the caller can upload chunks to PATCH /classify/{job_id}/upload.
     if inline_sequences is not None:
         file_path = job_dir / job_in.filename
@@ -97,24 +93,12 @@ async def create_public_job(
         bytes_written = len(inline_sequences.encode("utf-8"))
         log.info(f"[PUBLIC JOB] {job.id} Wrote {bytes_written} bytes to {file_path}")
 
-        if settings.RUNNER_PULL_ONLY:
-            update_job(
-                session=session,
-                job=job,
-                bytes_received=bytes_written,
-                status=JobStatus.ready,
-            )
-        else:
-            log.info(f"[PUBLIC JOB] {job.id} Triggering start_transfer()")
-            task_id = await start_transfer(str(job.id))
-            log.info(f"[PUBLIC JOB] {job.id} start_transfer() returned task_id={task_id}")
-            update_job(
-                session=session,
-                job=job,
-                globus_task_id=task_id,
-                bytes_received=bytes_written,
-                status=_completed_transfer_status(),
-            )
+        update_job(
+            session=session,
+            job=job,
+            bytes_received=bytes_written,
+            status=JobStatus.ready,
+        )
 
     return job
 
@@ -173,7 +157,7 @@ async def upload_public_file_chunk(
     """
     Public file upload endpoint (no auth required).
     Receives chunks with Content-Range header, writes to disk.
-    On completion, triggers transfer via start_transfer().
+    On completion, marks the job ready for the runner.
     """
     job = get_job(session=session, job_id=job_id)
     if not job:
@@ -200,26 +184,8 @@ async def upload_public_file_chunk(
         session=session,
         job=job,
         bytes_received=new_received,
-        status=JobStatus.transferring if is_complete else JobStatus.uploading,
+        status=JobStatus.ready if is_complete else JobStatus.uploading,
         file_size_bytes=total,
     )
-
-    if is_complete:
-        if settings.RUNNER_PULL_ONLY:
-            update_job(
-                session=session,
-                job=job,
-                status=JobStatus.ready,
-            )
-        else:
-            log.info(f"[PUBLIC UPLOAD] {job_id} COMPLETE - calling start_transfer()")
-            task_id = await start_transfer(str(job.id))
-            log.info(f"[PUBLIC UPLOAD] {job_id} start_transfer() returned task_id={task_id}")
-            update_job(
-                session=session,
-                job=job,
-                globus_task_id=task_id,
-                status=_completed_transfer_status(),
-            )
 
     return {"bytes_received": new_received, "complete": is_complete}

@@ -359,8 +359,7 @@ export class RunnerService {
     /**
      * Poll Jobs
      * Runner calls this every N seconds.
-     * Lazily checks Globus transfer status for 'transferring' jobs,
-     * promotes them to 'ready', then returns all unseen ready jobs.
+     * Returns all unseen ready jobs.
      * @param data The data for the request.
      * @param data.xRunnerToken
      * @returns JobRunnerView Successful Response

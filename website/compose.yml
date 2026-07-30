@@ -81,14 +81,6 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
       - UPLOAD_DIR=${UPLOAD_DIR}
       - RUNNER_SECRET=${RUNNER_SECRET?Variable not set}
-      - COPY_TO_LOCAL=${COPY_TO_LOCAL}
-      - LOCAL_COPY_DIR=${LOCAL_COPY_DIR}
-      - GLOBUS_MOCK=${GLOBUS_MOCK}
-      - GLOBUS_CLIENT_ID=${GLOBUS_CLIENT_ID}
-      - GLOBUS_CLIENT_SECRET=${GLOBUS_CLIENT_SECRET}
-      - GLOBUS_SOURCE_ENDPOINT=${GLOBUS_SOURCE_ENDPOINT}
-      - GLOBUS_DEST_ENDPOINT=${GLOBUS_DEST_ENDPOINT}
-      - GLOBUS_DEST_BASE_PATH=${GLOBUS_DEST_BASE_PATH}
 
   backend:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
@@ -130,14 +122,6 @@ services:
       # ── HPC integration ───────────────────────────────────
       - UPLOAD_DIR=${UPLOAD_DIR}
       - RUNNER_SECRET=${RUNNER_SECRET?Variable not set}
-      - COPY_TO_LOCAL=${COPY_TO_LOCAL}
-      - LOCAL_COPY_DIR=${LOCAL_COPY_DIR}
-      - GLOBUS_MOCK=${GLOBUS_MOCK}
-      - GLOBUS_CLIENT_ID=${GLOBUS_CLIENT_ID}
-      - GLOBUS_CLIENT_SECRET=${GLOBUS_CLIENT_SECRET}
-      - GLOBUS_SOURCE_ENDPOINT=${GLOBUS_SOURCE_ENDPOINT}
-      - GLOBUS_DEST_ENDPOINT=${GLOBUS_DEST_ENDPOINT}
-      - GLOBUS_DEST_BASE_PATH=${GLOBUS_DEST_BASE_PATH}
     volumes:
       - upload_data:/data/uploads
       - ./local_uploads:/local_uploads

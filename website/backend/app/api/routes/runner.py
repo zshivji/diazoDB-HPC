@@ -13,7 +13,6 @@ from app.core.config import settings
 from app.crud import get_job, get_jobs_for_runner, update_job
 from app.models import Job, JobRunnerView, JobStatus, User
 from app.services.email import send_failure_email, send_result_email
-from app.services.globus import get_transfer_status
 from app.services.results import build_result_download_url, save_result_file
 
 log = logging.getLogger(__name__)
@@ -36,33 +35,13 @@ def _job_recipient(*, session: Session, job: Job) -> str | None:
 async def poll_jobs(session: Session = Depends(get_db)) -> list[dict]:
     """
     Runner calls this every N seconds.
-    Lazily checks Globus transfer status for 'transferring' jobs,
-    promotes them to 'ready', then returns all unseen ready jobs.
+    Returns all unseen ready jobs.
     """
-    from sqlmodel import select
-
-    from app.models import JobStatus
-
-    # Check all jobs still mid-transfer
-    transferring = session.exec(
-        select(Job).where(Job.status == JobStatus.transferring)
-    ).all()
-
-    for job in transferring:
-        if not job.globus_task_id:
-            continue
-        globus_status = await get_transfer_status(job.globus_task_id)
-        if globus_status == "SUCCEEDED":
-            update_job(session=session, job=job, status=JobStatus.ready)
-        elif globus_status == "FAILED":
-            update_job(session=session, job=job, status=JobStatus.failed,
-                       error_message="Globus transfer failed")
-
     # Return ready jobs the runner hasn't seen yet, then mark them seen
     ready_jobs = get_jobs_for_runner(session=session)
     result = []
     for job in ready_jobs:
-        hpc_path = f"{settings.GLOBUS_DEST_BASE_PATH}/{job.id}/{job.filename}"
+        hpc_path = str(Path(settings.UPLOAD_DIR) / str(job.id) / job.filename)
         result.append({
             "id": job.id,
             "filename": job.filename,
@@ -127,7 +106,7 @@ def download_job_input(
 ) -> FileResponse:
     """
     Runner downloads submitted input directly from the API.
-    This supports HPC execution without Globus or inbound SSH/SCP to the cluster.
+    This supports HPC execution without inbound SSH/SCP to the cluster.
     """
     job = get_job(session=session, job_id=job_id)
     if not job:

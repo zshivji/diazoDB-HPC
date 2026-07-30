@@ -17,8 +17,8 @@ def get_datetime_utc() -> datetime:
 class JobStatus(str, enum.Enum):
     created      = "created"
     uploading    = "uploading"
-    transferring = "transferring"   # Globus transfer in flight
-    ready        = "ready"          # file landed on HPC, runner can pick up
+    transferring = "transferring"
+    ready        = "ready"          # runner can pick up the submitted input
     processing   = "processing"     # runner is working
     complete     = "complete"
     failed       = "failed"
@@ -31,7 +31,6 @@ class Job(SQLModel, table=True):
     file_size_bytes: int | None = None
     bytes_received: int = Field(default=0)
     status: JobStatus = Field(default=JobStatus.created)
-    globus_task_id: str | None = None
     seen_by_runner: bool = Field(default=False)
     result_filename: str | None = None
     user_email: EmailStr | None = Field(default=None, max_length=255, index=True)
@@ -59,7 +58,7 @@ class JobRunnerView(SQLModel):
     """Shape the runner receives when polling."""
     id: uuid.UUID
     filename: str
-    hpc_path: str   # absolute path on HPC after Globus transfer
+    hpc_path: str   # backend upload path retained for older runner logs
     use_prodigal: bool = False
 
 

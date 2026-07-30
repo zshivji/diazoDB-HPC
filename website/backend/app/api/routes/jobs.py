@@ -10,14 +10,9 @@ from app.api.deps import CurrentUser, get_db
 from app.core.config import settings
 from app.crud import create_job, get_job, update_job
 from app.models import Job, JobCreate, JobPublic, JobStatus
-from app.services.globus import start_transfer
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 log = logging.getLogger(__name__)
-
-
-def _completed_transfer_status() -> JobStatus:
-    return JobStatus.ready if settings.COPY_TO_LOCAL or settings.GLOBUS_MOCK or settings.RUNNER_PULL_ONLY else JobStatus.transferring
 
 
 def _parse_content_range(content_range: str) -> tuple[int, int, int]:
@@ -98,23 +93,11 @@ async def upload_chunk(
     )
 
     if is_complete:
-        if settings.RUNNER_PULL_ONLY:
-            update_job(
-                session=session,
-                job=job,
-                status=JobStatus.ready,
-            )
-        else:
-            log.info(f"[UPLOAD] {job_id} COMPLETE - calling start_transfer()")
-            task_id = await start_transfer(str(job.id))
-            log.info(f"[UPLOAD] {job_id} start_transfer() returned task_id={task_id}")
-
-            update_job(
-                session=session,
-                job=job,
-                globus_task_id=task_id,
-                status=JobStatus.transferring,
-            )
+        update_job(
+            session=session,
+            job=job,
+            status=JobStatus.ready,
+        )
 
     return {"bytes_received": new_received, "complete": is_complete}
 

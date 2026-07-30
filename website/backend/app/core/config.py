@@ -119,27 +119,6 @@ class Settings(BaseSettings):
         )
         return self
 
-    # ── Globus ───────────────────────────────────────────────
-    # Set GLOBUS_MOCK=true locally to skip real Globus API calls.
-    # The transfer service returns a fake task ID that immediately
-    # resolves as SUCCEEDED so the full job flow still works locally.
-    GLOBUS_MOCK: bool = False
-    # If true, copy uploaded files to LOCAL_COPY_DIR instead of using Globus.
-    COPY_TO_LOCAL: bool = False
-    # If true, skip Globus and let the runner download input from the API.
-    RUNNER_PULL_ONLY: bool = False
-    GLOBUS_CLIENT_ID: str = ""
-    GLOBUS_CLIENT_SECRET: str = ""
-    # UUID of the Globus endpoint on THIS server (install Globus Connect Server)
-    GLOBUS_SOURCE_ENDPOINT: str = ""
-    # UUID of your university HPC Globus endpoint (ask HPC team)
-    GLOBUS_DEST_ENDPOINT: str = ""
-    # Absolute path on HPC where Globus should drop files
-    GLOBUS_DEST_BASE_PATH: str = "/scratch/zshivji/diazoDB/jobs"
-    # Local directory for COPY_TO_LOCAL testing
-    LOCAL_COPY_DIR: str = "/local_uploads"
-
-
     # ── File storage ─────────────────────────────────────────
     # Path INSIDE the backend container — must match the Docker volume mount
     UPLOAD_DIR: str = "/data/uploads"

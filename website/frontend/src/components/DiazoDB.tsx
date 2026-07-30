@@ -333,25 +333,88 @@ interface UploadPageProps {
 
 interface WaitingPageProps {
   jobId: string
-  onSuccess: () => void
+  onSuccess: (resultFilename: string) => void
   onFailure: () => void
 }
 
-//  change this to add real results from the API when available
 interface ResultsPageProps {
   jobId: string
-  // results: any[]
-  // summary: {
-  //   total: number
-  //   classified: number
-  //   nonNitrogenase: number
-  // }
+  resultFilename: string
   onReset: () => void
 }
 
 interface FailurePageProps {
   jobId: string
   onReset: () => void
+}
+
+interface JobStatusResponse {
+  id: string
+  filename: string
+  file_size_bytes: number | null
+  status:
+    | "created"
+    | "uploading"
+    | "transferring"
+    | "ready"
+    | "processing"
+    | "complete"
+    | "failed"
+  result_filename?: string | null
+}
+
+interface ResultsData {
+  headers: string[]
+  rows: string[][]
+}
+
+function resultDownloadUrl(jobId: string, resultFilename: string) {
+  return `${API_BASE}/classify/${jobId}/results/${encodeURIComponent(resultFilename)}`
+}
+
+function parseCsv(text: string): ResultsData {
+  const rows: string[][] = []
+  let row: string[] = []
+  let field = ""
+  let quoted = false
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i]
+    const next = text[i + 1]
+
+    if (quoted) {
+      if (char === '"' && next === '"') {
+        field += '"'
+        i += 1
+      } else if (char === '"') {
+        quoted = false
+      } else {
+        field += char
+      }
+    } else if (char === '"') {
+      quoted = true
+    } else if (char === ",") {
+      row.push(field)
+      field = ""
+    } else if (char === "\n") {
+      row.push(field)
+      rows.push(row)
+      row = []
+      field = ""
+    } else if (char !== "\r") {
+      field += char
+    }
+  }
+
+  if (field || row.length) {
+    row.push(field)
+    rows.push(row)
+  }
+
+  const [headers = [], ...bodyRows] = rows.filter((items) =>
+    items.some((item) => item.trim()),
+  )
+  return { headers, rows: bodyRows }
 }
 
 // --- Citing banner ---
@@ -621,22 +684,21 @@ function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
       () => setElapsed(Math.floor((Date.now() - start) / 1000)),
       1000,
     )
-    const poll = setInterval(async () => {
+    const checkStatus = async () => {
       try {
         const res = await fetch(`${API_BASE}/classify/${jobId}`)
         if (res.ok) {
           setLastUpdated(new Date().toLocaleTimeString())
-          // When you add a status field, check it here:
-          const data = await res.json()
+          const data = (await res.json()) as JobStatusResponse
           if (data.status === "complete") {
-            // setResults(data.results)
-            // setSummary(data.summary)
-            onSuccess()
+            onSuccess(data.result_filename ?? "nif_clusters.csv")
           }
-          if (data.status === "FAILURE") onFailure()
+          if (data.status === "failed") onFailure()
         }
       } catch {}
-    }, 3000)
+    }
+    void checkStatus()
+    const poll = setInterval(checkStatus, 3000)
     return () => {
       clearInterval(timer)
       clearInterval(poll)
@@ -688,7 +750,7 @@ function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
             [
               ["Elapsed", `${mins}m ${secs < 10 ? "0" : ""}${secs}s`],
               ["Last checked", lastUpdated ?? "—"],
-              ["Status", "pending"],
+              ["Status", "processing"],
             ] as [string, string][]
           ).map(([k, v]) => (
             <div
@@ -733,7 +795,34 @@ function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
 }
 
 // --- Results page ---
-function ResultsPage({ jobId, onReset }: ResultsPageProps) {
+function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
+  const [results, setResults] = useState<ResultsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadResults = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch(resultDownloadUrl(jobId, resultFilename))
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status} ${res.statusText}`)
+        }
+        const text = await res.text()
+        setResults(parseCsv(text))
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error"
+        setError(`Could not load results: ${message}`)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void loadResults()
+  }, [jobId, resultFilename])
+
+  const visibleHeaders = results?.headers ?? []
 
   return (
     <div style={styles.main}>
@@ -770,62 +859,51 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
           <div style={styles.cardTitle}>Classification Results</div>
           <button
             style={styles.btn}
-            onClick={() => 
-              window.open(`${API_BASE}/classify/${jobId}/download`, "_blank")}
+            onClick={() =>
+              window.open(resultDownloadUrl(jobId, resultFilename), "_blank")}
           >
             Download CSV ↓
           </button>
         </div>
 
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              {[
-                "Sequence ID",
-                "Prediction",
-                "Confidence",
-                "E-value",
-                "Status",
-              ].map((h) => (
-                <th key={h} style={styles.th}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {/* {results.map((row) => (
-              <tr
-                key={row.id}
-                style={{
-                  background:
-                    row.status === "error"
-                      ? "rgba(255,92,92,0.03)"
-                      : "transparent",
-                }}
-              >
-                <td style={styles.td}>{row.id}</td>
-                <td
-                  style={{
-                    ...styles.td,
-                    color: row.status === "error" ? theme.red : theme.text,
-                  }}
-                >
-                  {row.prediction}
-                </td>
-                <td style={styles.td}>{row.confidence}</td>
-                <td style={styles.td}>{row.evalue}</td>
-                <td style={styles.td}>
-                  <span style={badgeStyle(row.status)}>
-                    {row.status === "success"
-                      ? "classified"
-                      : "non-nitrogenase"}
-                  </span>
-                </td>
-              </tr>
-            ))} */}
-          </tbody>
-        </table>
+        {loading && <div style={alertStyle("info")}>Loading results...</div>}
+        {error && <div style={alertStyle("error")}>{error}</div>}
+        {!loading && !error && results && results.rows.length === 0 && (
+          <div style={alertStyle("warn")}>
+            The job completed, but the result file did not contain any rows.
+          </div>
+        )}
+        {!loading && !error && results && results.rows.length > 0 && (
+          <>
+            <div style={{ ...styles.cardTitle, color: theme.textMuted }}>
+              Classification output
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    {visibleHeaders.map((header, index) => (
+                      <th key={`${header}-${index}`} style={styles.th}>
+                        {header || `Column ${index + 1}`}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.rows.map((row, rowIndex) => (
+                    <tr key={`${row[0] ?? "row"}-${rowIndex}`}>
+                      {visibleHeaders.map((_, cellIndex) => (
+                        <td key={cellIndex} style={styles.td}>
+                          {row[cellIndex] ?? ""}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       <button style={styles.btnSecondary} onClick={onReset}>
@@ -924,20 +1002,21 @@ function FailurePage({ jobId, onReset }: FailurePageProps) {
 type View = "upload" | "waiting" | "results" | "failure"
 
 
-// update to real results
 export default function DiazoDB() {
   const [view, setView] = useState<View>("upload")
   const [jobData, setJobData] = useState<JobData | null>(null)
-  // const [results, setResults] = useState<any[]>([])
-  // const [summary, setSummary] = useState({
-  //   total: 0,
-  //   classified: 0,
-  //   nonNitrogenase: 0,
-  // })
+  const [resultFilename, setResultFilename] = useState("nif_clusters.csv")
 
   const handleSubmit = (data: JobData) => {
     setJobData(data)
+    setResultFilename("nif_clusters.csv")
     setView("waiting")
+  }
+
+  const handleReset = () => {
+    setJobData(null)
+    setResultFilename("nif_clusters.csv")
+    setView("upload")
   }
 
   return (
@@ -963,21 +1042,25 @@ export default function DiazoDB() {
       {view === "upload" && <UploadPage onSubmit={handleSubmit} />}
       {view === "waiting" && (
         <WaitingPage
-          jobId={jobData?.jobId ?? "demo-job-id"}
-          onSuccess={() => setView("results")}
+          jobId={jobData?.jobId ?? ""}
+          onSuccess={(filename) => {
+            setResultFilename(filename)
+            setView("results")
+          }}
           onFailure={() => setView("failure")}
         />
       )}
       {view === "results" && (
         <ResultsPage
           jobId={jobData?.jobId ?? ""}
-          onReset={() => setView("upload")}
+          resultFilename={resultFilename}
+          onReset={handleReset}
         />
       )}
       {view === "failure" && (
         <FailurePage
           jobId={jobData?.jobId ?? ""}
-          onReset={() => setView("upload")}
+          onReset={handleReset}
         />
       )}
     </div>

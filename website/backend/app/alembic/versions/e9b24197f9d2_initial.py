@@ -46,7 +46,6 @@ def upgrade():
     sa.Column('file_size_bytes', sa.Integer(), nullable=True),
     sa.Column('bytes_received', sa.Integer(), nullable=False),
     sa.Column('status', sa.Enum('created', 'uploading', 'transferring', 'ready', 'processing', 'complete', 'failed', name='jobstatus'), nullable=False),
-    sa.Column('globus_task_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('seen_by_runner', sa.Boolean(), nullable=False),
     sa.Column('result_filename', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('error_message', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
