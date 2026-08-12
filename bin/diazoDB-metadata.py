@@ -10,6 +10,8 @@ import json
 import ast
 import argparse
 import warnings
+import math
+import numbers
 from pathlib import Path
 
 from Bio import SeqIO
@@ -17,6 +19,18 @@ from pygenomeviz import GenomeViz
 from helper import default_proteins_dir
 
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+
+def json_safe(value):
+    """Convert values unsupported by strict JSON to JSON-compatible values.
+    This prevents errors when js renders metadata.json on diazoDB home page."""
+    if isinstance(value, dict):
+        return {key: json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_safe(item) for item in value]
+    if isinstance(value, numbers.Real) and math.isnan(value):
+        return None
+    return value
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -205,7 +219,7 @@ def export_metadata(gene_data, operons):
             'taxonomy': taxonomy, 'group': group, 'environment': environments, 'regulon':regulon, 'operon': operon}
         
     with open('../results/final/metadata.json', 'w') as f:
-        json.dump(metadata, f, indent=2)
+        json.dump(json_safe(metadata), f, indent=2, allow_nan=False)
 
 
 def plot(gene_data): # plot operon organization

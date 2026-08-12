@@ -393,6 +393,21 @@ function getOrganismDetailUrl(id) {
   return `/organism?id=${encodeURIComponent(id)}`
 }
 
+function fetchMetadata(url) {
+  return fetch(url).then((response) => {
+    if (!response.ok) {
+      throw new Error(`Failed to load metadata.json: ${response.status} ${response.statusText}`)
+    }
+
+    return response.text().then((text) => {
+      // The generated metadata contains Python-style NaN values, which are
+      // not valid JSON and cause response.json() to fail in the browser.
+      const validJson = text.replace(/\bNaN\b/g, "null")
+      return JSON.parse(validJson)
+    })
+  })
+}
+
 function positionTooltip(e) {
   const offset = 12
 
@@ -442,12 +457,7 @@ if (treeContainer) {
       }
       return r.text()
     }),
-    fetch(metadataUrl).then((r) => {
-      if (!r.ok) {
-        throw new Error(`Failed to load metadata.json: ${r.status} ${r.statusText}`)
-      }
-      return r.json()
-    }),
+    fetchMetadata(metadataUrl),
   ])
     .then(([svg, metadata]) => {
       treeContainer.innerHTML = svg
@@ -520,7 +530,9 @@ if (treeContainer) {
 
       console.log("metadata-linked labels:", labelData.length)
     })
-    .catch(console.error)
+    .catch((error) => {
+      console.error("Failed to initialize tree:", error)
+    })
 }
 
 // add search functionality
