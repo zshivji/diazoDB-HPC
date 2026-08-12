@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!--
+    UPDATE THESE FOUR META TAGS FOR EVERY ARTICLE:
+    - <title>
+    - description
+    - og:title / og:description (shown when shared on Slack, Twitter, etc.)
+  -->
+  <title>Nitrogenase Metalloclusters</title>
+  <meta name="description" content="One-sentence description of this article." />
+  <meta property="og:title" content="Article Title — DiazoDb" />
+  <meta property="og:description" content="One-sentence description of this article." />
+  <meta property="og:type" content="article" />
+
+  <!--
+    Article pages are served from clean /articles/your-slug URLs.
+    Both stylesheets are always loaded.
+  -->
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/article.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- SITE HEADER (same on every page) -->
+  <header class="site-header">
+    <a href="/" class="logo">
+      DiazoDb <span class="logo-badge">WIKI</span>
+    </a>
+    <nav class="nav">
+      <a href="/?category=protein-structure">Proteins</a>
+      <a href="/?category=organisms">Organisms</a>
+      <a href="/?category=regulation">Regulation</a>
+      <a href="/?category=genetics">Genetics</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <!-- BREADCRUMB
+    Update category label and link, and the article title. -->
+  <div class="breadcrumb">
+    <a href="/">Home</a>
+    <span>›</span>
+    <a href="/?category=CATEGORY_ID">Category Label</a>
+    <span>›</span>
+    <span style="color: var(--text-secondary);">Article Title</span>
+  </div>
+
+  <!-- THREE-COLUMN ARTICLE LAYOUT -->
+  <div class="article-layout">
+
+    <!-- LEFT: Table of Contents
+      Add one .toc-item per h2, and .toc-item.sub per h3.
+      The JS in article.js will auto-highlight the active section. -->
+    <nav class="toc-col" aria-label="Table of contents">
+      <div class="toc-label">Contents</div>
+
+      <a class="toc-item active" href="#overview">Overview</a>
+      <a class="toc-item" href="#section-2">Section 2</a>
+      <a class="toc-item sub" href="#subsection-2a">Subsection 2a</a>
+      <a class="toc-item sub" href="#subsection-2b">Subsection 2b</a>
+      <a class="toc-item" href="#section-3">Section 3</a>
+      <a class="toc-item" href="#references">References</a>
+    </nav>
+
+    <!-- MIDDLE: Article body -->
+    <article class="article-body">
+
+      <!-- Header block -->
+      <div class="article-eyebrow">Category · Subcategory</div>
+      <h1 class="article-h1">Article Title Goes Here</h1>
+
+      <!-- Lead / abstract — italicized serif, shown before the meta bar -->
+      <p class="article-lead">
+        A one- or two-sentence summary of what this article covers and why it matters.
+        Treat this like an abstract.
+      </p>
+
+      <div class="article-meta-bar">
+        <span>Updated Month Year</span>
+        <span class="meta-dot"></span>
+        <span>XX min read</span>
+        <span class="meta-dot"></span>
+        <span>Cite as: DiazoDb / slug</span>
+      </div>
+
+      <!-- =====================================================
+           BODY CONTENT — write your article below this line
+           ===================================================== -->
+
+      <h2 id="overview">Overview</h2>
+      <p>
+        Three metalloclusters drive N2 reduction by nitrogenase: a relatively simple [Fe4:S4] cluster, the P-cluster, and FeMoco (iron-molybdenum cofactor). The dimeric Fe protein houses a single [Fe4:S4], and each hemisphere of the symmetric catalytic component (MoFe protein) houses one set of the [8Fe:7S] P-cluster and [7Fe:1Mo:9S:1C]-R-homocitrate FeMoco (Figure 1). Functionally, the Fe protein’s Fe4S4 cluster ferries low-potential electrons to the MoFe protein. Within the catalytic complex, the P-cluster serves as a waypoint for the low-potential electrons before they reach FeMoco for substrate reduction. Both the P-cluster and FeMoco are among the largest and most complex metalloclusters known in biochemistry.  
+        
+        Link to related articles like
+        <a href="/articles/femo-cofactor">FeMo-cofactor</a>.
+      </p>
+
+      <!-- FIGURE BLOCK — with real image -->
+      
+      <div class="figure-block">
+        <img src="../images/Nitrogenase-diagram.png" alt="Nitrogenase diagram with metalloclusters" />
+        <p class="figure-caption">
+          <strong>Figure 1.</strong> A functional Mo-dependent nitrogenase is composed of a reducing protein (Fe Protein) and a catalytic complex (MoFe Protein). The Fe Protein is a homodimer encoded by nifH (light green), and the MoFe Protein is a heterotetramer encoded by nifD (light purple) and nifK (dark purple). For each electron transfer from the Fe Protein to the MoFe Protein begins at the [Fe4:S4] cluster in the Fe Protein is passed through MoFe Protein’s P-cluster, before reducing dinitrogen at FeMo-co. Figure generated with PDB 1N2C.
+        </p>
+      </div>
+     
+
+      <h2 id="section-2">Section 2</h2>
+      <h3 id="subsection-2a">Subsection 2a</h3>
+      <p>Body text. Use <code>&lt;em&gt;</code> for gene names like <em>nifD</em>, and
+         <code>&lt;strong&gt;</code> sparingly for key terms.</p>
+
+      <!-- CALLOUT BOX — for key findings, caveats, or definitions -->
+      <div class="callout">
+        <div class="callout-label">Key finding</div>
+        <p>Use callout boxes for important results, caveats, or definitions that
+           deserve visual emphasis.</p>
+      </div>
+
+      <h3 id="subsection-2b">Subsection 2b</h3>
+      <p>More body text.</p>
+
+      <!-- RESIDUE TABLE — standard format for all residue listings -->
+      <table class="residue-table">
+        <thead>
+          <tr>
+            <th>Residue</th>
+            <th>Subunit</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="r-pill">α-His195</span></td>
+            <td>NifD (α)</td>
+            <td>Description of functional role.</td>
+          </tr>
+          <tr>
+            <td><span class="r-pill">α-Val70</span></td>
+            <td>NifD (α)</td>
+            <td>Description of functional role.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="section-3">Section 3</h2>
+      <p>Body text.</p>
+
+      <!-- =====================================================
+           REFERENCES
+           Use this format: numbered, with journal in <em>.
+           ===================================================== -->
+      <div class="refs-section" id="references">
+        <div class="refs-label">References</div>
+
+        <div class="ref-item">
+          <span class="ref-num">1.</span>
+          <span>Author A, Author B (Year). Title of paper. <em>Journal Name</em> vol, pages. DOI.</span>
+        </div>
+        <div class="ref-item">
+          <span class="ref-num">2.</span>
+          <span>Author C et al. (Year). Title of paper. <em>Journal Name</em> vol, pages. DOI.</span>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- RIGHT: Contextual sidebar -->
+    <aside class="right-col">
+
+      <div class="right-section">
+        <div class="right-label">Found in organisms</div>
+        <!-- Add one .organism-tag per relevant organism -->
+        <span class="organism-tag">A. vinelandii</span>
+        <span class="organism-tag">K. pneumoniae</span>
+      </div>
+
+      <div class="right-section">
+        <div class="right-label">Related articles</div>
+        <!-- Add links to related articles -->
+        <a class="related-item" href="/articles/femo-cofactor">FeMo-cofactor: the active site for N₂ reduction</a>
+        <a class="related-item" href="/articles/mofe-protein">The MoFe protein: architecture of the α₂β₂ heterotetramer</a>
+      </div>
+
+      <div class="right-section">
+        <div class="right-label">See also</div>
+        <a class="related-item" href="/residues">Residue index</a>
+        <!-- Link to PDB, UniProt, etc. -->
+        <a class="related-item" href="https://www.rcsb.org/structure/3U7Q" target="_blank" rel="noopener">PDB: 3U7Q ↗</a>
+      </div>
+
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <p>DiazoDb · <a href="/">Home</a> · <a href="/about">About</a> · <a href="https://github.com/yourusername/diazo-db" target="_blank" rel="noopener">GitHub</a></p>
+  </footer>
+
+  <script src="../../js/article.js"></script>
+</body>
+</html>
