@@ -31,12 +31,17 @@ function normalizeText(value, fallback = "Not available") {
 }
 
 function normalizeTreeIdentifier(value) {
-  return String(value || "")
+  const normalized = String(value || "")
     .trim()
     .replace(/^'+|'+$/g, "")
     .replace(/\b(GB|RS)\s+(GCA|GCF)\s+(\d+\.\d+)\b/gi, "$1_$2_$3")
     .replace(/\b([A-Z]{2})\s+([A-Z]*\d+(?:\.\d+)?)\b/g, "$1_$2")
-    .replace(/\|([^|]+?)\s+\d+$/, "|$1")
+
+  return normalized
+    .split("|")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" | ")
 }
 
 function formatTaxonomy(taxonomy) {
@@ -73,20 +78,29 @@ function getGeneColor(geneName) {
 
 function getContigFromKey(id) {
   const parts = String(id || "").split("|")
-  return normalizeText(parts[parts.length - 1])
+  return normalizeText(parts[3] || parts[parts.length - 1])
 }
 
 function getEnvironment(nodeMeta) {
-  return normalizeText(nodeMeta.environments || nodeMeta.environment)
+  const environment = String(nodeMeta.environments || nodeMeta.environment || "").trim()
+  return !environment || environment.toLowerCase() === "none"
+    ? "Not Available"
+    : environment
 }
 
-function findOrganismRecord(metadata, requestedId) {
-  const decodedId = normalizeTreeIdentifier(requestedId)
-  if (metadata[requestedId]) return { id: requestedId, meta: metadata[requestedId] }
-  if (metadata[decodedId]) return { id: decodedId, meta: metadata[decodedId] }
+function findOrganismRecords(metadata, requestedId) {
+  const decodedId = decodeURIComponent(requestedId)
+  const normalizedId = normalizeTreeIdentifier(decodedId)
+  let selectedId = Object.prototype.hasOwnProperty.call(metadata, decodedId)
+    ? decodedId
+    : Object.prototype.hasOwnProperty.call(metadata, normalizedId)
+      ? normalizedId
+      : null
 
-  const requestedLower = decodedId.toLowerCase()
-  const entry = Object.entries(metadata).find(([key, meta]) => {
+  const requestedLower = normalizedId.toLowerCase()
+  const entry = selectedId
+    ? [selectedId, metadata[selectedId]]
+    : Object.entries(metadata).find(([key, meta]) => {
     const normalizedKey = normalizeTreeIdentifier(key).toLowerCase()
     const genome = String(meta.genome || "").toLowerCase()
     return (
@@ -100,7 +114,20 @@ function findOrganismRecord(metadata, requestedId) {
   })
 
   if (!entry) return null
-  return { id: entry[0], meta: entry[1] }
+
+  const selectedMeta = entry[1]
+  const organism = String(
+    selectedMeta.organism || selectedMeta.species || entry[0].split("|")[0],
+  ).trim().toLowerCase()
+
+  return Object.entries(metadata)
+    .filter(([key, meta]) => {
+      const recordOrganism = String(
+        meta.organism || meta.species || key.split("|")[0],
+      ).trim().toLowerCase()
+      return recordOrganism === organism
+    })
+    .map(([id, meta]) => ({ id, meta }))
 }
 
 async function fetchJson(paths) {
@@ -112,7 +139,7 @@ async function fetchJson(paths) {
       if (!response.ok) {
         throw new Error(`${response.status} ${response.statusText}`)
       }
-      return response.json()
+      return response.text().then((text) => JSON.parse(text.replace(/\bNaN\b/g, "null")))
     } catch (error) {
       lastError = error
     }
@@ -261,14 +288,18 @@ function renderGeneTable(nodeMeta) {
   `
 }
 
-function renderOrganismPage(id, nodeMeta) {
-  const organism = normalizeText(nodeMeta.organism || nodeMeta.species || id, id)
-  const genome = normalizeText(nodeMeta.genome)
-  const group = normalizeText(nodeMeta.group)
-  const environment = getEnvironment(nodeMeta)
-  const regulon = normalizeText(nodeMeta.regulon)
-  const taxonomy = formatTaxonomy(nodeMeta.taxonomy)
-  const contig = getContigFromKey(id)
+function renderOrganismPage(records) {
+  const firstRecord = records[0]
+  const organism = normalizeText(
+    firstRecord.meta.organism || firstRecord.meta.species || firstRecord.id,
+    firstRecord.id,
+  )
+  const genomes = [...new Set(records.map(({ meta }) => normalizeText(meta.genome)))]
+  const contigs = [...new Set(records.map(({ id }) => getContigFromKey(id)))]
+  const environments = [...new Set(records.map(({ meta }) => getEnvironment(meta)))]
+  const groups = [...new Set(records.map(({ meta }) => normalizeText(meta.group)))]
+  const regulons = [...new Set(records.map(({ meta }) => normalizeText(meta.regulon)))]
+  const taxonomies = [...new Set(records.map(({ meta }) => formatTaxonomy(meta.taxonomy)))]
 
   document.title = `${organism} - DiazoDB`
 
@@ -278,41 +309,43 @@ function renderOrganismPage(id, nodeMeta) {
     </div>
 
     <section class="organism-hero">
-      <p class="organism-eyebrow">${escapeHtml(group)}</p>
+      <p class="organism-eyebrow">${escapeHtml(groups.join(", "))}</p>
       <h1>${escapeHtml(organism)}</h1>
-      <p class="organism-id">${escapeHtml(id)}</p>
+      <p class="organism-id">${records.length} operon${records.length === 1 ? "" : "s"}</p>
     </section>
 
     <section class="organism-summary" aria-label="Organism metadata">
       <div>
         <span>Genome</span>
-        <strong>${escapeHtml(genome)}</strong>
+        <strong>${escapeHtml(genomes.join(", "))}</strong>
       </div>
       <div>
         <span>Contig</span>
-        <strong>${escapeHtml(contig)}</strong>
+        <strong>${escapeHtml(contigs.join(", "))}</strong>
       </div>
       <div>
         <span>Environment</span>
-        <strong>${escapeHtml(environment)}</strong>
+        <strong>${escapeHtml(environments.join(", "))}</strong>
       </div>
       <div>
         <span>Regulon</span>
-        <strong>${escapeHtml(regulon)}</strong>
+        <strong>${escapeHtml(regulons.join(", "))}</strong>
       </div>
     </section>
 
     <section class="organism-section">
       <h2>Taxonomy</h2>
-      <p class="organism-taxonomy">${escapeHtml(taxonomy)}</p>
+      <p class="organism-taxonomy">${escapeHtml(taxonomies.join("; "))}</p>
     </section>
 
-    <section class="organism-section">
-      <h2>Operon</h2>
-      ${renderOperonHTML(nodeMeta)}
-    </section>
-
-    ${renderGeneTable(nodeMeta)}
+    ${records.map(({ id, meta }, index) => `
+      <section class="organism-section">
+        <h2>Operon ${index + 1}</h2>
+        <p class="organism-id">${escapeHtml(id)}</p>
+        ${renderOperonHTML(meta)}
+      </section>
+      ${renderGeneTable(meta)}
+    `).join("")}
   `
 }
 
@@ -333,9 +366,9 @@ async function initOrganismPage() {
 
   try {
     const metadata = await fetchJson(["./metadata.json", "../results/metadata.json"])
-    const record = findOrganismRecord(metadata, requestedId)
+    const records = findOrganismRecords(metadata, requestedId)
 
-    if (!record) {
+    if (!records || records.length === 0) {
       detailRoot.innerHTML = `
         <div class="organism-empty">
           <h1>Organism not found</h1>
@@ -346,7 +379,7 @@ async function initOrganismPage() {
       return
     }
 
-    detailRoot.innerHTML = renderOrganismPage(record.id, record.meta)
+    detailRoot.innerHTML = renderOrganismPage(records)
   } catch (error) {
     console.error(error)
     detailRoot.innerHTML = `
