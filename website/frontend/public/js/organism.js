@@ -139,9 +139,14 @@ async function fetchJson(paths) {
       if (!response.ok) {
         throw new Error(`${response.status} ${response.statusText}`)
       }
-      return response.text().then((text) => JSON.parse(text.replace(/\bNaN\b/g, "null")))
+      const text = await response.text()
+      const trimmedText = text.trim()
+      if (trimmedText.startsWith("<")) {
+        throw new Error(`${path} returned HTML instead of JSON`)
+      }
+      return JSON.parse(trimmedText.replace(/\bNaN\b/g, "null"))
     } catch (error) {
-      lastError = error
+      lastError = new Error(`Unable to load ${path}: ${error.message}`)
     }
   }
 
@@ -365,7 +370,11 @@ async function initOrganismPage() {
   }
 
   try {
-    const metadata = await fetchJson(["./metadata.json", "../results/metadata.json"])
+    const metadata = await fetchJson([
+      "./results/metadata.json",
+      "../results/metadata.json",
+      "./metadata.json",
+    ])
     const records = findOrganismRecords(metadata, requestedId)
 
     if (!records || records.length === 0) {
