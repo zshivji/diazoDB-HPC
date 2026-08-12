@@ -174,6 +174,8 @@ def get_plot_data():
 # export metadata.json for displaying hover info on diazoDB phylo tree
 def export_metadata(gene_data, operons):
 
+    gene_data.set_index(['genome', 'contig', 'operon', 'cluster'], inplace=True)
+
     # known regulon genes (in sort order)
     reg_genes = ['nifA', 'nifL', 'nifR', 'nifI', 'nifI1', 'nifI2', 'glnB', 'glnK', 'draT', 'draG']
 
@@ -192,7 +194,7 @@ def export_metadata(gene_data, operons):
         # get operon data for plotting on interactive tree
         genes = []
         regulon = []
-        cluster_gene_data = gene_data.loc[gene_data['genome'] == genome]
+        cluster_gene_data = gene_data.loc[(genome, contig, operonID, cl)]
         for _, gene in cluster_gene_data.iterrows():
             # for each nif cluster, store surrounding gene info as list
             genes.append({'gene_id': gene.query_id,
@@ -218,7 +220,7 @@ def export_metadata(gene_data, operons):
         metadata[f"{organism} | {cl} | {genome} | {contig} | {operonID}"] = {'organism': organism, 'genome': genome, 
             'taxonomy': taxonomy, 'group': group, 'environment': environments, 'regulon':regulon, 'operon': operon}
         
-    with open('../results/final/metadata.json', 'w') as f:
+    with open('../results/final/metadata.json', 'w') as f: # overwrites existing metadata.json
         json.dump(json_safe(metadata), f, indent=2, allow_nan=False)
 
 

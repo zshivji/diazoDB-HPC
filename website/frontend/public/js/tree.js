@@ -175,7 +175,9 @@ function renderOperonHTML(nodeMeta) {
       const leftPx = leftPad + ((start - regionStart) / span) * usableWidth
       const rightPx = leftPad + ((end - regionStart) / span) * usableWidth
       const widthPx = Math.max(10, rightPx - leftPx)
-      const label = escapeHtml(gene.gene_name || gene.gene_id || "")
+      const geneName = String(gene.gene_name || "").trim()
+      const label = escapeHtml(geneName || gene.gene_id || "")
+      const displayLabel = /^WP_/.test(geneName) ? "" : label
       const product = escapeHtml(gene.product || "")
       const title = `${label} | ${direction} | ${start}-${end}${product ? ` | ${product}` : ""}`
 
@@ -184,7 +186,7 @@ function renderOperonHTML(nodeMeta) {
         <div class="tooltip-operon-gene"
              style="left:${leftPx}px; width:${widthPx}px;"
              title="${title}">
-          <div class="tooltip-operon-gene-label">${label}</div>
+          <div class="tooltip-operon-gene-label">${displayLabel}</div>
           <div class="tooltip-operon-arrow-reverse"
                style="border-right-color:${color};"></div>
           <div class="tooltip-operon-gene-body"
@@ -197,7 +199,7 @@ function renderOperonHTML(nodeMeta) {
       <div class="tooltip-operon-gene"
            style="left:${leftPx}px; width:${widthPx}px;"
            title="${title}">
-        <div class="tooltip-operon-gene-label">${label}</div>
+        <div class="tooltip-operon-gene-label">${displayLabel}</div>
         <div class="tooltip-operon-gene-body"
              style="background-color:${color};"></div>
         <div class="tooltip-operon-arrow-forward"
@@ -281,6 +283,17 @@ function normalizeText(value, fallback = "Not available") {
   return text ? text : fallback
 }
 
+function normalizeEnvironment(value) {
+  const text = String(value == null ? "" : value).trim()
+  return !text || text.toLowerCase() === "none" ? "Not Available" : text
+}
+
+function getTreeIdParts(id) {
+  return String(id == null ? "" : id)
+    .split("|")
+    .map((part) => part.trim())
+}
+
 function splitTreeLabelText(value) {
   const fullValue = String(value == null ? "" : value).trim()
   if (!fullValue) {
@@ -349,13 +362,14 @@ function toSearchText(parts) {
 }
 
 function buildTooltipHTML(id, nodeMeta) {
-  const organism = normalizeText(
-    nodeMeta.organism || nodeMeta.species || id,
-    id,
-  )
+  const idParts = getTreeIdParts(id)
+  const title = idParts.length >= 2
+    ? `${idParts[0]} | ${idParts[1]}`
+    : normalizeText(nodeMeta.organism || nodeMeta.species || id, id)
   const genome = normalizeText(nodeMeta.genome)
+  const contig = normalizeText(idParts[3])
   const group = normalizeText(nodeMeta.group)
-  const environments = normalizeText(
+  const environments = normalizeEnvironment(
     nodeMeta.environments || nodeMeta.environment,
   )
   const regulon = normalizeText(nodeMeta.regulon)
@@ -364,12 +378,14 @@ function buildTooltipHTML(id, nodeMeta) {
 
   return `
     <div class="tooltip-card">
-      <div class="tooltip-title">${escapeHtml(organism)}</div>
-      <div class="tooltip-subtitle">${escapeHtml(id)}</div>
+      <div class="tooltip-title">${escapeHtml(title)}</div>
 
       <div class="tooltip-meta-grid">
         <div class="tooltip-key">Genome</div>
         <div class="tooltip-value">${escapeHtml(genome)}</div>
+
+        <div class="tooltip-key">Contig</div>
+        <div class="tooltip-value">${escapeHtml(contig)}</div>
 
         <div class="tooltip-key">Group</div>
         <div class="tooltip-value">${escapeHtml(group)}</div>
