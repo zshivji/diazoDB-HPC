@@ -73,106 +73,23 @@ def parse_annotations() -> pd.DataFrame: #hits_path: Path, outdir: Path
     for file in glob.glob(str("../pangenome/batch_*/annotation_results/*.annot")):
         # add annotation results to the dataframe
         tmp = pd.read_csv(file, sep="\t")
-        tmp["genome_id"] = re.search(r'/(*?)_protein' ,file).group(0)
+        tmp["genome_id"] = re.search(r'/(*?)_[0-9]_[a-z]{3}_operon.fasta.annot' ,file).group(0)
         print(tmp["genome_id"][0])
         annotation_results = pd.concat([annotation_results, tmp], ignore_index=True)
 
+    annotations = list(set(annotation_results['ko_number'].to_list()))
+    annotations.extend('genomeID')
 
-#         # Parse file using SearchIO/HmmerIO
-#         for result in SearchIO.parse(file, "hmmer3-text"):
-#             for item in result.hits:
-#                 # grab gene name
-#                 s = r"([a-zA-Z]+)"  # ex. nifHDK, pchlide
-#                 gene = re.findall(s, result.id)[0]
+    heat_map = pd.DataFrame(columns=annotations)
 
-#                 # Check for positive bitscore and append the data to the corresponding lists
-#                 if item.bitscore > 0 and item.evalue < 0.01:
-#                     append_hit(genome_id, gene, item)
+    annotation_results.set_index('genome_id', inplace=True)
+    for genome in annotation_results.index.unique():
+        genome_annotations = annotation_results.loc[genome]
+        heat_map.loc[genome] = genome_annotations['ko_number'].value_counts()
 
-#                     # check if full seq and best domain e-val are significant
-#                     if item.hsps[0].evalue < 0.01:
-#                         flag1.append(0)
-#                     else:
-#                         # check if "full sequence Eval is sig but best domain is not"
-#                         flag1.append(1)
+    heat_map.fillna(0, inplace=True)
+    heat_map.to_csv("../pangenome/heatmap.csv")
 
-#                     # check if bitscore >> bias (same order of magnitude) as bitscore
-#                     if item.bias != 0 and item.bitscore / item.bias > 10:
-#                         flag2.append(0)
-#                     elif item.bias == 0:
-#                         flag2.append(0)
-#                     else:
-#                         flag2.append(1)
-
-#     # create and store dataframe
-#     hits = pd.DataFrame(
-#         {
-#             "GenomeID": result_target,
-#             "Gene": query_id,
-#             "Hit": hit_id,
-#             "E-value": evalue,
-#             "Best Domain E-value": best_domain_evalue,
-#             "Bit Score": bitscore,
-#             "Bias": bias,
-#             "Location": location,
-#             "Alignment Length": alens,
-#             "Sequence Length": slength,
-#             "Flag_Eval": flag1,
-#             "Flag_Bias": flag2,
-#         }
-#     )
-
-#     # add taxonomy info
-#     hits = pd.merge(hits, gtdb_taxonomy, on="GenomeID", how="left")
-#     return hits
-
-
-# def parse_tophits(hits: pd.DataFrame, outdir: Path, min_genes: int, gene_range: int) -> None:
-#     # save "contig" as col
-#     hits["contig"] = hits["Hit"].str.split("_").str[:-1].str.join("_")
-
-#     # multi-index to cluster by genome, contig
-#     hits.set_index(["GenomeID", "contig"], inplace=True)
-#     hits.sort_index(inplace=True)
-#     hits.drop_duplicates(inplace=True)
-
-#     # filter for genome, contig with at least 3 unique genes (nifHDKENB)
-#     filtered_df = hits.groupby(level=["GenomeID", "contig"]).filter(
-#         lambda x: x["Gene"].nunique() >= min_genes
-#     )
-
-#     # make sure these 3 unique genes are not the same hit (i.e. not the same gene in reference genome)
-#     filtered_df2 = filtered_df.groupby(level=["GenomeID", "contig"]).filter(
-#         lambda x: x["Hit"].nunique() >= min_genes
-#     )
-
-#     genomes_to_keep = pd.DataFrame(columns=filtered_df2.columns)
-#     # iterate through each genome and contig
-#     for genome in filtered_df2.index.get_level_values(0).unique():
-#         for contig in filtered_df2.loc[genome].index.get_level_values(0).unique():
-#             tmp = filtered_df2.loc[(genome, contig)]
-
-#             # only keep numbers that have clusters >= min_genes
-#             pos_clusters = cluster_pos(tmp.Hit.unique(), gene_range)
-
-#             # for each cluster, find the best combination of genes (min e-value)
-#             for cl in pos_clusters:
-#                 pos = [contig + "_" + str(p) for p in cl]
-#                 no_pos = len(pos)
-
-#                 # need at least min_genes genes to continue
-#                 if no_pos < min_genes:
-#                     continue
-
-#                 # only keep hits that are in the cluster
-#                 tmp2 = tmp[tmp.Hit.isin(pos)].reset_index()
-
-#                 genomes_to_keep = pd.concat([genomes_to_keep, tmp2])
-
-#     # export
-#     outdir.mkdir(parents=True, exist_ok=True)
-#     genomes_to_keep.to_feather(str(outdir) + "_hits.feather")
-#     genomes_to_keep.to_csv(str(outdir) + "_hits.csv", index=False)
 
 
 def main() -> None:

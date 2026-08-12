@@ -2,8 +2,11 @@ import pandas as pd
 import argparse
 import glob
 import os
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from Bio import Phylo
+import Bio.Phylo.NewickIO
 
 def default_proteins_dir() -> str:
     """Resolve the GTDB protein reps directory with sensible fallbacks."""
@@ -92,14 +95,51 @@ def filter_groups_by_unique_counts(df, group_cols, requirements, exclude='nifB')
         lambda x: has_excluded_protein(x) or meets_requirements(x)
     )
 
-# def str_to_bool(value):
-#     """Convert an argument string into a boolean, supporting numbers and text."""
-#     # Convert to lowercase string to check string variations safely
-#     val_lower = str(value).lower().strip()
-    
-#     if val_lower in ('yes', 'true', 't', 'y', '1'):
-#         return True
-#     elif val_lower in ('no', 'false', 'f', 'n', '0'):
-#         return False
-#     else:
-#         raise argparse.ArgumentTypeError(f"Boolean value expected. Got '{value}'.")
+def tree_node_match_metadata(tree_file):
+
+    clusters = pd.read_csv('../results/final/nif_clusters.csv')
+
+    tree = Phylo.read(tree_file, "newick")
+
+    for clade in tree.get_terminals():
+        # for each node, update nodeID to match the metadata headers (except added outbranches)
+        if clade.name.startswith('WP_'):
+            new_name = clade.name
+        else:
+            protein = clade.name
+            contig = '_'.join(protein.split('_')[:-1])
+            position = protein.split('_')[-1]
+            cluster = clusters[clusters["contig"] == contig]
+            for _, row in cluster.iterrows():
+                positions = str(row['pos_num']).strip('[]').replace(',', ' ').split()
+                if position in {p.strip() for p in positions}:
+                    organism = row['Organism']
+                    clusterID = row['cluster']
+                    genome = row['GenomeID']
+                    contig = row['contig']
+                    operon = row['operon']
+                    new_name = f"{organism} | {clusterID} | {genome} | {contig} | {operon}"
+                    break
+
+        clade.name = new_name
+
+    Phylo.write(tree, tree_file, "newick")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="DiazoDB helper functions")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    tree_parser = subparsers.add_parser(
+        "tree_node_match_metadata",
+        help="Replace tree terminal IDs with metadata-matched IDs.",
+    )
+    tree_parser.add_argument("tree_file", help="Newick tree file to update in place.")
+
+    args = parser.parse_args()
+    if args.command == "tree_node_match_metadata":
+        tree_node_match_metadata(args.tree_file)
+
+
+if __name__ == "__main__":
+    main()

@@ -38,6 +38,7 @@ def test(checked: pd.DataFrame) -> None:
             elif checked_count < test_file_count:
                 log.write(f'FAIL: missing {test_file_count - checked_count} hits \n')
             elif checked_count > test_file_count:
+                    print(checked[checked['GenomeID'] == genome])
                     extra = [hit for hit in checked[checked['GenomeID'] == genome].protein.to_list() if hit not in test_file.loc[genome].hit.to_list()]
                     log.write(f'FAIL: {checked_count - test_file_count} extra hits: {extra} \n')
 

@@ -7,7 +7,7 @@
 #   DIAZODB_OUTDIR   - output directory for intermediate files
 #   DIAZODB_OUTPUT   - final CSV/HTML/PDF path to post back to the API
 
-#SBATCH --time=02:04:00
+#SBATCH --time=0:14:00
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4

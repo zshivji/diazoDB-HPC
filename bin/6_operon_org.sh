@@ -1,13 +1,14 @@
 #!/bin/bash
 # Run `bash bin/6_operon_org.sh` to batch inputs and submit the workflow.
 
-#SBATCH --time=3:10:00
+#SBATCH --time=4:10:00
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=120GB
+#SBATCH --mem=150GB
 #SBATCH --job-name=operon-org
 #SBATCH -o logs/%x-%j.out # STDOUT
+##SBATCH --dependency=afterok:66482956
 
 echo "====================================================="
 echo "Start Time  : $(date)"
@@ -35,10 +36,10 @@ log() {
 prepare_batches() {
     log "Creating operon FASTA inputs"
     mkdir -p "$BATCH_DIR"
-#    (
-#        cd "${ROOT}/bin"
-#        conda run -p "${PARSE_ENV}" python diazoDB-metadata.py --prepare
-#    )
+    (
+        cd "${ROOT}/bin"
+        conda run -p "${PARSE_ENV}" python diazoDB-metadata.py --prepare
+    )
     find "${BATCH_DIR}" -maxdepth 1 -type f -name 'batch_*' -delete
     find "${INPUT_DIR}" -maxdepth 1 -type f -name '*.fasta' | sort \
         > "${BATCH_DIR}/inputs.txt"
@@ -96,21 +97,22 @@ postprocess() {
 
 submit_workflow() {
     local batch_count array_job post_job
-    prepare_batches
-    batch_count=$(find "${BATCH_DIR}" -maxdepth 1 \
-        -type f -name 'batch_[0-9][0-9][0-9]' | wc -l)
+#    prepare_batches
+#    batch_count=$(find "${BATCH_DIR}" -maxdepth 1 \
+#        -type f -name 'batch_[0-9][0-9][0-9]' | wc -l)
 
-    array_job=$(sbatch --parsable \
-        --output="logs/%x-%A_%a.out" \
-        --array="0-$((batch_count - 1))" \
-        "${SCRIPT}" run)
+#    array_job=$(sbatch --parsable \
+#        --output="logs/%x-%A_%a.out" \
+#        --array="0-$((batch_count - 1))" \
+#        "${SCRIPT}" run)
     post_job=$(sbatch --parsable \
         --output="logs/%x-%j.out" \
-        --dependency="afterok:${array_job}" \
         "${SCRIPT}" postprocess)
 
-    log "Submitted MicrobeAnnotator array ${array_job} (${batch_count} batches)"
-    log "Submitted get_plot_data job ${post_job} after ${array_job}"
+#--dependency="afterok:${array_job}" \
+
+#    log "Submitted MicrobeAnnotator array ${array_job} (${batch_count} batches)"
+#    log "Submitted get_plot_data job ${post_job} after ${array_job}"
 }
 
 case "${1:-submit}" in

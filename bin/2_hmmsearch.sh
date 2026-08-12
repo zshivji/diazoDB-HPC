@@ -1,11 +1,12 @@
 #!/bin/bash
 
-#SBATCH --time=18:10:00   # walltime --> 15 hrs for both Archaea, Bacteria
+#SBATCH --time=18:10:00   # walltime --> 16 hrs for both Archaea, Bacteria
 #SBATCH --ntasks=4   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=1   # number of nodes
 #SBATCH --mem 4GB   # memory per CPU core
 #SBATCH --job-name=hmmsearch   # job name
 #SBATCH -o logs/%x-%j.out # STDOUT
+##SBATCH --dependency=afterok:66011990
 
 eval "$(conda shell.bash hook)"
 conda activate /resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm
@@ -28,7 +29,7 @@ for file in "$GTDB_REP_DIR"/archaea/*; do
         hmmsearch \
             --domtblout "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/archaea/${f%.faa}_nif.domtblout" \
             -o "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/archaea/${f%.faa}_nif.out" \
-            /resnick/groups/enviromics/zahra/diazoDB-HPC/HMMs/combined_nif_07202026.hmm "$file"
+            /resnick/groups/enviromics/zahra/diazoDB-HPC/HMMs/combined_nif_07292026.hmm "$file"
 done
 
 chgrp hpc_enviromics /resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/archaea/*
@@ -41,7 +42,7 @@ for file in "$GTDB_REP_DIR"/bacteria/*; do
         hmmsearch \
             --domtblout "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/bacteria/${f%.faa}_nif.domtblout" \
             -o "/resnick/groups/enviromics/zahra/diazoDB-HPC/results/hmmsearch_results/bacteria/${f%.faa}_nif.out" \
-            /resnick/groups/enviromics/zahra/diazoDB-HPC/HMMs/combined_nif_07202026.hmm "$file" 
+            /resnick/groups/enviromics/zahra/diazoDB-HPC/HMMs/combined_nif_07292026.hmm "$file" 
 done
 
 for file in /resnick/groups/enviromics/zahra/diazoDB-HPC/results/bacteria/hmmsearch_results/*; do

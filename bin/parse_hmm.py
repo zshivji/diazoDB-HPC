@@ -138,11 +138,11 @@ def parse_hits(hits_path: Path, outdir: Path) -> pd.DataFrame:
             
             for hit in result.hits:
                 # Check for positive bitscore and append the data to the corresponding lists
-                if hit.bitscore <= 0 or hit.evalue >= 0.001:
+                if hit.bitscore <= 0 or hit.evalue >= 0.0001:
                     continue
 
                 for hsp in hit.hsps:
-                    if hsp.bitscore <= 0 or hsp.evalue >= 0.001:
+                    if hsp.bitscore <= 0 or hsp.evalue >= 0.0001:
                         continue
                     append_hit(genome_id, gene, hit, hsp)
 

@@ -17,7 +17,7 @@ echo "Job ID/Name : $SLURM_JOBID / $SLURM_JOB_NAME"
 echo "======================================================"
 echo ""
 
-python conserved-res.py --reload_fasta --test
+python conserved-res.py --align_fasta --test
 
 echo ""
 echo "======================================================"

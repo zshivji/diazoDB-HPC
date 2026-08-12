@@ -101,11 +101,8 @@ def write_fasta(
     config: dict,
     proteins_dir: str = "../protein_faa_reps_232",
     results_dir: str = "../results/tmp",
-    reference_genome: str | None = None,
 ):
-    """Get fasta sequences for each gene & export to fasta.
-
-    Returns updated gene_list (with 'Seq' column filled where found).
+    """Get fasta sequences for each gene & export to fasta of domains.
     """
     os.makedirs(results_dir, exist_ok=True)
     for name, gene in gene_list.items():
@@ -127,19 +124,6 @@ def write_fasta(
             )
             records.append(seq)
 
-        # Each MAFFT split needs a known reference sequence. Runner jobs contain
-        # only the uploaded genome, so add the configured reference explicitly.
-        if reference_genome and not any(record.id == reference_genome for record in records):
-            records.append(
-                get_seq(
-                    reference_genome,
-                    config[name]['ref_gene'],
-                    id=reference_genome,
-                    description=config[name]['ref_gene'],
-                    dir=proteins_dir,
-                )
-            )
-
         print(len(records), "records found for " + name, flush=True)
         with open(os.path.join(results_dir, name + ".fasta"), "w") as output_handle:
             SeqIO.write(records, output_handle, "fasta")
@@ -151,8 +135,8 @@ def write_fasta(
 
 def aln_fasta(
     genes: dict,
+    config: dict,
     results_dir: str = "../results/tmp",
-    ref_seq_ids: str = "../results/ref_seq.ids",
 ):
     # align fasta files
     splits_dir = os.path.join(results_dir, 'fasta_splits')
@@ -163,19 +147,23 @@ def aln_fasta(
         num = int(tmp.shape[0]/200)+1 # how many splits
         fasta_path = os.path.join(results_dir, f"{name}.fasta")
         split_prefix = os.path.join(splits_dir, f"{name}_split")
+        ref_fasta_path = f"/resnick/groups/enviromics/zahra/diazoDB-HPC/results/reference/{name}.fasta" # placeholder for ref fasta path (for diazoDB and API runner, will always point to AV)
+        # split fasta file into smaller files for alignment
         subprocess.run(
             ["seqtk", "split", "-n", str(num), split_prefix, fasta_path],
             check=True,
         )
+        # for each split...
         for i in range(num):
             split_path = f"{split_prefix}.{str(i+1).zfill(5)}.fa"
             alignment_path = f"{split_prefix}.{str(i+1).zfill(5)}.aln"
-            with open(split_path, "ab") as split_file:
-                subprocess.run(
-                    ["seqtk", "subseq", fasta_path, ref_seq_ids],
-                    stdout=split_file,
-                    check=True,
-                )
+            
+            # add reference sequences to split file
+            ref = SeqRecord(Seq(config[name]['ref_seq']), id='reference', description=name)
+            with open(split_path, "a") as f:
+                SeqIO.write(ref, f, "fasta")
+
+            # align split file
             with open(alignment_path, "wb") as alignment_file:
                 subprocess.run(
                     ["mafft", "--auto", "--quiet", "--thread", "4", split_path],
@@ -195,13 +183,13 @@ def check_gene(file, ref_seq, important_residues, residue_scores, passing_score,
     alignment = AlignIO.read(f"{file}", "fasta")
 
     for record in alignment:
-        if ref_seq in record.description:
+        if record.id == 'reference':
             aln = record.seq
             break
 
     # map important cols in aln to ref_seq
     residue_to_alignment = {}
-    residue_idx = 0  # index in original (ungapped) sequence
+    residue_idx = 0
     col2res = {}
     col2score = {}
 
@@ -210,7 +198,7 @@ def check_gene(file, ref_seq, important_residues, residue_scores, passing_score,
             residue_idx += 1
             if residue_idx in important_residues:
                 residue_to_alignment[residue_idx] = aln_idx
-                col2res[aln_idx] = aln[aln_idx]
+                col2res[aln_idx] = f"{aln[aln_idx]}{residue_idx}"
                 col2score[aln_idx] = residue_to_score[residue_idx]
                 
             # early stop if we've found everything
@@ -262,7 +250,7 @@ def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../res
         print(f'checking {gene}', flush=True)
 
         # load json parameters
-        ref_seq = config[gene]['ref_gene']
+        ref_seq = config[gene]['ref_seq']
         important_residues = config[gene]['residues']
         residue_scores = config[gene].get('residue_scores', config[gene].get('reside_scores'))
         if residue_scores is None:
@@ -320,18 +308,20 @@ def export_results(
     # make sure nif clusters have at least nifHDK (unless it is a nifB-only operon)
     # doesn't check anf or vnf clusters
     def gene_check(genes):
+        def has_gene_letter(letter):
+            return any(letter in str(gene) for gene in genes)
         if len(genes) >= 3:
-            if genes.__contains__('vnfG'):
+            if has_gene_letter('G'):
                 return True
-            elif genes.__contains__('anfO'):
-                return True
-            elif genes.__contains__('nifH'):
-                if genes.__contains__('nifD'):
-                    if genes.__contains__('nifK'):
+            elif has_gene_letter('H'):
+                if has_gene_letter('D'):
+                    if has_gene_letter('K'):
                         return True
-        else:
-            if genes.__contains__('nifB'):
+        elif len(genes) == 1:
+            if genes[0] == 'nifB':
                 return True
+
+        return False
 
     def relabel_operon_gene_prefix(idx, new_prefix):
         current = hits.loc[idx, 'residue_match'].astype(str)
@@ -353,18 +343,7 @@ def export_results(
             if strand['residue_match'].eq('anfO').any():
                 relabel_operon_gene_prefix(target_idx, 'anf')
 
-    # remove operons with fewer than 3 unique nif genes (except for operons that contain nifB)
     hits.reset_index(inplace=True)
-    hits = filter_groups_by_unique_counts(
-        hits,
-        group_cols=["GenomeID", "contig", "operon"],
-        requirements={
-        "Gene": min_genes,
-        "Hit": min_genes
-        },
-        exclude='nifB'
-    )
-
     # assign final annotation + group domains into proteins
     hits['protein'] = hits['Hit'].str.rsplit('_', n=1).str[0] # remove domain suffix to get protein name
     genomes_to_keep = pd.DataFrame(columns=hits.columns).set_index('protein')
@@ -415,8 +394,20 @@ def export_results(
     genomes_to_keep['Gene'] = genomes_to_keep['residue_match']
     #hits = hits[['Gene', 'E-value', 'Bit Score', 'Location', 'Orientation', 'Alignment Length', 'Sequence Length', 'GTDB']]
     genomes_to_keep.drop_duplicates(inplace = True)
-    genomes_to_keep = genomes_to_keep.reset_index().set_index('GenomeID')
+    genomes_to_keep = genomes_to_keep.reset_index()
 
+    # remove operons with fewer than 3 unique nif genes (except for operons that contain nifB)
+    genomes_to_keep = filter_groups_by_unique_counts(
+    genomes_to_keep,
+    group_cols=["GenomeID", "contig", "operon"],
+    requirements={
+    "Gene": min_genes,
+    "Hit": min_genes
+    },
+    exclude='nifB'
+    )
+
+    genomes_to_keep.set_index('GenomeID', inplace=True)
     # export csv with each gene as individual row
     genomes_to_keep.to_csv(os.path.join(results_dir, 'nif_final.csv'))
 
@@ -453,7 +444,7 @@ def export_results(
     operons = operons.drop(columns=['_location_start', '_location_end'])
 
     operons = operons.groupby(['GenomeID', 'contig', 'operon', 'cluster']).agg(**{
-        'Gene set': ('Gene', lambda x: ', '.join(x.astype(str))),
+        'Gene set': ('Gene', lambda x: ', '.join(x.astype(str).str.replace(r'^(nif|anf|vnf)', '', regex=True))),
         'Location_start': ('Location_start', 'first'),
         'Location_end': ('Location_end', 'last'),
         'GTDB': ('GTDB', 'first'),
@@ -591,34 +582,9 @@ def main() -> None:
 
     # load hits dataframe
     hits = load_nif(update_index=['GenomeID'], hits_file=args.hits_file)
-    if 'Seq' not in hits.columns:
-        hits['Seq'] = ''
+    
     if hits.empty:
-        os.makedirs(args.final_dir, exist_ok=True)
-        hits.reset_index().to_csv(
-            os.path.join(args.final_dir, 'nif_final.csv'),
-            index=False,
-        )
-        result_columns = [
-            "GenomeID",
-            "contig",
-            "operon",
-            "cluster",
-            "Nitrogenase Set",
-            "Location_start",
-            "Location_end",
-            "Orientation",
-            "pos_num",
-        ]
-        if not args.skip_metadata:
-            result_columns.extend(
-                ["GTDB Taxonomy", "NCBI Taxonomy", "Isolation Source"]
-            )
-        pd.DataFrame(columns=result_columns).to_csv(
-            os.path.join(args.final_dir, 'nif_clusters.csv'),
-            index=False,
-        )
-        print("No qualifying HMM hits; wrote empty final result files.", flush=True)
+        print("No qualifying HMM hits; skipping conserved residue check.", flush=True)
         return
 
     # store per-gene df in a dict
@@ -627,23 +593,12 @@ def main() -> None:
 
     # reload + align fasta files if specified
     if args.reload_fasta:
-        with open(args.ref_seq_ids, encoding="utf-8") as ref_file:
-            reference_genome = next(
-                (line.strip() for line in ref_file if line.strip()),
-                None,
-            )
-        gene_list = write_fasta(
-            gene_list,
-            config,
-            proteins_dir=args.proteins_dir,
-            results_dir=args.results_dir,
-            reference_genome=reference_genome,
-        )
+        gene_list = write_fasta(gene_list, config, proteins_dir=args.proteins_dir, results_dir=args.results_dir)
         args.align_fasta = True  # Automatically align if reloading fasta
     else: 
         gene_list = pd.read_csv(os.path.join(args.results_dir, 'hits_seq.csv'))
     if args.align_fasta:
-        aln_fasta(gene_list, results_dir=args.results_dir, ref_seq_ids=args.ref_seq_ids)
+        aln_fasta(gene_list, config, results_dir=args.results_dir)
 
     # check for conserved residues and save results
     checked = check_gene_wrapper(gene_list, config, results_dir=args.results_dir)
@@ -657,199 +612,7 @@ def main() -> None:
 
     # check results against known nitrogenase
     if args.test:
-        test(checked)
+        test(checked=pd.read_csv('../results/final/nif_final.csv'))
 
 if __name__ == "__main__":
     main()
-
-
-
-#### END OF CONSERVED RESIDUE CHECKING, BELOW IS VALIDATion/BACKUP CODE ####
-
-# #backup check --> likely don't need this since we're reducing alignments to 200 seq per file
-# #get seq that failed checks
-# print('getting failed sequences', flush=True)
-
-# seqs = []
-
-# for gene in 'DKEN':
-
-#     # for each gene, get all hmm hit acc
-#     result = list(SeqIO.parse(f"../results/fasta_splits/nif{gene}.fasta", "fasta"))
-#     hit = [record.description.split(" ")[-1] for record in result]
-
-#     # get seq that failed check
-#     for record, acc in zip(result, hit):
-#         if acc not in eval(f"list(nif{gene}_checked.index.get_level_values(1).unique())"):
-#             seq = SeqRecord(Seq(record.seq), id=record.id, description=acc)
-#             seqs.append(record)
-
-# print(str(len(seqs)) + " seqs failed nifDKEN checks", flush=True) # counting how many failed pre/post 2026 edits
-
-# # Write the records to a FASTA file
-# with open(f"../results/fasta_splits/nifDKEN.fasta", "w") as output_handle:
-#     SeqIO.write(seqs, output_handle, "fasta")
-
-# # add reference sequences
-# for gene in 'DKEN':
-#     os.system(f"seqtk subseq ../results/fasta_splits/nif{gene}.fasta ../results/ref_seq.ids >> ../results/fasta_splits/nifDKEN.fasta")
-
-# print('aligning failed sequences', flush=True)
-# # aln all seqs
-# num = int(len(seqs)/200) +1  # how many splits
-# os.system(f"seqtk split -n {num} ../results/fasta_splits/nifDKEN_split ../results/fasta_splits/nifDKEN.fasta") # split fasta file
-# for i in range(num):
-#     print(i+1)
-#     os.system(f"seqtk subseq ../results/fasta_splits/nifDKEN.fasta ../results/ref_seq.ids >> ../results/fasta_splits/nifDKEN_split.{str(i+1).zfill(5)}.fa") # add reference sequences
-#     os.system(f"mafft --auto --quiet --thread 4 ../results/fasta_splits/nifDKEN_split.{str(i+1).zfill(5)}.fa > ../results/fasta_splits/nifDKEN_split.{str(i+1).zfill(5)}.aln")
-    
-
-# backup check --> likely don't need this since we're reducing alignments to 200 seq per file
-# print('checking failed sequences', flush=True)
-
-# nifD_backup = check_gene('nifDKEN_split.00001', ref_seq_nifD, important_residues_nifD, passing_score)
-# nifK_backup = check_gene('nifDKEN_split.00001', ref_seq_nifK, important_residues_nifK, passing_score)
-# nifE_backup = check_gene('nifDKEN_split.00001', ref_seq_nifE, important_residues_nifE, passing_score)
-# nifN_backup = check_gene('nifDKEN_split.00001', ref_seq_nifN, important_residues_nifN, passing_score)
-
-# for file in glob.glob(f'nifDKEN_split.00*.aln'):
-#     if file == '../results/fasta_splits/nifDKEN_split.00001.aln':
-#         continue
-#     nifD_backup = check_gene(file[:-4], ref_seq_nifD, important_residues_nifD, passing_score)
-#     nifD_backup = pd.concat([nifD_backup, new])
-
-#     nifK_backup = check_gene(file[:-4], ref_seq_nifK, important_residues_nifK, passing_score)
-#     nifK_backup = pd.concat([nifK_backup, new])
-
-#     nifE_backup = check_gene(file[:-4], ref_seq_nifE, important_residues_nifE, passing_score)
-#     nifE_backup = pd.concat([nifE_backup, new])
-
-#     nifN_backup = check_gene(file[:-4], ref_seq_nifN, important_residues_nifN, passing_score)
-#     nifN_backup = pd.concat([nifN_backup, new])
-
-# # set index as genome, hit
-# nifD_backup.set_index(['hit'], append= True, inplace = True)
-
-# # remove hits that are already in saved
-# nifD_backup = nifD_backup[~nifD_backup.index.get_level_values(1).isin(nifD_checked.index.get_level_values(1).to_list())] # remove nifD
-# nifD_backup = nifD_backup[~nifD_backup.index.get_level_values(1).isin(nifK_checked.index.get_level_values(1).to_list())] # remove nifK
-# nifD_backup = nifD_backup[~nifD_backup.index.get_level_values(1).isin(nifE_checked.index.get_level_values(1).to_list())] # remove nifE
-# nifD_backup = nifD_backup[~nifD_backup.index.get_level_values(1).isin(nifN_checked.index.get_level_values(1).to_list())] # remove nifN
-
-# # for each genome, only keep the best hit per contig
-# nifD_backup['gene_cluster'] = 0
-# nifD_backup = nifD_backup.loc[nifD_backup.groupby(['contig'])['score'].idxmax()]
-# nifD_backup.drop_duplicates(inplace = True)
-
-# print(str(len(nifD_backup.index.unique())) + " nifD seqs", flush=True)
-# nifD_checked = pd.concat([nifD_checked, nifD_backup])
-
-# # set index as genome, hit
-# nifK_backup.set_index(['hit'], append= True, inplace = True)
-
-# # remove hits that are already in saved
-# nifK_backup = nifK_backup[~nifK_backup.index.get_level_values(1).isin(nifD_checked.index.get_level_values(1).to_list())] # remove nifD
-# nifK_backup = nifK_backup[~nifK_backup.index.get_level_values(1).isin(nifK_checked.index.get_level_values(1).to_list())] # remove nifK
-# nifK_backup = nifK_backup[~nifK_backup.index.get_level_values(1).isin(nifE_checked.index.get_level_values(1).to_list())] # remove nifE
-# nifK_backup = nifK_backup[~nifK_backup.index.get_level_values(1).isin(nifN_checked.index.get_level_values(1).to_list())] # remove nifN
-
-# # for each genome, only keep the best hit per contig
-# nifK_backup['gene_cluster'] = 0
-# nifK_backup = nifK_backup.loc[nifK_backup.groupby(['contig'])['score'].idxmax()]
-# nifK_backup.drop_duplicates(inplace = True)
-
-# print(str(len(nifK_backup.index.unique())) + " nifK seqs", flush=True)
-# nifK_checked = pd.concat([nifK_checked, nifK_backup])
-
-# # set index as genome, hit
-# nifE_backup.set_index(['hit'], append= True, inplace = True)
-
-# # remove hits that are already in saved
-# nifE_backup = nifE_backup[~nifE_backup.index.get_level_values(1).isin(nifD_checked.index.get_level_values(1).to_list())] # remove nifD
-# nifE_backup = nifE_backup[~nifE_backup.index.get_level_values(1).isin(nifK_checked.index.get_level_values(1).to_list())] # remove nifK
-# nifE_backup = nifE_backup[~nifE_backup.index.get_level_values(1).isin(nifE_checked.index.get_level_values(1).to_list())] # remove nifE
-# nifE_backup = nifE_backup[~nifE_backup.index.get_level_values(1).isin(nifN_checked.index.get_level_values(1).to_list())] # remove nifN
-
-# # for each genome, only keep the best hit per gene cluster
-# nifE_backup['gene_cluster'] = 0
-# nifE_backup = nifE_backup.loc[nifE_backup.groupby(['contig'])['score'].idxmax()]
-# nifE_backup.drop_duplicates(inplace = True)
-
-# print(str(len(nifE_backup.index.unique())) + " nifE seqs", flush=True)
-# nifE_checked = pd.concat([nifE_checked, nifE_backup])
-
-# # set index as genome, hit
-# nifN_backup.set_index(['hit'], append= True, inplace = True)
-
-# # remove hits that are already in saved
-# nifN_backup = nifN_backup[~nifN_backup.index.get_level_values(1).isin(nifD_checked.index.get_level_values(1).to_list())] # remove nifD
-# nifN_backup = nifN_backup[~nifN_backup.index.get_level_values(1).isin(nifK_checked.index.get_level_values(1).to_list())] # remove nifK
-# nifN_backup = nifN_backup[~nifN_backup.index.get_level_values(1).isin(nifE_checked.index.get_level_values(1).to_list())] # remove nifE
-# nifN_backup = nifN_backup[~nifN_backup.index.get_level_values(1).isin(nifN_checked.index.get_level_values(1).to_list())] # remove nifN
-
-# # for each genome, only keep the best hit per gene cluster
-# nifN_backup['gene_cluster'] = 0
-# nifN_backup = nifN_backup.loc[nifN_backup.groupby(['contig'])['score'].idxmax()]
-# nifN_backup.drop_duplicates(inplace = True)
-
-# print(str(len(nifN_backup.index.unique())) + " nifN seqs", flush=True)
-# nifN_checked = pd.concat([nifN_checked, nifN_backup])
-
-# # append updated annotation (based on conserved residue matching) to nif files
-# nif['residue_match'] = ''
-# nif['backup_match'] = ''
-
-# nif.set_index(['Hit'], append = True, inplace = True)
-# nif.sort_index(inplace = True)
-
-# # update residue match column in nif df
-# for gene in 'HDKEN':
-#     for genome, cols in eval(f"nif{gene}_checked.iterrows()"):
-#         nif.loc[(genome, cols.hit), 'residue_match'] = "nif" + gene
-
-#  # add backup check       
-# for gene in 'DKEN':
-#     for genome, cols in eval(f"nif{gene}_backup.iterrows()"):
-#         nif.loc[(genome[0], genome[1]), 'backup_match'] = "nif" + gene
-
-# # filter to get hits that passed residue matching
-# nifH = nif[(nif.residue_match == 'nifH') & (nif.Gene == 'nifH') & (nif['Alignment Length'] > 200)]
-# # nifB = nif[(nif.Gene == 'nifB')] # not done
-# # nifB['residue_match'] = 'nifB'
-
-# # only index OG matches
-# nifD = nif[((nif.residue_match == 'nifD') & (nif.Gene == 'nifD') & (nif.backup_match != 'nifD') & (nif['Alignment Length'] > 300))]
-# # add backup check
-# nifD_backup = nif[(nif.backup_match == 'nifD') & (nif['Alignment Length'] > 300)].sort_values(by = 'E-value')
-# nifD_backup = nifD_backup.groupby(['GenomeID', 'Hit']).first()
-# nifD = pd.concat([nifD, nifD_backup])
-
-# # only index OG matches
-# nifK = nif[((nif.residue_match == 'nifK') & (nif.Gene == 'nifK') & (nif.backup_match != 'nifK') & (nif['Alignment Length'] > 300))]
-# # add backup check
-# nifK_backup = nif[(nif.backup_match == 'nifK') & (nif['Alignment Length'] > 300)].sort_values(by = 'E-value')
-# nifK_backup = nifK_backup.groupby(['GenomeID', 'Hit']).first()
-# nifK = pd.concat([nifK, nifK_backup])
-
-# # only index OG matches
-# nifE = nif[((nif.residue_match == 'nifE') & (nif.Gene == 'nifE') & (nif.backup_match != 'nifE') & (nif['Alignment Length'] > 300))]
-# # add backup check
-# nifE_backup = nif[(nif.backup_match == 'nifE') & (nif['Alignment Length'] > 300)].sort_values(by = 'E-value')
-# nifE_backup = nifE_backup.groupby(['GenomeID', 'Hit']).first()
-# nifE = pd.concat([nifE, nifE_backup])
-
-# # only index OG matches
-# nifN = nif[((nif.residue_match == 'nifN') & (nif.Gene == 'nifN') & (nif.backup_match != 'nifN') & (nif['Alignment Length'] > 300))]
-# # add backup check
-# nifN_backup = nif[(nif.backup_match == 'nifN') & (nif['Alignment Length'] > 300)].sort_values(by = 'E-value')
-# nifN_backup = nifN_backup.groupby(['GenomeID', 'Hit']).first()
-# nifN = pd.concat([nifN, nifN_backup])
-
-# nif = pd.concat([nifH, nifD, nifK, nifE, nifN])
-# nif.sort_index(inplace = True)
-
-# nif.to_csv(f'../results/fasta_splits/nif_rescheck_nofilt.csv')
-
-# # Are any nifD,E,K being missed and printed nifN (for example?) should I align all DKEN first and then check for conserved residues?
-
-# EXPORT
