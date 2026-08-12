@@ -63,12 +63,20 @@ function getGeneColor(geneName) {
 }
 
 function normalizeTreeIdentifier(value) {
-  return String(value || "")
+  const normalized = String(value || "")
     .trim()
     .replace(/^'+|'+$/g, "")
     .replace(/\b(GB|RS)\s+(GCA|GCF)\s+(\d+\.\d+)\b/gi, "$1_$2_$3")
     .replace(/\b([A-Z]{2})\s+([A-Z]*\d+(?:\.\d+)?)\b/g, "$1_$2")
-    .replace(/\|([^|]+?)\s+\d+$/, "|$1")
+
+  // Tree labels and metadata keys use the same fields but may differ in
+  // whitespace around separators (and in accession formatting). Keep the
+  // final copy number: it is part of the exact metadata ID.
+  return normalized
+    .split("|")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" | ")
 }
 
 function canonicalLookupKey(value) {
@@ -284,6 +292,8 @@ function splitTreeLabelText(value) {
     .map((part) => part.trim())
     .filter(Boolean)
 
+  // The first two fields are always the organism and nitrogenase type
+  // (nif/vnf/anf). Everything after them is the metadata ID suffix.
   if (parts.length >= 3) {
     return {
       primary: parts.slice(0, 2).join(" | "),
