@@ -2,6 +2,7 @@ console.log("tree.js is running")
 
 // define variables
 const tooltip = document.getElementById("tooltip")
+const treeContainer = document.getElementById("tree-container")
 const searchInput = document.getElementById("tree-search")
 const searchExampleButtons = document.querySelectorAll("[data-search-example]")
 let labelData = []
@@ -28,7 +29,7 @@ const SHOW_OPERON_IN_TOOLTIP = true
 // helper functions
 
 function escapeHtml(str) {
-  return String(str ?? "")
+  return String(str == null ? "" : str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -132,7 +133,7 @@ function findMetadataKey(candidate, metadata) {
 // render operon
 
 function renderOperonHTML(nodeMeta) {
-  if (!nodeMeta?.operon?.genes || nodeMeta.operon.genes.length === 0) {
+  if (!nodeMeta || !nodeMeta.operon || !nodeMeta.operon.genes || nodeMeta.operon.genes.length === 0) {
     return ""
   }
 
@@ -268,12 +269,55 @@ function resolveMetadataKey(rawLabel, metadata) {
 }
 
 function normalizeText(value, fallback = "Not available") {
-  const text = String(value ?? "").trim()
+  const text = String(value == null ? "" : value).trim()
   return text ? text : fallback
 }
 
+function splitTreeLabelText(value) {
+  const fullValue = String(value == null ? "" : value).trim()
+  if (!fullValue) {
+    return { primary: "", secondary: "" }
+  }
+
+  const parts = fullValue
+    .split("|")
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (parts.length >= 3) {
+    return {
+      primary: parts.slice(0, 2).join(" | "),
+      secondary: ` | ${parts.slice(2).join(" | ")}`,
+    }
+  }
+
+  return { primary: fullValue, secondary: "" }
+}
+
+function renderTreeLabelWithMetadataStyle(label, value) {
+  const { primary, secondary } = splitTreeLabelText(value)
+  if (!primary && !secondary) return
+
+  const svgNs = "http://www.w3.org/2000/svg"
+  label.textContent = ""
+
+  const primarySpan = document.createElementNS(svgNs, "tspan")
+  primarySpan.setAttribute("fill", "#111827")
+  primarySpan.setAttribute("font-weight", "600")
+  primarySpan.textContent = primary
+  label.appendChild(primarySpan)
+
+  if (secondary) {
+    const secondarySpan = document.createElementNS(svgNs, "tspan")
+    secondarySpan.setAttribute("fill", "#ffffff")
+    secondarySpan.setAttribute("font-weight", "500")
+    secondarySpan.textContent = secondary
+    label.appendChild(secondarySpan)
+  }
+}
+
 function formatTaxonomy(taxonomy) {
-  const raw = String(taxonomy ?? "").trim()
+  const raw = String(taxonomy == null ? "" : taxonomy).trim()
   if (!raw) return "Not available"
 
   return raw
@@ -286,7 +330,7 @@ function formatTaxonomy(taxonomy) {
 function toSearchText(parts) {
   return parts
     .map((value) =>
-      String(value ?? "")
+      String(value == null ? "" : value)
         .toLowerCase()
         .trim(),
     )
@@ -376,20 +420,29 @@ function positionTooltip(e) {
 
 // main
 
-// load SVG + metadata + leaf labels + add tooltip interactivity
-Promise.all([
-  fetch("../images/tree.svg").then((r) => r.text()),
-  fetch("../results/metadata.json").then((r) => {
-    if (!r.ok) {
-      throw new Error(`Failed to load metadata.json: ${r.status} ${r.statusText}`)
-    }
-    return r.json()
-  }),
-])
-  .then(([svg, metadata]) => {
-    document.getElementById("tree-container").innerHTML = svg
-    metadataKeyLookup = createMetadataLookup(metadata)
-    console.log("SVG + metadata loaded")
+if (treeContainer) {
+  const svgUrl = new URL("./images/nifH-tree.svg", window.location.href).href
+  const metadataUrl = new URL("./results/metadata.json", window.location.href).href
+
+  // load SVG + metadata + leaf labels + add tooltip interactivity
+  Promise.all([
+    fetch(svgUrl).then((r) => {
+      if (!r.ok) {
+        throw new Error(`Failed to load nifH-tree.svg: ${r.status} ${r.statusText}`)
+      }
+      return r.text()
+    }),
+    fetch(metadataUrl).then((r) => {
+      if (!r.ok) {
+        throw new Error(`Failed to load metadata.json: ${r.status} ${r.statusText}`)
+      }
+      return r.json()
+    }),
+  ])
+    .then(([svg, metadata]) => {
+      treeContainer.innerHTML = svg
+      metadataKeyLookup = createMetadataLookup(metadata)
+      console.log("SVG + metadata loaded")
 
     // grab iTOL leaf labels (<text> elements)
     const labels = document.querySelectorAll("svg text")
@@ -422,6 +475,7 @@ Promise.all([
       })
 
       label.classList.add("tree-label")
+      renderTreeLabelWithMetadataStyle(label, id || rawId)
       label.setAttribute("role", "link")
       label.setAttribute("tabindex", "0")
       label.setAttribute(
@@ -454,40 +508,42 @@ Promise.all([
       })
     })
 
-    console.log("metadata-linked labels:", labelData.length)
-  })
-  .catch(console.error)
+      console.log("metadata-linked labels:", labelData.length)
+    })
+    .catch(console.error)
+}
 
 // add search functionality
-
-searchExampleButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    searchInput.value = button.dataset.searchExample
-    searchInput.dispatchEvent(new Event("input", { bubbles: true }))
-    searchInput.focus()
-  })
-})
-
-searchInput.addEventListener("input", () => {
-  const query = searchInput.value.toLowerCase().trim()
-  const tokens = query.split(/\s+/).filter(Boolean)
-
-  if (!query) {
-    labelData.forEach((d) => {
-      d.label.classList.remove("tree-match", "tree-dim")
+if (searchInput) {
+  searchExampleButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      searchInput.value = button.dataset.searchExample
+      searchInput.dispatchEvent(new Event("input", { bubbles: true }))
+      searchInput.focus()
     })
-    return
-  }
-
-  labelData.forEach((d) => {
-    const isMatch = tokens.every((token) => d.text.includes(token))
-
-    if (isMatch) {
-      d.label.classList.add("tree-match")
-      d.label.classList.remove("tree-dim")
-    } else {
-      d.label.classList.remove("tree-match")
-      d.label.classList.add("tree-dim")
-    }
   })
-})
+
+  searchInput.addEventListener("input", () => {
+    const query = searchInput.value.toLowerCase().trim()
+    const tokens = query.split(/\s+/).filter(Boolean)
+
+    if (!query) {
+      labelData.forEach((d) => {
+        d.label.classList.remove("tree-match", "tree-dim")
+      })
+      return
+    }
+
+    labelData.forEach((d) => {
+      const isMatch = tokens.every((token) => d.text.includes(token))
+
+      if (isMatch) {
+        d.label.classList.add("tree-match")
+        d.label.classList.remove("tree-dim")
+      } else {
+        d.label.classList.remove("tree-match")
+        d.label.classList.add("tree-dim")
+      }
+    })
+  })
+}
