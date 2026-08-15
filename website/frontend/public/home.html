@@ -7,6 +7,26 @@
   <title>DiazoDB</title>
   <link rel="icon" href="./assets/images/FeMoco-favicon.ico" />
   <link rel="stylesheet" href="./css/style.css" />
+  <style>
+    /* Keep the tree behind the page heading while making it fit smaller screens. */
+    main.tree-page .tree-header,
+    main.tree-page .page-description {
+      position: relative;
+      z-index: 2;
+      background: var(--bg-page);
+    }
+
+    main.tree-page .tree-panel {
+      margin-top: -4.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    main.tree-page #tree-container svg {
+      width: 80%;
+      height: auto;
+    }
+  </style>
 </head>
 
 <!-- Google tag (gtag.js) -->
@@ -35,7 +55,7 @@
 
   <hr class="header-separator">
 
-  <main>
+  <main class="tree-page">
     <!-- <div style='position: absolute; bottom: 25px; right: 10px;'></div> -->
     <div class="tree-header">
       <h1>Nitrogenase Phylogeny</h1>
@@ -51,16 +71,17 @@
         </div>
       </div>
     </div>
-    <p class="page-description">Nitrogenase phylogeny built from nifH sequences.</p>
+    <p class="page-description">Nitrogenase phylogeny built from 1000 representative nifH sequences.</p>
     <div class="tree-panel">
       <div id="tree-container"></div>
       <aside class="tree-instructions" aria-label="Tree instructions">
         <div class="tree-instructions__title">Instructions</div>
         <p>
           Mouse over tree labels to learn more about organisms encoding nitrogenase
-          and the genetic neighborhoods around nif genes. Click on an organism to learn
+          and the genetic neighborhoods around their nif genes. Click on an organism to learn
           more about its nitrogenase cluster. Use the search bar to find specific organisms
-          or environments.
+          or environments. For viewing ease, each node represents multiple organisms. Check 
+          out all diazotrophs in the <a href="/database">DiazoDB</a> database.
         </p>
       </aside>
     </div>

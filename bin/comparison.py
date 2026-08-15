@@ -3,10 +3,10 @@ import numpy as np
 
 category_names = ['I', 'II', 'III', 'III-anf', 'III-vnf', 'IVa']
 
-results = {'DiazoDB\n5692': np.array([7559, 0, 0, 271, 216, 0]), 
-            'NFix\n4488': np.array([4402, 0, 0, 261, 56, 0]),
-            'Kacar\n1536': np.array([139, 181, 31, 17, 17]), 
-            'Cyano\n1342': np.array([1310, 9, 0, 23, 0])}
+results = {'DiazoDB\n7911': np.array([2064, 4178, 338, 271, 216, 168]), 
+            'NFix\n4488': np.array([4085, 0, 0, 261, 56, 0]),
+            'NSDB\n1536': np.array([139, 181, 31, 17, 17, 0]), 
+            'Cyano\n1342': np.array([1310, 9, 0, 23, 0, 0])}
 
 
 labels = list(results.keys())
@@ -33,5 +33,6 @@ for i, (colname, color) in enumerate(zip(category_names, category_colors)):
 ax.legend(ncols=len(category_names), bbox_to_anchor=(0, 1),
             loc='lower left', fontsize='small')
 
-plt.savefig('diazoDB-comp/diazoDB-comp-counts.svg', format='svg', dpi=6000)
+fig.savefig('../diazoDB-comparison/diazoDB-comp-counts.svg', format='svg',
+            dpi=6000, transparent=True)
 plt.show()
