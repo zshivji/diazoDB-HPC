@@ -37,6 +37,27 @@ Automated annotation and curation of nitrogenase genes using profile hidden Mark
 
 + **diazoDB-check.sh**
 
+## Data Provenance and Reproducibility
+
+### 1. Source Data
+**Source Data:** Genome Taxonomy Database (GTDB) R232  
+**Source Files:**
++ https://data.gtdb.aau.ecogenomic.org/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.tar.gz  
++ https://data.gtdb.aau.ecogenomic.org/releases/latest/bac120_taxonomy.tsv.gz
++ https://data.gtdb.aau.ecogenomic.org/releases/latest/ar53_metadata.tsv.gz
+
+### 2. Manual Curation 
+The following files were manually curated:
++ HMM_seeds/nifH.fasta
++ HMM_seeds/nifD.fasta
++ HMM_seeds/nifK.fasta
++ HMM_seeds/nifE.fasta
++ HMM_seeds/nifN.fasta
++ HMM_seeds/nifB.fasta
++ HMM_seeds/anfG.fasta
++ HMM_seeds/anfO.fasta
++ HMM_seeds/vnfG.fasta
+
 + **get-operon.py**
 
 + **operon-org-plot.py**
