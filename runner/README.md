@@ -5,8 +5,7 @@ API for ready jobs, downloads each submitted input file over HTTPS, submits the
 analysis to Slurm, and posts the final result back to the API.
 
 This avoids SSH/SCP from the web server into the cluster. The only secret shared
-between systems is `RUNNER_SECRET`. Set `RUNNER_PULL_ONLY=true` in the web
-API .env to skip Globus transfers and let the runner download inputs.
+between systems is `RUNNER_SECRET`. 
 
 ## Minimal Environment
 
@@ -22,14 +21,9 @@ Optional pipeline settings consumed by `bin/diazodb_classify.sh`:
 
 ```bash
 DIAZODB_CONDA_ENV=/path/to/conda/env
+DIAZODB_CONDA_BIN=/path/to/miniconda3/bin/conda
 DIAZODB_HMM_PROFILE=/path/to/combined_nif.hmm
 DIAZODB_USE_PRODIGAL=false
-```
-
-For smoke testing without Slurm:
-
-```bash
-DUMMY_RUNNER=true python runner.py
 ```
 
 The runner performs one poll per invocation and is intended to be invoked

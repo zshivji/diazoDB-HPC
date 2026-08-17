@@ -102,10 +102,15 @@ def update_job(*, session: Session, job: Job, **fields) -> Job:
 
 
 def get_jobs_for_runner(*, session: Session) -> list[Job]:
-    """Ready jobs the runner hasn't seen yet."""
+    """Jobs with a local input the runner hasn't seen yet.
+
+    ``transferring`` was used before the runner switched to pulling uploads
+    directly from the API.  Keep accepting it so jobs created during that
+    transition are not stranded in the queue.
+    """
     return session.exec(
         select(Job).where(
-            Job.status == JobStatus.ready,
+            Job.status.in_((JobStatus.ready, JobStatus.transferring)),
             Job.seen_by_runner.is_(False),
         )
     ).all()

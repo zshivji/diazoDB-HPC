@@ -17,7 +17,7 @@
 
 set -euo pipefail
 
-REPO_ROOT="/resnick/groups/enviromics/zahra/diazoDB-HPC/"
+REPO_ROOT="/resnick/groups/enviromics/zahra/diazoDB-HPC"
 SCRIPT_DIR="/resnick/groups/enviromics/zahra/diazoDB-HPC/bin"
 
 # Prefer env vars injected by runner; fall back to positional args if provided.
@@ -37,9 +37,12 @@ HMMSEARCH_BIN="${DIAZODB_HMMSEARCH_BIN:-hmmsearch}"
 PRODIGAL_BIN="${DIAZODB_PRODIGAL_BIN:-prodigal}"
 USE_PRODIGAL="${DIAZODB_USE_PRODIGAL:-false}"
 DIAZODB_CONDA_ENV="${DIAZODB_CONDA_ENV:-/resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm}"
+CONDA_BIN="${DIAZODB_CONDA_BIN:-/resnick/groups/enviromics/zahra/miniconda3/bin/conda}"
 
 QUERY_FASTA="$INPUT_FASTA"
-HMM_DB="${REPO_ROOT}/HMMs/combined_nif_07202026.hmm"
+# Allow deployments to pin a profile explicitly; keep the repository's current
+# profile as the default for the shared runner environment.
+HMM_DB="${DIAZODB_HMM_PROFILE:-${REPO_ROOT}/HMMs/combined_nif_07292026.hmm}"
 JOB_HMM_DIR="$OUTDIR/hmmsearch_results/hmm_out"
 JOB_PARSE_DIR="$OUTDIR/hmmsearch_results"
 JOB_PARSED_HITS="$JOB_PARSE_DIR/hits.csv"
@@ -77,7 +80,11 @@ echo "Output      : $FINAL_OUTPUT"
 echo "Slurm ID    : ${SLURM_JOBID:-local}"
 echo "====================================================="
 
-eval "$(conda shell.bash hook)"
+if [[ ! -x "$CONDA_BIN" ]]; then
+  echo "Conda executable not found or not executable: $CONDA_BIN" >&2
+  exit 127
+fi
+eval "$("$CONDA_BIN" shell.bash hook)"
 conda activate "$DIAZODB_CONDA_ENV"
 
 if [[ "$USE_PRODIGAL" == "true" ]]; then

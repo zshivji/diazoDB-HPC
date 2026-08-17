@@ -88,16 +88,10 @@ async def upload_chunk(
         session=session,
         job=job,
         bytes_received=new_received,
-        status=JobStatus.uploading if not is_complete else _completed_transfer_status(),
+        status=JobStatus.ready if is_complete else JobStatus.uploading,
         file_size_bytes=total,
+        seen_by_runner=False,
     )
-
-    if is_complete:
-        update_job(
-            session=session,
-            job=job,
-            status=JobStatus.ready,
-        )
 
     return {"bytes_received": new_received, "complete": is_complete}
 

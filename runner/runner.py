@@ -15,8 +15,8 @@ SLURM_SCRIPT = os.environ.get("SLURM_SCRIPT")
 # runner polls API (HTTP request)
 def poll() -> list[dict]:
     r = requests.get(f"{API}/api/v1/runner/jobs", headers=HEADERS, timeout=15)
-    print(r.status_code)
-    print(r.text)
+    log.info("API response status: %s", r.status_code)
+    log.info("API response body: %s", r.text)
     r.raise_for_status()
     return r.json()
 
@@ -185,10 +185,10 @@ def process(job: dict) -> None:
         log.info(f"[{job_id}] complete")
     except subprocess.CalledProcessError as e:
         mark(job_id, "failed", str(e))
-        log.error(f"[{job_id}] tool failed: {e}")
+        log.exception("[%s] tool failed: %s", job_id, e)
     except Exception as e:
         mark(job_id, "failed", str(e))
-        log.error(f"[{job_id}] unexpected error: {e}")
+        log.exception("[%s] unexpected error: %s", job_id, e)
 
 
 if __name__ == '__main__':
@@ -199,4 +199,4 @@ if __name__ == '__main__':
         for job in jobs:
             process(job)
     except Exception as e:
-        log.error(f"Poll error: {e}")
+        log.exception("Poll error: %s", e)

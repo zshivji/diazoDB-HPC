@@ -185,6 +185,7 @@ async def upload_public_file_chunk(
         bytes_received=new_received,
         status=JobStatus.ready if is_complete else JobStatus.uploading,
         file_size_bytes=total,
+        seen_by_runner=False,
     )
 
     return {"bytes_received": new_received, "complete": is_complete}

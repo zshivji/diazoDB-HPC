@@ -677,7 +677,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
                 fontSize: "11px",
               }}
             >
-              Download results promptly — they may be deleted in the event of a
+              Download results promptly — they will be delted after two weeks or in the event of a
               server crash.
             </p>
           </div>
