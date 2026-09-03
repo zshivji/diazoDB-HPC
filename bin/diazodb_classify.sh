@@ -145,8 +145,15 @@ python conserved-res.py \
   --skip_metadata
 
 # Emit final result for the runner
-if [[ ! -s "$FINAL_OUTPUT" ]]; then
-  echo "Expected result was not created: $FINAL_OUTPUT" >&2
+FINAL_NAME="$(basename "$FINAL_OUTPUT")"
+FINAL_CSV="$FINAL_DIR/$FINAL_NAME"
+FINAL_DETAIL_CSV="$FINAL_DIR/nif_final.csv"
+if [[ ! -s "$FINAL_CSV" ]]; then
+  echo "Expected result was not created: $FINAL_CSV" >&2
+  exit 1
+fi
+if [[ ! -s "$FINAL_DETAIL_CSV" ]]; then
+  echo "Expected result was not created: $FINAL_DETAIL_CSV" >&2
   exit 1
 fi
 

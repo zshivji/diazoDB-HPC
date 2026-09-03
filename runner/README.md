@@ -46,8 +46,8 @@ HPC_JOB_BASE/<job-id>/
 │       ├── user/                   # uploaded or Prodigal-predicted proteins
 │       └── reference/              # packaged conserved-residue references
 ├── results/
-│   ├── nif_clusters.csv           # file uploaded to the API
-│   ├── nif_final.csv              # per-gene conserved-residue calls
+│   ├── nif_clusters.csv           # classification result uploaded to the API
+│   ├── nif_final.csv               # detailed result uploaded to the API
 │   └── fastas/                    # final FASTAs grouped by gene call
 └── logs/
     ├── slurm-<name>-<id>.out

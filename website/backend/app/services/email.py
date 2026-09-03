@@ -17,6 +17,36 @@ def _send_message(msg: MIMEMultipart) -> None:
         server.sendmail(settings.EMAILS_FROM_EMAIL, msg["To"], msg.as_string())
 
 
+def send_submission_email(
+    *,
+    to: str,
+    job_id: str,
+    submitter_email: str,
+    filename: str,
+    file_size_bytes: int,
+    job_url: str | None = None,
+) -> None:
+    """Notify the configured testing/admin inbox about a new submission."""
+    assert settings.emails_enabled, "no provided configuration for email variables"
+
+    msg = MIMEMultipart()
+    msg["From"] = settings.EMAILS_FROM_EMAIL
+    msg["To"] = to
+    msg["Subject"] = f"{settings.PROJECT_NAME} new job submitted"
+
+    body = (
+        f"A new {settings.PROJECT_NAME} job was submitted.\n\n"
+        f"Job ID: {job_id}\n"
+        f"Submitter email: {submitter_email}\n"
+        f"Input file: {filename}\n"
+        f"File size: {file_size_bytes} bytes"
+    )
+    if job_url:
+        body += f"\n\nView the job here:\n{job_url}"
+    msg.attach(MIMEText(body, "plain"))
+    _send_message(msg)
+
+
 def send_result_email(
     *,
     to: str,
@@ -25,6 +55,8 @@ def send_result_email(
     content_type: str,
     data: bytes,
     download_url: str | None = None,
+    job_url: str | None = None,
+    attachments: list[tuple[str, str, bytes]] | None = None,
 ) -> None:
     assert settings.emails_enabled, "no provided configuration for email variables"
 
@@ -34,17 +66,25 @@ def send_result_email(
     msg["Subject"] = f"{settings.PROJECT_NAME} analysis results are ready"
 
     body = f"Your job ({job_id}) completed successfully."
-    if download_url:
+    if job_url:
+        body += f"\n\nView your job and download the results here:\n{job_url}"
+    elif download_url:
         body += f"\n\nDownload your result here:\n{download_url}"
-    body += "\n\nThe result file is also attached to this email."
+
+    if attachments is None:
+        attachments = [(filename, content_type, data)]
+    body += "\n\nThe result files are also attached to this email."
 
     msg.attach(MIMEText(body, "plain"))
 
-    part = MIMEBase(*content_type.split("/"))
-    part.set_payload(data)
-    encoders.encode_base64(part)
-    part.add_header("Content-Disposition", f'attachment; filename="{filename}"')
-    msg.attach(part)
+    for attachment_name, attachment_type, attachment_data in attachments:
+        part = MIMEBase(*attachment_type.split("/"))
+        part.set_payload(attachment_data)
+        encoders.encode_base64(part)
+        part.add_header(
+            "Content-Disposition", f'attachment; filename="{attachment_name}"'
+        )
+        msg.attach(part)
 
     _send_message(msg)
 

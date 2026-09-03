@@ -42,18 +42,26 @@ def mark(job_id: str, status: str, error: str = "") -> dict:
     return response
 
 # uploads analysis output back to server
-def push_result(job_id: str, result_path: Path) -> dict:
+def push_results(job_id: str, result_paths: list[Path]) -> dict:
     content_types = {
         ".csv": "text/csv",
         ".html": "text/html",
         ".htm": "text/html",
         ".pdf": "application/pdf",
     }
-    content_type = content_types.get(result_path.suffix.lower(), "application/octet-stream")
-    data = base64.b64encode(result_path.read_bytes()).decode()
+    files = []
+    for result_path in result_paths:
+        content_type = content_types.get(
+            result_path.suffix.lower(), "application/octet-stream"
+        )
+        files.append({
+            "filename": result_path.name,
+            "content_type": content_type,
+            "data_base64": base64.b64encode(result_path.read_bytes()).decode(),
+        })
     r = requests.post(
         f"{API}/api/v1/runner/jobs/{job_id}/result",
-        json={"filename": result_path.name, "content_type": content_type, "data_base64": data},
+        json={"files": files},
         headers=HEADERS,
         timeout=60,
     )
@@ -66,6 +74,11 @@ def push_result(job_id: str, result_path: Path) -> dict:
             response.get("email_status", "unknown"),
         )
     return response
+
+
+def push_result(job_id: str, result_path: Path) -> dict:
+    """Backward-compatible helper for callers that have one result file."""
+    return push_results(job_id, [result_path])
 
 
 def download_input(job: dict, dest: Path) -> Path:
@@ -166,6 +179,7 @@ def process(job: dict) -> None:
     input_path = download_input(job, workspace / "input" / safe_filename)
     intermediate_dir = workspace / "intermediate"
     result_path = workspace / "results" / "nif_clusters.csv"
+    final_result_path = workspace / "results" / "nif_final.csv"
     log_dir = workspace / "logs"
 
     if not input_path.exists():
@@ -179,9 +193,14 @@ def process(job: dict) -> None:
 
     try:
         run_analysis(job_id, input_path, intermediate_dir, result_path, log_dir)
-        if not result_path.exists():
-            raise FileNotFoundError(f"Expected result file was not created: {result_path}")
-        push_result(job_id, result_path)
+        result_paths = [result_path, final_result_path]
+        missing = [path for path in result_paths if not path.exists()]
+        if missing:
+            raise FileNotFoundError(
+                "Expected result file(s) were not created: "
+                + ", ".join(str(path) for path in missing)
+            )
+        push_results(job_id, result_paths)
         log.info(f"[{job_id}] complete")
     except subprocess.CalledProcessError as e:
         mark(job_id, "failed", str(e))

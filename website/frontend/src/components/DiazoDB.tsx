@@ -869,13 +869,22 @@ function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
           }}
         >
           <div style={styles.cardTitle}>Classification Results</div>
-          <button
-            style={styles.btn}
-            onClick={() =>
-              window.open(resultDownloadUrl(jobId, resultFilename), "_blank")}
-          >
-            Download CSV ↓
-          </button>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button
+              style={styles.btn}
+              onClick={() =>
+                window.open(resultDownloadUrl(jobId, "nif_clusters.csv"), "_blank")}
+            >
+              Download CSV (nif_clusters.csv) ↓
+            </button>
+            <button
+              style={styles.btn}
+              onClick={() =>
+                window.open(resultDownloadUrl(jobId, "nif_final.csv"), "_blank")}
+            >
+              Download CSV (nif_final.csv) ↓
+            </button>
+          </div>
         </div>
 
         {loading && <div style={alertStyle("info")}>Loading results...</div>}

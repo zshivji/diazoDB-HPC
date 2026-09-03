@@ -154,9 +154,10 @@ def test_runner_post_result_sends_email(client, runner_headers, job, db, monkeyp
     call_kwargs = mock_email.call_args.kwargs
     assert call_kwargs["filename"] == "nif_clusters.csv"
     assert call_kwargs["data"] == csv_bytes
-    assert call_kwargs["download_url"] == (
-        f"https://api.example.edu/api/v1/classify/{job.id}/results/nif_clusters.csv"
-    )
+    assert call_kwargs["job_url"] == f"http://localhost:5173/classify?job={job.id}"
+    assert call_kwargs["attachments"] == [
+        ("nif_clusters.csv", "text/csv", csv_bytes),
+    ]
     assert (tmp_path / str(job.id) / "results" / "nif_clusters.csv").read_bytes() == csv_bytes
 
     download = client.get(f"/api/v1/classify/{job.id}/results/nif_clusters.csv")

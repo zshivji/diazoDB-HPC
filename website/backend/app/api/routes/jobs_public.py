@@ -18,10 +18,32 @@ from app.api.deps import get_db
 from app.core.config import settings
 from app.crud import get_job, update_job
 from app.models import Job, JobStatus
+from app.services.email import send_submission_email
 from app.services.results import get_result_path, safe_result_filename
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/classify", tags=["classify"])
+
+
+def _job_url(job_id: uuid.UUID) -> str:
+    return f"{settings.FRONTEND_HOST.rstrip('/')}/classify?job={job_id}"
+
+
+def _notify_job_submitted(job: Job) -> None:
+    recipient = settings.JOB_NOTIFICATION_EMAIL
+    if not recipient or not settings.emails_enabled:
+        return
+    try:
+        send_submission_email(
+            to=recipient,
+            job_id=str(job.id),
+            submitter_email=str(job.user_email),
+            filename=job.filename,
+            file_size_bytes=job.file_size_bytes or 0,
+            job_url=_job_url(job.id),
+        )
+    except Exception:
+        log.exception("Failed to send submission notification for job %s", job.id)
 
 
 class PublicJobCreate(SQLModel):
@@ -99,6 +121,7 @@ async def create_public_job(
             status=JobStatus.ready,
         )
 
+    _notify_job_submitted(job)
     return job
 
 

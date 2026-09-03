@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.crud import get_job, get_jobs_for_runner, update_job
 from app.models import Job, JobRunnerView, JobStatus, User
 from app.services.email import send_failure_email, send_result_email
-from app.services.results import build_result_download_url, save_result_file
+from app.services.results import save_result_file
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +22,10 @@ router = APIRouter(
     tags=["runner"],
     dependencies=[Depends(verify_runner_token)],
 )
+
+
+def _job_url(job_id: uuid.UUID) -> str:
+    return f"{settings.FRONTEND_HOST.rstrip('/')}/classify?job={job_id}"
 
 
 def _job_recipient(*, session: Session, job: Job) -> str | None:
@@ -126,9 +130,11 @@ def download_job_input(
 
 
 class ResultPayload(BaseModel):
-    filename: str
-    content_type: str       # "text/csv" or "text/html"
-    data_base64: str        # base64-encoded file content
+    # The singular fields preserve compatibility with older runners.
+    filename: str | None = None
+    content_type: str | None = None
+    data_base64: str | None = None
+    files: list[dict] | None = None
 
 
 @router.post("/jobs/{job_id}/result")
@@ -148,10 +154,28 @@ def post_result(
     if not job:
         raise HTTPException(status_code=404)
 
+    if payload.files is not None:
+        file_payloads = payload.files
+    elif payload.filename and payload.content_type and payload.data_base64:
+        file_payloads = [{
+            "filename": payload.filename,
+            "content_type": payload.content_type,
+            "data_base64": payload.data_base64,
+        }]
+    else:
+        raise HTTPException(status_code=400, detail="No result files provided")
+    if not file_payloads:
+        raise HTTPException(status_code=400, detail="No result files provided")
+
+    attachments: list[tuple[str, str, bytes]] = []
     try:
-        data = base64.b64decode(payload.data_base64, validate=True)
-        save_result_file(job_id=job.id, filename=payload.filename, data=data)
-    except (binascii.Error, ValueError):
+        for file_payload in file_payloads:
+            filename = file_payload["filename"]
+            content_type = file_payload["content_type"]
+            data = base64.b64decode(file_payload["data_base64"], validate=True)
+            save_result_file(job_id=job.id, filename=filename, data=data)
+            attachments.append((filename, content_type, data))
+    except (KeyError, TypeError, binascii.Error, ValueError):
         raise HTTPException(status_code=400, detail="Invalid result payload")
 
     recipient = _job_recipient(session=session, job=job)
@@ -163,13 +187,11 @@ def post_result(
             send_result_email(
                 to=recipient,
                 job_id=str(job.id),
-                filename=payload.filename,
-                content_type=payload.content_type,
-                data=data,
-                download_url=build_result_download_url(
-                    job_id=job.id,
-                    filename=payload.filename,
-                ),
+                filename=attachments[0][0],
+                content_type=attachments[0][1],
+                data=attachments[0][2],
+                attachments=attachments,
+                job_url=_job_url(job.id),
             )
             email_sent = True
             email_status = "sent"
@@ -183,11 +205,34 @@ def post_result(
     else:
         log.warning("No result-email recipient is available for job %s", job.id)
 
+    admin_recipient = settings.JOB_NOTIFICATION_EMAIL
+    if (
+        admin_recipient
+        and str(admin_recipient).lower() != str(recipient).lower()
+        and settings.emails_enabled
+    ):
+        try:
+            send_result_email(
+                to=admin_recipient,
+                job_id=str(job.id),
+                filename=attachments[0][0],
+                content_type=attachments[0][1],
+                data=attachments[0][2],
+                attachments=attachments,
+                job_url=_job_url(job.id),
+            )
+            log.info("Sent completion notification for job %s", job.id)
+        except Exception:
+            log.exception("Failed to send completion notification for job %s", job.id)
+
     update_job(
         session=session,
         job=job,
         status=JobStatus.complete,
-        result_filename=payload.filename,
+        result_filename=next(
+            (filename for filename, _, _ in attachments if filename == "nif_clusters.csv"),
+            attachments[0][0],
+        ),
         email_status=email_status,
     )
     return {
