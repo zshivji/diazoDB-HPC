@@ -8,12 +8,43 @@
   <link rel="icon" href="./assets/images/FeMoco-favicon.ico" />
   <link rel="stylesheet" href="./css/style.css" />
   <style>
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #root {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      flex: 1;
+    }
+
     /* Keep the tree behind the page heading. */
+    main.tree-page {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      padding-top: 0.75rem;
+      padding-bottom: 0.5rem;
+    }
+
     main.tree-page .tree-header,
     main.tree-page .page-description {
       position: relative;
       z-index: 2;
       background: var(--bg-page);
+    }
+
+    main.tree-page .tree-header {
+      margin: 0;
+      padding: 0;
     }
 
     main.tree-page .tree-panel {
@@ -22,9 +53,26 @@
       z-index: 1;
     }
 
+    main.tree-page #tree-container {
+      position: relative;
+      z-index: 1;
+    }
+
     main.tree-page #tree-container svg {
       width: 95%;
       height: auto;
+      position: relative;
+      z-index: 1;
+      display: block;
+    }
+
+    footer {
+      position: sticky;
+      bottom: 0;
+      z-index: 20;
+      background: rgba(225, 225, 225, 0.9);
+      border-top: 1px solid #ddd;
+      width: 100%;
     }
   </style>
 </head>
@@ -94,7 +142,7 @@
 
   <footer>
     <div>
-      <p><b>Citation: </b> DiazoDB: Interactive Nitrogenase Web Database, Shivji (2026) · <a href="https://doi.org/10.5281/zenodo.21909831"</a> · Check out our <a href="https://github.com/zshivji/diazoDB-HPC" target="_blank" rel="noopener">GitHub!</a></p>
+      <p><b>Citation: </b> DiazoDB: Interactive Nitrogenase Web Database, Shivji (2026) · <a href="https://doi.org/10.5281/zenodo.21909831">doi: 10.5281/zenodo.21909831</a> · Check out our <a href="https://github.com/zshivji/diazoDB-HPC" target="_blank" rel="noopener">GitHub!</a></p>
     </div>
   </footer>
   

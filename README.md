@@ -37,6 +37,10 @@ Automated annotation and curation of nitrogenase genes using profile hidden Mark
 
 + **diazoDB-check.sh**
 
++ **get-operon.py**
+
++ **operon-org-plot.py**
+
 ## Data Provenance and Reproducibility
 
 ### 1. Source Data
@@ -55,11 +59,5 @@ The following files were manually curated:
 + HMM_seeds/nifN.fasta
 + HMM_seeds/nifB.fasta
 + HMM_seeds/anfG.fasta
-+ HMM_seeds/anfO.fasta
 + HMM_seeds/vnfG.fasta
-
-+ **get-operon.py**
-
-+ **operon-org-plot.py**
-
-
++ HMM_seeds/anfO.fasta

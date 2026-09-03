@@ -435,8 +435,7 @@ function setJobUrl(jobId: string | null) {
 function CitingBanner() {
   return (
     <div style={styles.cite}>
-      <strong style={{ color: theme.green }}>Please cite:</strong> If you use
-      DiazoDB for research, please cite our Github.{" "}
+      <strong style={{ color: theme.green }}>Please cite:</strong> DiazoDB: Interactive Nitrogenase Web Database, Shivji (2026)· <a href="https://doi.org/10.5281/zenodo.21909831">doi: 10.5281/zenodo.21909831</a> · Check out our <a href="https://github.com/zshivji/diazoDB-HPC" target="_blank" rel="noopener">GitHub!</a>{" "}
       {/* <span style={{ color: theme.textDim }}>
         Predicting and classifying nitrogenase sequences from metagenomes using
         DiazoDB.
@@ -523,7 +522,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
       <h1 style={styles.h1}>Classify Nitrogenase Sequences</h1>
       <p style={styles.lead}>
         DiazoDB provides accurate prediction and classification of nitrogenase
-        sequences from metagenomes.
+        sequences from MAGs.
       </p>
       <CitingBanner />
 
@@ -548,7 +547,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
               onChange={(e) => setEmail(e.target.value)}
             />
 
-            <label style={styles.label}>Paste FASTA sequences</label>
+            {/* <label style={styles.label}>Paste FASTA sequences</label>
             <textarea
               style={styles.textarea}
               placeholder={
@@ -559,13 +558,9 @@ function UploadPage({ onSubmit }: UploadPageProps) {
                 setSequences(e.target.value)
                 setFileName(null)
               }}
-            />
+            /> */}
 
-            <div style={styles.divider}>
-              <div style={styles.dividerLine} />
-              or upload a file
-              <div style={styles.dividerLine} />
-            </div>
+            <label style={styles.label}>Upload FASTA file</label>
 
             <div
               style={{
@@ -648,8 +643,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
           <div style={styles.sidebar}>
             <div style={styles.sidebarTitle}>Instructions</div>
             <p style={styles.sidebarText}>
-              Paste FASTA-formatted sequences or upload a <code>.fasta</code>{" "}
-              file.
+              Upload a <code>.fasta</code>{" "} with CDS regions predicted with Prodigal.
             </p>
             {/* <p style={styles.sidebarText}>
               For nucleotide input from metagenomes, enable{" "}
@@ -674,7 +668,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
               style={{
                 ...styles.sidebarText,
                 color: theme.textMuted,
-                fontSize: "11px",
+                fontSize: "15px",
               }}
             >
               Download results promptly — they will be delted after two weeks or in the event of a
