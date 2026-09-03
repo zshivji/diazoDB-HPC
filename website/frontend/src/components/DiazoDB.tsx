@@ -1021,6 +1021,29 @@ type View = "upload" | "waiting" | "results" | "failure"
 
 
 export default function DiazoDB() {
+  useEffect(() => {
+    const measurementId = "G-89SKEBYC49"
+    const scriptId = "google-gtag"
+    const dataLayerWindow = window as Window & {
+      dataLayer?: unknown[][]
+    }
+
+    dataLayerWindow.dataLayer = dataLayerWindow.dataLayer || []
+    const gtag = (...args: unknown[]) => {
+      dataLayerWindow.dataLayer?.push(args)
+    }
+    gtag("js", new Date())
+    gtag("config", measurementId)
+
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script")
+      script.id = scriptId
+      script.async = true
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`
+      document.head.appendChild(script)
+    }
+  }, [])
+
   const [initialJobId] = useState(() => jobIdFromUrl())
   const [view, setView] = useState<View>(() =>
     initialJobId ? "waiting" : "upload",
