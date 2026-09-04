@@ -30,6 +30,24 @@ function normalizeText(value, fallback = "Not available") {
   return text ? text : fallback
 }
 
+function genomeAccession(value) {
+  return String(value ?? "")
+    .trim()
+    .replace(/^(?:GB|RS)_/i, "")
+}
+
+function renderSummaryValues(values, linkToGtdb = false) {
+  return values
+    .map((value) => {
+      const text = linkToGtdb ? genomeAccession(value) : String(value)
+      const rendered = escapeHtml(text)
+      return linkToGtdb && text && text !== "Not available"
+        ? `<a href="https://gtdb.ecogenomic.org/genome?gid=${encodeURIComponent(text)}" target="_blank" rel="noopener" translate="no">${rendered}</a>`
+        : rendered
+    })
+    .join(",<br>")
+}
+
 function normalizeTreeIdentifier(value) {
   const normalized = String(value || "")
     .trim()
@@ -196,8 +214,7 @@ function renderOperonHTML(nodeMeta) {
   const span = Math.max(1, regionEnd - regionStart)
   const leftPad = 8
   const rightPad = 8
-  const trackWidth = 404
-  const usableWidth = trackWidth - leftPad - rightPad
+  const usableWidth = 100 - leftPad - rightPad
 
   const geneHtml = genes
     .map((gene) => {
@@ -205,18 +222,17 @@ function renderOperonHTML(nodeMeta) {
       const end = Number(gene.end)
       const direction = normalizeDirection(gene.direction)
       const color = getGeneColor(gene.gene_name)
-      const leftPx = leftPad + ((start - regionStart) / span) * usableWidth
-      const rightPx = leftPad + ((end - regionStart) / span) * usableWidth
-      const widthPx = Math.max(10, rightPx - leftPx)
+      const leftPercent = leftPad + ((start - regionStart) / span) * usableWidth
+      const widthPercent = Math.max(0.5, ((end - start) / span) * usableWidth)
       const label = escapeHtml(gene.gene_name || gene.gene_id || "")
       const product = escapeHtml(gene.product || "")
-      const title = `${label} | ${direction} | ${start}-${end}${product ? ` | ${product}` : ""}`
+      const title = `${gene.gene_name || gene.gene_id || "Gene"} | ID: ${gene.gene_id || "Not available"} | ${direction} | ${start}-${end}${product ? ` | Product: ${gene.product}` : ""}`
 
       if (direction === "reverse") {
         return `
           <div class="tooltip-operon-gene"
-               style="left:${leftPx}px; width:${widthPx}px;"
-               title="${title}">
+               style="left:${leftPercent}%; width:${widthPercent}%;"
+               title="${escapeHtml(title)}">
             <div class="tooltip-operon-gene-label">${label}</div>
             <div class="tooltip-operon-arrow-reverse"
                  style="border-right-color:${color};"></div>
@@ -228,8 +244,8 @@ function renderOperonHTML(nodeMeta) {
 
       return `
         <div class="tooltip-operon-gene"
-             style="left:${leftPx}px; width:${widthPx}px;"
-             title="${title}">
+             style="left:${leftPercent}%; width:${widthPercent}%;"
+             title="${escapeHtml(title)}">
           <div class="tooltip-operon-gene-label">${label}</div>
           <div class="tooltip-operon-gene-body"
                style="background-color:${color};"></div>
@@ -250,46 +266,6 @@ function renderOperonHTML(nodeMeta) {
         ${renderScaleHTML(regionStart, regionEnd)}
       </div>
     </div>
-  `
-}
-
-function renderGeneTable(nodeMeta) {
-  const genes = nodeMeta?.operon?.genes
-  if (!genes || genes.length === 0) return ""
-
-  const rows = [...genes]
-    .sort((a, b) => Number(a.start) - Number(b.start))
-    .map((gene) => `
-      <tr>
-        <td>${escapeHtml(gene.gene_name || "Not available")}</td>
-        <td>${escapeHtml(gene.gene_id || "Not available")}</td>
-        <td>${escapeHtml(normalizeDirection(gene.direction))}</td>
-        <td>${escapeHtml(gene.start ?? "Not available")}</td>
-        <td>${escapeHtml(gene.end ?? "Not available")}</td>
-        <td>${escapeHtml(gene.product || "Not available")}</td>
-      </tr>
-    `)
-    .join("")
-
-  return `
-    <section class="organism-section">
-      <h2>Operon genes</h2>
-      <div class="organism-table-wrap">
-        <table class="organism-gene-table">
-          <thead>
-            <tr>
-              <th>Gene</th>
-              <th>Gene ID</th>
-              <th>Direction</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Product</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    </section>
   `
 }
 
@@ -314,7 +290,6 @@ function renderOrganismPage(records) {
     </div>
 
     <section class="organism-hero">
-      <p class="organism-eyebrow">${escapeHtml(groups.join(", "))}</p>
       <h1>${escapeHtml(organism)}</h1>
       <p class="organism-id">${records.length} operon${records.length === 1 ? "" : "s"}</p>
     </section>
@@ -322,19 +297,19 @@ function renderOrganismPage(records) {
     <section class="organism-summary" aria-label="Organism metadata">
       <div>
         <span>Genome</span>
-        <strong>${escapeHtml(genomes.join(", "))}</strong>
+        <strong>${renderSummaryValues(genomes, true)}</strong>
       </div>
       <div>
         <span>Contig</span>
-        <strong>${escapeHtml(contigs.join(", "))}</strong>
+        <strong>${renderSummaryValues(contigs)}</strong>
       </div>
       <div>
         <span>Environment</span>
-        <strong>${escapeHtml(environments.join(", "))}</strong>
+        <strong>${renderSummaryValues(environments)}</strong>
       </div>
       <div>
         <span>Regulon</span>
-        <strong>${escapeHtml(regulons.join(", "))}</strong>
+        <strong>${renderSummaryValues(regulons)}</strong>
       </div>
     </section>
 
@@ -349,7 +324,6 @@ function renderOrganismPage(records) {
         <p class="organism-id">${escapeHtml(id)}</p>
         ${renderOperonHTML(meta)}
       </section>
-      ${renderGeneTable(meta)}
     `).join("")}
   `
 }

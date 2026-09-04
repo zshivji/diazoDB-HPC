@@ -91,6 +91,12 @@ def parse_args() -> argparse.Namespace:
         help="Do not read or join repository taxonomy metadata (used by API runner jobs).",
     )
 
+    parser.add_argument(
+        "--external",
+        action="store_true",
+        help="Export a cleaned-up nif_final.csv and nif_clusters.csv for external DiazoDB users.",
+    )
+
     return parser.parse_args()
 
 # Note: runtime data (nif table, config, per-gene frames) are loaded in `main`.
@@ -299,6 +305,7 @@ def export_results(
     results_dir: str = "../results/final",
     proteins_dir: str = "../protein_faa_reps_232",
     include_metadata: bool = True,
+    external: bool = False
 ) -> None:
     os.makedirs(results_dir, exist_ok=True)
     hits = all_genes_checked.copy()
@@ -391,8 +398,7 @@ def export_results(
                 genomes_to_keep = pd.concat([genomes_to_keep, cluster])
 
     #clean up cols
-    genomes_to_keep['Gene'] = genomes_to_keep['residue_match']
-    #hits = hits[['Gene', 'E-value', 'Bit Score', 'Location', 'Orientation', 'Alignment Length', 'Sequence Length', 'GTDB']]
+    genomes_to_keep['gene'] = genomes_to_keep['residue_match']
     genomes_to_keep.drop_duplicates(inplace = True)
     genomes_to_keep = genomes_to_keep.reset_index()
 
@@ -406,22 +412,30 @@ def export_results(
     },
     exclude='nifB'
     )
-
     genomes_to_keep.set_index('GenomeID', inplace=True)
+
     # export csv with each gene as individual row
-    genomes_to_keep.to_csv(os.path.join(results_dir, 'nif_final.csv'))
+    if external: # clean up export for external DiazoDB users
+        external_export = genomes_to_keep.copy()
+        external_export['Sequence Length'] = external_export['Domain End'] - external_export['Domain Start']
+        external_export = external_export[['contig', 'protein', 'cluster', 'gene', 'Location', 'Orientation', 'Sequence Length']]
+        external_export.to_csv(os.path.join(results_dir, 'nif_final.csv'))
+
+    else:
+        genomes_to_keep.to_csv(os.path.join(results_dir, 'nif_final.csv'))
+
 
     # get fasta sequences for each gene & export to fasta
     os.makedirs(os.path.join(results_dir, "fastas"), exist_ok=True)
-    for gene in genomes_to_keep['Gene'].unique().tolist():
+    for gene in genomes_to_keep['gene'].unique().tolist():
         records = []
 
-        for genome, hit in genomes_to_keep[genomes_to_keep.Gene == gene].iterrows():
+        for genome, hit in genomes_to_keep[genomes_to_keep.gene == gene].iterrows():
             record = get_seq(
                 genome,
                 hit.protein,
                 id=hit.protein,
-                description=f"{genome} {hit.Gene}",
+                description=f"{genome} {hit.gene}",
                 dir=proteins_dir,
             )
             records.append(record)
@@ -547,31 +561,14 @@ def export_results(
         operons.drop(columns=["GTDB"], errors="ignore", inplace=True)
         operons.rename(columns={"Gene set": "Nitrogenase Set"}, inplace=True)
 
+    if external: # clean up export for external DiazoDB users
+        # append contig to the front of each value in pos_num 
+        operons['proteins'] = operons.apply(lambda row: [f"{row['contig']}_{pos}" for pos in row['pos_num']], axis=1)
+        operons = operons[['contig', 'proteins', 'cluster', 'Nitrogenase Set', 'Location_start', 'Location_end', 'Orientation']]
+
     operons.to_csv(os.path.join(results_dir, 'nif_clusters.csv'))
 
     return genomes_to_keep
-
-#----------------------------------------------------------------
-
-    # for gene_name, checked_df in all_genes_checked.items():
-    #     for genome_idx, cols in checked_df.iterrows():
-    #         try:
-    #             nif.loc[(genome_idx[0], genome_idx[1]), 'residue_match'] = gene_name
-    #         except Exception:
-    #             continue
-
-    # # filter to get hits that passed residue matching and are within length bounds
-    # filtered = {}
-    # for gene_name, params in config.items():
-    #     maxl = params.get('max-length')
-    #     minl = params.get('min-length')
-    #     mask = (nif.residue_match == gene_name) & (nif.Gene == gene_name)
-    #     if minl is not None:
-    #         mask &= (nif['Alignment Length'] >= minl)
-    #     if maxl is not None:
-    #         mask &= (nif['Alignment Length'] < maxl)
-    #     filtered[gene_name] = nif[mask]
-
 
 def main() -> None:
     args = parse_args()

@@ -165,12 +165,18 @@ main {
   padding: 1.5rem clamp(1rem, 3vw, 2.5rem);
 }
 
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .organism-page {
   color: #1a1a18;
 }
 
 .organism-detail {
-  max-width: 1100px;
+  max-width: none;
 }
 
 .organism-back-row {
@@ -223,7 +229,7 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1px;
-  max-width: 1100px;
+  max-width: none;
   margin-bottom: 1.5rem;
   border: 1px solid rgba(30, 30, 20, 0.12);
   background: rgba(30, 30, 20, 0.12);
@@ -253,7 +259,7 @@ main {
 }
 
 .organism-section {
-  max-width: 1100px;
+  max-width: none;
   margin-top: 1.5rem;
 }
 
@@ -264,14 +270,16 @@ main {
 }
 
 .organism-taxonomy {
-  max-width: 900px;
+  max-width: none;
   margin: 0;
   color: #3b3b37;
   line-height: 1.55;
 }
 
 .organism-operon {
-  display: inline-block;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
   max-width: 100%;
   padding: 1rem;
   border-radius: 6px;
@@ -321,6 +329,10 @@ main {
 }
 
 footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  width: 100%;
   border-top: 1px solid #ddd;
   background: rgba(225, 225, 225, 0.8);
   min-height: 25px;
@@ -533,6 +545,10 @@ footer a:hover {
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
+}
+
+.organism-operon .tooltip-operon-track {
+  width: 100%;
 }
 
 .tooltip-operon-track::before {

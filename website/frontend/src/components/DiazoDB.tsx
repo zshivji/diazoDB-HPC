@@ -811,6 +811,7 @@ function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
   const [results, setResults] = useState<ResultsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [fastaMenuOpen, setFastaMenuOpen] = useState(false)
 
   useEffect(() => {
     const loadResults = async () => {
@@ -835,6 +836,9 @@ function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
   }, [jobId, resultFilename])
 
   const visibleHeaders = results?.headers ?? []
+  const visibleColumnIndexes = visibleHeaders
+    .map((header, index) => ({ header, index }))
+    .filter(({ header }) => header.trim().toLowerCase() !== "operon")
 
   return (
     <div style={styles.main}>
@@ -884,6 +888,55 @@ function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
             >
               Download CSV (nif_final.csv) ↓
             </button>
+            <div style={{ position: "relative" }}>
+              <button
+                style={styles.btn}
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={fastaMenuOpen}
+                onClick={() => setFastaMenuOpen((open) => !open)}
+              >
+                Download FASTA ↓
+              </button>
+              {fastaMenuOpen && (
+                <div
+                  role="menu"
+                  aria-label="Download FASTA files"
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "calc(100% + 4px)",
+                    zIndex: 10,
+                    minWidth: "150px",
+                    padding: "6px 0",
+                    background: theme.bgCard,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: "4px",
+                    boxShadow: "0 6px 16px rgba(0, 0, 0, 0.12)",
+                  }}
+                >
+                  {["nifH", "nifD", "nifK", "nifN", "nifE"].map((gene) => (
+                    <a
+                      key={gene}
+                      href={`/fastas/${gene}.fasta`}
+                      download
+                      role="menuitem"
+                      onClick={() => setFastaMenuOpen(false)}
+                      style={{
+                        display: "block",
+                        padding: "7px 12px",
+                        color: theme.text,
+                        fontSize: "12px",
+                        textDecoration: "none",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {gene}.fasta
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -903,7 +956,7 @@ function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
               <table style={styles.table}>
                 <thead>
                   <tr>
-                    {visibleHeaders.map((header, index) => (
+                    {visibleColumnIndexes.map(({ header, index }) => (
                       <th key={`${header}-${index}`} style={styles.th}>
                         {header || `Column ${index + 1}`}
                       </th>
@@ -913,9 +966,9 @@ function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
                 <tbody>
                   {results.rows.map((row, rowIndex) => (
                     <tr key={`${row[0] ?? "row"}-${rowIndex}`}>
-                      {visibleHeaders.map((_, cellIndex) => (
-                        <td key={cellIndex} style={styles.td}>
-                          {row[cellIndex] ?? ""}
+                      {visibleColumnIndexes.map(({ index }) => (
+                        <td key={index} style={styles.td}>
+                          {row[index] ?? ""}
                         </td>
                       ))}
                     </tr>

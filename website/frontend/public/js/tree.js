@@ -405,8 +405,11 @@ function buildTooltipHTML(id, nodeMeta) {
   `
 }
 
-function getOrganismDetailUrl(id) {
-  return `/organism?id=${encodeURIComponent(id)}`
+function getOrganismDetailUrl(genome) {
+  const genomeId = String(genome || "")
+    .trim()
+    .replace(/^(?:GB|RS)_/i, "")
+  return `/organism?id=${encodeURIComponent(genomeId)}`
 }
 
 function fetchMetadata(url) {
@@ -534,13 +537,13 @@ if (treeContainer) {
       })
 
       label.addEventListener("click", () => {
-        window.location.href = getOrganismDetailUrl(id)
+        window.location.href = getOrganismDetailUrl(metadata[id].genome)
       })
 
       label.addEventListener("keydown", (e) => {
         if (e.key !== "Enter" && e.key !== " ") return
         e.preventDefault()
-        window.location.href = getOrganismDetailUrl(id)
+        window.location.href = getOrganismDetailUrl(metadata[id].genome)
       })
     })
 

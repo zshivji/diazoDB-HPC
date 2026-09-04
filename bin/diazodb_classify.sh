@@ -142,7 +142,8 @@ python conserved-res.py \
   --proteins_dir "$JOB_PROTEINS_DIR" \
   --config_file "$SCRIPT_DIR/nif-config.json" \
   --ref_seq_ids "$REFERENCE_IDS" \
-  --skip_metadata
+  --skip_metadata \
+  --external
 
 # Emit final result for the runner
 FINAL_NAME="$(basename "$FINAL_OUTPUT")"
