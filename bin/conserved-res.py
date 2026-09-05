@@ -415,6 +415,7 @@ def export_results(
     genomes_to_keep.set_index('GenomeID', inplace=True)
 
     # export csv with each gene as individual row
+    print(external, flush=True)
     if external: # clean up export for external DiazoDB users
         external_export = genomes_to_keep.copy()
         external_export['Sequence Length'] = external_export['Domain End'] - external_export['Domain Start']
@@ -605,6 +606,7 @@ def main() -> None:
         results_dir=args.final_dir,
         proteins_dir=args.proteins_dir,
         include_metadata=not args.skip_metadata,
+        external=args.external,
     )
 
     # check results against known nitrogenase
