@@ -2,6 +2,7 @@ import type { CSSProperties } from "react"
 import { useEffect, useRef, useState } from "react"
 
 const API_BASE = `${import.meta.env.VITE_API_URL}/api/v1`
+const RESULTS_TABLE_FILENAME = "nif_final.csv"
 
 const theme = {
   bg: "#f7f6f2",
@@ -807,7 +808,7 @@ function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
 }
 
 // --- Results page ---
-function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
+function ResultsPage({ jobId, onReset }: ResultsPageProps) {
   const [results, setResults] = useState<ResultsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -818,7 +819,7 @@ function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(resultDownloadUrl(jobId, resultFilename))
+        const res = await fetch(resultDownloadUrl(jobId, RESULTS_TABLE_FILENAME))
         if (!res.ok) {
           throw new Error(`HTTP ${res.status} ${res.statusText}`)
         }
@@ -833,7 +834,7 @@ function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
     }
 
     void loadResults()
-  }, [jobId, resultFilename])
+  }, [jobId])
 
   const visibleHeaders = results?.headers ?? []
   const visibleColumnIndexes = visibleHeaders
@@ -918,7 +919,7 @@ function ResultsPage({ jobId, resultFilename, onReset }: ResultsPageProps) {
                   {["nifH", "nifD", "nifK", "nifN", "nifE"].map((gene) => (
                     <a
                       key={gene}
-                      href={`/fastas/${gene}.fasta`}
+                      href={resultDownloadUrl(jobId, `final_${gene}.fasta`)}
                       download
                       role="menuitem"
                       onClick={() => setFastaMenuOpen(false)}
@@ -1032,10 +1033,10 @@ function FailurePage({ jobId, onReset }: FailurePageProps) {
             "Invalid FASTA format",
             "Each sequence must start with > followed by a sequence ID on a new line.",
           ],
-          /* [
-            "Non-protein sequences without Prodigal",
-            "If submitting DNA/nucleotide sequences, enable the Prodigal CDS prediction option.",
-          ], */
+          [
+            "CDS regions not predicted with Prodigal",
+            "Protein/CDS fasta files must be generated with Prodigal.",
+          ],
           [
             "Empty or corrupt file",
             "Try re-exporting your FASTA file and resubmitting.",

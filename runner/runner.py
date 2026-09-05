@@ -45,6 +45,10 @@ def mark(job_id: str, status: str, error: str = "") -> dict:
 def push_results(job_id: str, result_paths: list[Path]) -> dict:
     content_types = {
         ".csv": "text/csv",
+        ".fa": "text/plain",
+        ".faa": "text/plain",
+        ".fasta": "text/plain",
+        ".fna": "text/plain",
         ".html": "text/html",
         ".htm": "text/html",
         ".pdf": "application/pdf",
@@ -193,7 +197,8 @@ def process(job: dict) -> None:
 
     try:
         run_analysis(job_id, input_path, intermediate_dir, result_path, log_dir)
-        result_paths = [result_path, final_result_path]
+        fasta_paths = sorted((workspace / "results" / "fastas").glob("final_*.fasta"))
+        result_paths = [result_path, final_result_path, *fasta_paths]
         missing = [path for path in result_paths if not path.exists()]
         if missing:
             raise FileNotFoundError(
