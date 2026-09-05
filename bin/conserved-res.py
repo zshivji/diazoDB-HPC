@@ -81,11 +81,6 @@ def parse_args() -> argparse.Namespace:
         help="Directory for nif_final.csv, nif_clusters.csv, and final FASTAs.",
     )
     parser.add_argument(
-        "--ref_seq_ids",
-        default="../results/ref_seq.ids",
-        help="seqtk ID file identifying the conserved-residue reference genome.",
-    )
-    parser.add_argument(
         "--skip_metadata",
         action="store_true",
         help="Do not read or join repository taxonomy metadata (used by API runner jobs).",
@@ -153,7 +148,6 @@ def aln_fasta(
         num = int(tmp.shape[0]/200)+1 # how many splits
         fasta_path = os.path.join(results_dir, f"{name}.fasta")
         split_prefix = os.path.join(splits_dir, f"{name}_split")
-        ref_fasta_path = f"/resnick/groups/enviromics/zahra/diazoDB-HPC/results/reference/{name}.fasta" # placeholder for ref fasta path (for diazoDB and API runner, will always point to AV)
         # split fasta file into smaller files for alignment
         subprocess.run(
             ["seqtk", "split", "-n", str(num), split_prefix, fasta_path],
@@ -178,7 +172,7 @@ def aln_fasta(
                 )
 
 
-def check_gene(file, ref_seq, important_residues, residue_scores, passing_score, p=False):
+def check_gene(file, important_residues, residue_scores, passing_score, p=False):
     if len(important_residues) != len(residue_scores):
         raise ValueError(
             f"{file[-20:-16]}: residues and residue_scores must have the same length "
@@ -256,7 +250,6 @@ def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../res
         print(f'checking {gene}', flush=True)
 
         # load json parameters
-        ref_seq = config[gene]['ref_seq']
         important_residues = config[gene]['residues']
         residue_scores = config[gene].get('residue_scores', config[gene].get('reside_scores'))
         if residue_scores is None:
@@ -268,12 +261,12 @@ def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../res
         if not os.path.exists(first_file):
             all_genes_checked[gene] = pd.DataFrame()
             continue
-        checked = check_gene(first_file, ref_seq, important_residues, residue_scores, passing_score, p=True)
+        checked = check_gene(first_file, important_residues, residue_scores, passing_score, p=True)
 
         for file in glob.glob(os.path.join(results_dir, 'fasta_splits', f"{gene}_split.*.aln")):
             if f'{gene}_split.00001' in file:
                 continue
-            new = check_gene(file, ref_seq, important_residues, residue_scores, passing_score)
+            new = check_gene(file, important_residues, residue_scores, passing_score)
             checked = pd.concat([checked, new])
 
         checked.drop_duplicates(subset = ['hit'], inplace = True)
@@ -415,11 +408,10 @@ def export_results(
     genomes_to_keep.set_index('GenomeID', inplace=True)
 
     # export csv with each gene as individual row
-    print(external, flush=True)
     if external: # clean up export for external DiazoDB users
         external_export = genomes_to_keep.copy()
         external_export['Sequence Length'] = external_export['Domain End'] - external_export['Domain Start']
-        external_export = external_export[['contig', 'protein', 'cluster', 'gene', 'Location', 'Orientation', 'Sequence Length']]
+        external_export = external_export[['contig', 'protein', 'cluster', 'gene', 'Location', 'Sequence Length', 'Orientation']]
         external_export.to_csv(os.path.join(results_dir, 'nif_final.csv'))
 
     else:
@@ -567,7 +559,7 @@ def export_results(
         operons['proteins'] = operons.apply(lambda row: [f"{row['contig']}_{pos}" for pos in row['pos_num']], axis=1)
         operons = operons[['GenomeID', 'contig', 'proteins', 'cluster', 'Nitrogenase Set', 'Location_start', 'Location_end', 'Orientation']]
 
-    operons.to_csv(os.path.join(results_dir, 'nif_clusters.csv'))
+    operons.to_csv(os.path.join(results_dir, 'nif_clusters.csv'), index=False)
 
     return genomes_to_keep
 

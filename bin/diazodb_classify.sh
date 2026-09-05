@@ -49,8 +49,6 @@ JOB_PARSED_HITS="$JOB_PARSE_DIR/hits.csv"
 JOB_CONSERVED_DIR="$OUTDIR/conserved_res"
 JOB_PROTEINS_DIR="$OUTDIR/proteins"
 FINAL_DIR="$(dirname "$FINAL_OUTPUT")"
-REFERENCE_PROTEINS="$REPO_ROOT/runner/references/RS_GCF_001571105.1_protein.faa"
-REFERENCE_IDS="$REPO_ROOT/runner/references/reference_genome.ids"
 
 if [[ ! -f "$INPUT_FASTA" ]]; then
   echo "Input FASTA does not exist: $INPUT_FASTA" >&2
@@ -58,10 +56,6 @@ if [[ ! -f "$INPUT_FASTA" ]]; then
 fi
 if [[ ! -f "$HMM_DB" ]]; then
   echo "HMM profile does not exist: $HMM_DB" >&2
-  exit 2
-fi
-if [[ ! -f "$REFERENCE_PROTEINS" || ! -f "$REFERENCE_IDS" ]]; then
-  echo "Packaged conserved-residue references are missing under runner/references." >&2
   exit 2
 fi
 
@@ -112,9 +106,6 @@ fi
 # Present only the uploaded proteins and small packaged conserved-residue
 # references through the directory layout understood by helper.get_seq().
 ln -sfn "$QUERY_FASTA" "$JOB_PROTEINS_DIR/user/${GENOME_ID}_protein.faa"
-ln -sfn \
-  "$REFERENCE_PROTEINS" \
-  "$JOB_PROTEINS_DIR/reference/RS_GCF_001571105.1_protein.faa"
 
 # Match bin/2_hmmsearch.sh: parse_hmm.py consumes HMMER domtblout files.
 "$HMMSEARCH_BIN" \
@@ -141,7 +132,6 @@ python conserved-res.py \
   --final_dir "$FINAL_DIR" \
   --proteins_dir "$JOB_PROTEINS_DIR" \
   --config_file "$SCRIPT_DIR/nif-config.json" \
-  --ref_seq_ids "$REFERENCE_IDS" \
   --skip_metadata \
   --external
 
