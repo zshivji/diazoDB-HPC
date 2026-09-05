@@ -106,6 +106,15 @@ function getEnvironment(nodeMeta) {
     : environment
 }
 
+function getNitrogenaseGenes(records) {
+  return [...new Set(
+    records
+      .flatMap(({ meta }) => meta.operon?.genes || [])
+      .map((gene) => String(gene.gene_name || "").trim())
+      .filter((geneName) => /^(?:nif|vnf|anf)/i.test(geneName)),
+  )]
+}
+
 function findOrganismRecords(metadata, requestedId) {
   const decodedId = decodeURIComponent(requestedId)
   const normalizedId = normalizeTreeIdentifier(decodedId)
@@ -232,7 +241,7 @@ function renderOperonHTML(nodeMeta) {
         return `
           <div class="tooltip-operon-gene"
                style="left:${leftPercent}%; width:${widthPercent}%;"
-               title="${escapeHtml(title)}">
+               data-tooltip="${escapeHtml(title)}">
             <div class="tooltip-operon-gene-label">${label}</div>
             <div class="tooltip-operon-arrow-reverse"
                  style="border-right-color:${color};"></div>
@@ -245,7 +254,7 @@ function renderOperonHTML(nodeMeta) {
       return `
         <div class="tooltip-operon-gene"
              style="left:${leftPercent}%; width:${widthPercent}%;"
-             title="${escapeHtml(title)}">
+             data-tooltip="${escapeHtml(title)}">
           <div class="tooltip-operon-gene-label">${label}</div>
           <div class="tooltip-operon-gene-body"
                style="background-color:${color};"></div>
@@ -269,6 +278,37 @@ function renderOperonHTML(nodeMeta) {
   `
 }
 
+function attachGeneTooltips() {
+  let tooltip = document.getElementById("organism-gene-tooltip")
+  if (!tooltip) {
+    tooltip = document.createElement("div")
+    tooltip.id = "organism-gene-tooltip"
+    tooltip.className = "organism-gene-tooltip"
+    tooltip.setAttribute("role", "tooltip")
+    document.body.appendChild(tooltip)
+  }
+
+  const positionTooltip = (event) => {
+    const gap = 14
+    const maxLeft = window.innerWidth - tooltip.offsetWidth - 8
+    const maxTop = window.innerHeight - tooltip.offsetHeight - 8
+    tooltip.style.left = `${Math.max(8, Math.min(event.clientX + gap, maxLeft))}px`
+    tooltip.style.top = `${Math.max(8, Math.min(event.clientY + gap, maxTop))}px`
+  }
+
+  document.querySelectorAll(".organism-operon .tooltip-operon-gene").forEach((gene) => {
+    gene.addEventListener("pointerenter", (event) => {
+      tooltip.textContent = gene.dataset.tooltip || "Gene information unavailable"
+      tooltip.style.display = "block"
+      positionTooltip(event)
+    })
+    gene.addEventListener("pointermove", positionTooltip)
+    gene.addEventListener("pointerleave", () => {
+      tooltip.style.display = "none"
+    })
+  })
+}
+
 function renderOrganismPage(records) {
   const firstRecord = records[0]
   const organism = normalizeText(
@@ -278,7 +318,7 @@ function renderOrganismPage(records) {
   const genomes = [...new Set(records.map(({ meta }) => normalizeText(meta.genome)))]
   const contigs = [...new Set(records.map(({ id }) => getContigFromKey(id)))]
   const environments = [...new Set(records.map(({ meta }) => getEnvironment(meta)))]
-  const groups = [...new Set(records.map(({ meta }) => normalizeText(meta.group)))]
+  const nitrogenaseGenes = getNitrogenaseGenes(records)
   const regulons = [...new Set(records.map(({ meta }) => normalizeText(meta.regulon)))]
   const taxonomies = [...new Set(records.map(({ meta }) => formatTaxonomy(meta.taxonomy)))]
 
@@ -300,12 +340,16 @@ function renderOrganismPage(records) {
         <strong>${renderSummaryValues(genomes, true)}</strong>
       </div>
       <div>
+        <span>Environment</span>
+        <strong>${renderSummaryValues(environments)}</strong>
+      </div>
+      <div>
         <span>Contig</span>
         <strong>${renderSummaryValues(contigs)}</strong>
       </div>
       <div>
-        <span>Environment</span>
-        <strong>${renderSummaryValues(environments)}</strong>
+        <span>Gene set</span>
+        <strong>${renderSummaryValues(nitrogenaseGenes)}</strong>
       </div>
       <div>
         <span>Regulon</span>
@@ -363,6 +407,7 @@ async function initOrganismPage() {
     }
 
     detailRoot.innerHTML = renderOrganismPage(records)
+    attachGeneTooltips()
   } catch (error) {
     console.error(error)
     detailRoot.innerHTML = `

@@ -229,7 +229,8 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1px;
-  max-width: none;
+  width: min(60vw, 100%);
+  max-width: 100%;
   margin-bottom: 1.5rem;
   border: 1px solid rgba(30, 30, 20, 0.12);
   background: rgba(30, 30, 20, 0.12);
@@ -279,7 +280,7 @@ main {
 .organism-operon {
   display: block;
   box-sizing: border-box;
-  width: 100%;
+  width: min(60vw, 100%);
   max-width: 100%;
   padding: 1rem;
   border-radius: 6px;
@@ -549,6 +550,62 @@ footer a:hover {
 
 .organism-operon .tooltip-operon-track {
   width: 100%;
+  height: 72px;
+}
+
+.organism-operon .tooltip-operon-gene {
+  top: 29px;
+  height: 28px;
+  cursor: help;
+}
+
+.organism-operon .tooltip-operon-gene-label {
+  top: -22px;
+  max-width: 140px;
+  font-size: 14px;
+}
+
+.organism-operon .tooltip-operon-gene-body {
+  height: 16px;
+}
+
+.organism-operon .tooltip-operon-arrow-forward,
+.organism-operon .tooltip-operon-arrow-reverse {
+  border-top-width: 8px;
+  border-bottom-width: 8px;
+}
+
+.organism-operon .tooltip-operon-arrow-forward {
+  border-left-width: 12px;
+}
+
+.organism-operon .tooltip-operon-arrow-reverse {
+  border-right-width: 12px;
+}
+
+.organism-operon .tooltip-operon-track::before {
+  top: 43px;
+}
+
+.organism-operon .tooltip-operon-scale-label {
+  font-size: 13px;
+}
+
+.organism-gene-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  max-width: min(420px, calc(100vw - 16px));
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 5px;
+  background: rgba(19, 28, 46, 0.98);
+  color: #f6f8fb;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  pointer-events: none;
+  white-space: pre-wrap;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.25);
 }
 
 .tooltip-operon-track::before {
