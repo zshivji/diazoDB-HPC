@@ -465,7 +465,7 @@ def export_results(
         'GTDB': ('GTDB', 'first'),
         'Orientation': ('Orientation', 'first'),
         'pos_num': ('pos_num', lambda x: x.astype(int).tolist())
-    })
+    }).reset_index()
 
     # def get_hit(rec):
     #     return rec.description.split(' ')[-1]
@@ -565,7 +565,7 @@ def export_results(
     if external: # clean up export for external DiazoDB users
         # append contig to the front of each value in pos_num 
         operons['proteins'] = operons.apply(lambda row: [f"{row['contig']}_{pos}" for pos in row['pos_num']], axis=1)
-        operons = operons[['contig', 'proteins', 'cluster', 'Nitrogenase Set', 'Location_start', 'Location_end', 'Orientation']]
+        operons = operons[['GenomeID', 'contig', 'proteins', 'cluster', 'Nitrogenase Set', 'Location_start', 'Location_end', 'Orientation']]
 
     operons.to_csv(os.path.join(results_dir, 'nif_clusters.csv'))
 
