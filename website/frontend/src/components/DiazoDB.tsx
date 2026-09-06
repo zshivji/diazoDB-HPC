@@ -889,6 +889,20 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
             >
               Download CSV (nif_final.csv) ↓
             </button>
+            <button
+              style={styles.btn}
+              onClick={() =>
+                window.open(resultDownloadUrl(jobId, "operon-org.png"), "_blank")}
+            >
+              Download operon diagram ↓
+            </button>
+            <button
+              style={styles.btn}
+              onClick={() =>
+                window.open(resultDownloadUrl(jobId, "operon_metadata.json"), "_blank")}
+            >
+              Download operon data ↓
+            </button>
             <div style={{ position: "relative" }}>
               <button
                 style={styles.btn}

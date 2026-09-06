@@ -52,6 +52,9 @@ def push_results(job_id: str, result_paths: list[Path]) -> dict:
         ".html": "text/html",
         ".htm": "text/html",
         ".pdf": "application/pdf",
+        ".json": "application/json",
+        ".png": "image/png",
+        ".svg": "image/svg+xml",
     }
     files = []
     for result_path in result_paths:
@@ -184,6 +187,8 @@ def process(job: dict) -> None:
     intermediate_dir = workspace / "intermediate"
     result_path = workspace / "results" / "nif_clusters.csv"
     final_result_path = workspace / "results" / "nif_final.csv"
+    operon_plot_path = workspace / "intermediate" / "operon-org.png"
+    operon_metadata_path = workspace / "results" / "operon_metadata.json"
     log_dir = workspace / "logs"
 
     if not input_path.exists():
@@ -198,7 +203,11 @@ def process(job: dict) -> None:
     try:
         run_analysis(job_id, input_path, intermediate_dir, result_path, log_dir)
         fasta_paths = sorted((workspace / "results" / "fastas").glob("final_*.fasta"))
-        result_paths = [result_path, final_result_path, *fasta_paths]
+        operon_paths = [
+            path for path in (operon_plot_path, operon_metadata_path)
+            if path.exists()
+        ]
+        result_paths = [result_path, final_result_path, *fasta_paths, *operon_paths]
         missing = [path for path in result_paths if not path.exists()]
         if missing:
             raise FileNotFoundError(

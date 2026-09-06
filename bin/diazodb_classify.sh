@@ -5,20 +5,25 @@
 #   DIAZODB_JOB_ID   - API job UUID
 #   DIAZODB_INPUT    - input FASTA path in the job workspace
 #   DIAZODB_OUTDIR   - output directory for intermediate files
-#   DIAZODB_OUTPUT   - final CSV/HTML/PDF path to post back to the API
+#   DIAZODB_OUTPUT   - final CSV path to post back to the API
 
-#SBATCH --time=0:14:00
+# Operon annotation is substantially slower than HMM classification.
+#SBATCH --time=4:10:00
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=40GB
-#SBATCH -J diazodb_classify
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=150GB
+#SBATCH -J diazodb_operon
 #SBATCH -o /resnick/scratch/zshivji/diazoDB-HPC/logs/%x-%j.out
 
 set -euo pipefail
 
 REPO_ROOT="/resnick/groups/enviromics/zahra/diazoDB-HPC"
 SCRIPT_DIR="/resnick/groups/enviromics/zahra/diazoDB-HPC/bin"
+
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >&2
+}
 
 # Prefer env vars injected by runner; fall back to positional args if provided.
 DIAZODB_JOB_ID="${DIAZODB_JOB_ID:-${1:-}}"
@@ -38,6 +43,8 @@ PRODIGAL_BIN="${DIAZODB_PRODIGAL_BIN:-prodigal}"
 USE_PRODIGAL="${DIAZODB_USE_PRODIGAL:-false}"
 DIAZODB_CONDA_ENV="${DIAZODB_CONDA_ENV:-/resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm}"
 CONDA_BIN="${DIAZODB_CONDA_BIN:-/resnick/groups/enviromics/zahra/miniconda3/bin/conda}"
+MICROBE_ENV="${DIAZODB_MICROBE_ENV:-/resnick/groups/enviromics/zahra/miniconda3/envs/microbeannotator}"
+MICROBE_DB="${DIAZODB_MICROBE_DB:-/resnick/groups/enviromics/databases/microbeannotator-db}"
 
 QUERY_FASTA="$INPUT_FASTA"
 # Allow deployments to pin a profile explicitly; keep the repository's current
@@ -135,6 +142,71 @@ python conserved-res.py \
   --skip_metadata \
   --external
 
+# Create operon organization diagrams in this job's isolated workspace.
+# The classifier has already produced nif_clusters.csv and nif_final.csv in
+# FINAL_DIR.  The metadata helper uses those files to select neighborhoods,
+# while MicrobeAnnotator supplies annotations for surrounding genes.
+OPERON_DIR="$OUTDIR/operon-org"
+OPERON_INPUT_DIR="$OPERON_DIR/input-fastas"
+OPERON_ANNOT_DIR="$OPERON_DIR/microbeannotator"
+OPERON_METADATA="$FINAL_DIR/operon_metadata.json"
+OPERON_PLOT="$OUTDIR/operon-org.png"
+OPERON_CLUSTERS="$FINAL_DIR/nif_clusters.csv"
+OPERON_NIF_FINAL="$FINAL_DIR/nif_final.csv"
+
+log "Preparing operon FASTA inputs in $OPERON_INPUT_DIR"
+mkdir -p "$OPERON_INPUT_DIR" "$OPERON_ANNOT_DIR"
+if [[ -s "$OPERON_CLUSTERS" && -s "$OPERON_NIF_FINAL" ]]; then
+  (
+    cd "$SCRIPT_DIR"
+    conda run -p "$DIAZODB_CONDA_ENV" python diazoDB-metadata.py \
+      --prepare \
+      --clusters_file "$OPERON_CLUSTERS" \
+      --operon_dir "$OPERON_DIR" \
+      --proteins_dir "$JOB_PROTEINS_DIR"
+  )
+
+  mapfile -t OPERON_INPUTS < <(find "$OPERON_INPUT_DIR" -maxdepth 1 -type f -name '*.fasta' | sort)
+  if ((${#OPERON_INPUTS[@]})); then
+    if command -v module >/dev/null 2>&1; then
+      module load diamond/2.1.7-gcc-13.2.0-cfkl5pd
+    fi
+    conda activate "$MICROBE_ENV"
+    if [[ ! -d "$MICROBE_DB" ]]; then
+      echo "MicrobeAnnotator database does not exist: $MICROBE_DB" >&2
+      exit 2
+    fi
+
+    log "Annotating ${#OPERON_INPUTS[@]} operon neighborhoods"
+    microbeannotator \
+      --input "${OPERON_INPUTS[@]}" \
+      --outdir "$OPERON_ANNOT_DIR" \
+      --method diamond \
+      --database "$MICROBE_DB" \
+      -p "${DIAZODB_MICROBE_PROCS:-8}" \
+      -t "${DIAZODB_MICROBE_THREADS:-4}" \
+      --refine \
+      --no_plot
+
+    (
+      cd "$SCRIPT_DIR"
+      conda run -p "$DIAZODB_CONDA_ENV" python diazoDB-metadata.py \
+        --data \
+        --plot \
+        --clusters_file "$OPERON_CLUSTERS" \
+        --nif_final_file "$OPERON_NIF_FINAL" \
+        --operon_dir "$OPERON_DIR" \
+        --proteins_dir "$JOB_PROTEINS_DIR" \
+        --metadata_file "$OPERON_METADATA" \
+        --plot_file "$OPERON_PLOT"
+    )
+  else
+    log "No candidate operons found; skipping operon diagram"
+  fi
+else
+  log "No nif result tables found; skipping operon diagram"
+fi
+
 # Emit final result for the runner
 FINAL_NAME="$(basename "$FINAL_OUTPUT")"
 FINAL_CSV="$FINAL_DIR/$FINAL_NAME"
@@ -147,8 +219,6 @@ if [[ ! -s "$FINAL_DETAIL_CSV" ]]; then
   echo "Expected result was not created: $FINAL_DETAIL_CSV" >&2
   exit 1
 fi
-
-# to do --> add figure creation etc.
 
 echo "====================================================="
 echo "End Time    : $(date)"
