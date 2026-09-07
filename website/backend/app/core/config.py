@@ -80,15 +80,8 @@ class Settings(BaseSettings):
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
     EMAILS_FROM_EMAIL: EmailStr | None = None
-    EMAILS_FROM_NAME: str | None = None
     # Optional testing/admin inbox for job submission and completion notices.
     JOB_NOTIFICATION_EMAIL: EmailStr | None = None
-
-    @model_validator(mode="after")
-    def _set_default_emails_from(self) -> Self:
-        if not self.EMAILS_FROM_NAME:
-            self.EMAILS_FROM_NAME = self.PROJECT_NAME
-        return self
 
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
 

@@ -8,11 +8,11 @@
 #   DIAZODB_OUTPUT   - final CSV path to post back to the API
 
 # Operon annotation is substantially slower than HMM classification.
-#SBATCH --time=4:10:00
+#SBATCH --time=1:10:00
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=150GB
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=100GB
 #SBATCH -J diazodb_operon
 #SBATCH -o /resnick/scratch/zshivji/diazoDB-HPC/logs/%x-%j.out
 
@@ -139,8 +139,8 @@ python conserved-res.py \
   --final_dir "$FINAL_DIR" \
   --proteins_dir "$JOB_PROTEINS_DIR" \
   --config_file "$SCRIPT_DIR/nif-config.json" \
-  --skip_metadata \
-  --external
+  --skip_metadata
+  # --external
 
 # Create operon organization diagrams in this job's isolated workspace.
 # The classifier has already produced nif_clusters.csv and nif_final.csv in
@@ -183,7 +183,6 @@ if [[ -s "$OPERON_CLUSTERS" && -s "$OPERON_NIF_FINAL" ]]; then
       --outdir "$OPERON_ANNOT_DIR" \
       --method diamond \
       --database "$MICROBE_DB" \
-      -p "${DIAZODB_MICROBE_PROCS:-8}" \
       -t "${DIAZODB_MICROBE_THREADS:-4}" \
       --refine \
       --no_plot

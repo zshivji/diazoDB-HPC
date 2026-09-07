@@ -369,6 +369,40 @@ interface ResultsData {
   rows: string[][]
 }
 
+interface OperonGene {
+  gene_id?: string | null
+  gene_name?: string | null
+  start?: number | string | null
+  end?: number | string | null
+  direction?: number | string | null
+  product?: string | null
+}
+
+interface OperonMetadata {
+  organism?: string | null
+  genome?: string | null
+  group?: string | null
+  operon?: {
+    region_start?: number | string | null
+    region_end?: number | string | null
+    genes?: OperonGene[]
+  } | null
+}
+
+const GENE_COLORS: Record<string, string> = {
+  nifA: "#c084fc",
+  nifB: "#f472b6",
+  nifH: "#60a5fa",
+  nifD: "#f59e0b",
+  nifK: "#10b981",
+  nifE: "#f97316",
+  nifN: "#14b8a6",
+  nifV: "#a3e635",
+  anfG: "#818cf8",
+  anfO: "#fb7185",
+  vnfG: "#22d3ee",
+}
+
 function resultDownloadUrl(jobId: string, resultFilename: string) {
   return `${API_BASE}/classify/${jobId}/results/${encodeURIComponent(resultFilename)}`
 }
@@ -430,6 +464,156 @@ function setJobUrl(jobId: string | null) {
     url.searchParams.delete("job")
   }
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
+}
+
+function formatBp(bp: number) {
+  if (bp >= 1000000) return `${(bp / 1000000).toFixed(1)} Mb`
+  if (bp >= 1000) return `${(bp / 1000).toFixed(1)} kb`
+  return `${Math.round(bp)} bp`
+}
+
+function normalizeDirection(direction: OperonGene["direction"]) {
+  if (Number(direction) < 0) return "reverse"
+  const value = String(direction || "").toLowerCase()
+  return ["reverse", "-", "-1", "left"].includes(value) ? "reverse" : "forward"
+}
+
+function geneColor(geneName: string) {
+  return GENE_COLORS[geneName] || "#9ca3af"
+}
+
+function OperonDiagram({ item }: { item: OperonMetadata }) {
+  const genes = [...(item.operon?.genes ?? [])]
+    .filter((gene) => !Number.isNaN(Number(gene.start)) && !Number.isNaN(Number(gene.end)))
+    .sort((a, b) => Number(a.start) - Number(b.start))
+
+  if (genes.length === 0) {
+    return <div style={alertStyle("warn")}>No operon data available.</div>
+  }
+
+  const starts = genes.map((gene) => Number(gene.start))
+  const ends = genes.map((gene) => Number(gene.end))
+  const regionStart = Number(item.operon?.region_start)
+  const regionEnd = Number(item.operon?.region_end)
+  const start = Number.isNaN(regionStart) ? Math.min(...starts) : regionStart
+  const end = Number.isNaN(regionEnd) ? Math.max(...ends) : regionEnd
+  const span = Math.max(1, end - start)
+  const leftPad = 8
+  const usableWidth = 84
+  const ticks = [0, 0.25, 0.5, 0.75, 1]
+
+  return (
+    <div>
+      <div
+        style={{
+          position: "relative",
+          height: "78px",
+          borderRadius: "6px",
+          background: theme.bgInput,
+          border: `1px solid ${theme.border}`,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: "8%",
+            right: "8%",
+            top: "46px",
+            borderTop: `1px solid ${theme.borderHover}`,
+          }}
+        />
+        {genes.map((gene) => {
+          const geneStart = Number(gene.start)
+          const geneEnd = Number(gene.end)
+          const direction = normalizeDirection(gene.direction)
+          const label = String(gene.gene_name || gene.gene_id || "")
+          const color = geneColor(label)
+          const left = leftPad + ((geneStart - start) / span) * usableWidth
+          const width = Math.max(1.5, ((geneEnd - geneStart) / span) * usableWidth)
+          const title = `${label || "Gene"} | ${gene.gene_id || "No ID"} | ${direction} | ${geneStart}-${geneEnd}`
+
+          return (
+            <div
+              key={`${gene.gene_id ?? label}-${geneStart}-${geneEnd}`}
+              title={title}
+              style={{
+                position: "absolute",
+                left: `${left}%`,
+                top: "28px",
+                width: `${width}%`,
+                height: "28px",
+                display: "flex",
+                alignItems: "center",
+                minWidth: "12px",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: "-18px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  maxWidth: "110px",
+                  color: theme.textDim,
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {label}
+              </div>
+              {direction === "reverse" && (
+                <div
+                  style={{
+                    width: 0,
+                    height: 0,
+                    borderTop: "8px solid transparent",
+                    borderBottom: "8px solid transparent",
+                    borderRight: `12px solid ${color}`,
+                  }}
+                />
+              )}
+              <div style={{ flex: "1 1 auto", height: "16px", background: color }} />
+              {direction === "forward" && (
+                <div
+                  style={{
+                    width: 0,
+                    height: 0,
+                    borderTop: "8px solid transparent",
+                    borderBottom: "8px solid transparent",
+                    borderLeft: `12px solid ${color}`,
+                  }}
+                />
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <div style={{ position: "relative", height: "24px", margin: "4px 8% 0" }}>
+        <div style={{ position: "absolute", top: "5px", right: 0, left: 0, borderTop: `1px solid ${theme.border}` }} />
+        {ticks.map((fraction) => (
+          <div
+            key={fraction}
+            style={{
+              position: "absolute",
+              left: `${fraction * 100}%`,
+              top: 0,
+              transform:
+                fraction === 0 ? "translateX(0)" : fraction === 1 ? "translateX(-100%)" : "translateX(-50%)",
+            }}
+          >
+            <div style={{ width: "1px", height: "7px", margin: "2px auto 0", background: theme.borderHover }} />
+            <span style={{ display: "block", color: theme.textMuted, fontSize: "10px", whiteSpace: "nowrap" }}>
+              {formatBp(start + fraction * (end - start))}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // --- Citing banner ---
@@ -810,6 +994,10 @@ function WaitingPage({ jobId, onSuccess, onFailure }: WaitingPageProps) {
 // --- Results page ---
 function ResultsPage({ jobId, onReset }: ResultsPageProps) {
   const [results, setResults] = useState<ResultsData | null>(null)
+  const [operonMetadata, setOperonMetadata] = useState<Record<
+    string,
+    OperonMetadata
+  > | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [fastaMenuOpen, setFastaMenuOpen] = useState(false)
@@ -825,6 +1013,22 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
         }
         const text = await res.text()
         setResults(parseCsv(text))
+
+        try {
+          const metadataRes = await fetch(
+            resultDownloadUrl(jobId, "operon_metadata.json"),
+          )
+          if (metadataRes.ok) {
+            const metadataText = await metadataRes.text()
+            setOperonMetadata(
+              JSON.parse(metadataText.replace(/\bNaN\b/g, "null")),
+            )
+          } else {
+            setOperonMetadata(null)
+          }
+        } catch {
+          setOperonMetadata(null)
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error"
         setError(`Could not load results: ${message}`)
@@ -840,6 +1044,27 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
   const visibleColumnIndexes = visibleHeaders
     .map((header, index) => ({ header, index }))
     .filter(({ header }) => header.trim().toLowerCase() !== "operon")
+  const geneColumnIndex = visibleHeaders.findIndex(
+    (header) => header.trim().toLowerCase() === "gene",
+  )
+  const fastaGenes =
+    geneColumnIndex >= 0 && results
+      ? Array.from(
+          new Set(
+            results.rows
+              .map((row) => row[geneColumnIndex]?.trim())
+              .filter(
+                (gene): gene is string =>
+                  Boolean(gene) && /^(nif|vnf|anf)[A-Za-z0-9_]+$/.test(gene),
+              ),
+          ),
+        ).sort((left, right) => left.localeCompare(right))
+      : []
+  const operonItems = operonMetadata
+    ? Object.entries(operonMetadata).sort(([left], [right]) =>
+        left.localeCompare(right),
+      )
+    : []
 
   return (
     <div style={styles.main}>
@@ -889,20 +1114,6 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
             >
               Download CSV (nif_final.csv) ↓
             </button>
-            <button
-              style={styles.btn}
-              onClick={() =>
-                window.open(resultDownloadUrl(jobId, "operon-org.png"), "_blank")}
-            >
-              Download operon diagram ↓
-            </button>
-            <button
-              style={styles.btn}
-              onClick={() =>
-                window.open(resultDownloadUrl(jobId, "operon_metadata.json"), "_blank")}
-            >
-              Download operon data ↓
-            </button>
             <div style={{ position: "relative" }}>
               <button
                 style={styles.btn}
@@ -923,6 +1134,8 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
                     top: "calc(100% + 4px)",
                     zIndex: 10,
                     minWidth: "150px",
+                    maxHeight: "320px",
+                    overflowY: "auto",
                     padding: "6px 0",
                     background: theme.bgCard,
                     border: `1px solid ${theme.border}`,
@@ -930,25 +1143,38 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
                     boxShadow: "0 6px 16px rgba(0, 0, 0, 0.12)",
                   }}
                 >
-                  {["nifH", "nifD", "nifK", "nifN", "nifE"].map((gene) => (
-                    <a
-                      key={gene}
-                      href={resultDownloadUrl(jobId, `final_${gene}.fasta`)}
-                      download
-                      role="menuitem"
-                      onClick={() => setFastaMenuOpen(false)}
+                  {fastaGenes.length > 0 ? (
+                    fastaGenes.map((gene) => (
+                      <a
+                        key={gene}
+                        href={resultDownloadUrl(jobId, `final_${gene}.fasta`)}
+                        download
+                        role="menuitem"
+                        onClick={() => setFastaMenuOpen(false)}
+                        style={{
+                          display: "block",
+                          padding: "7px 12px",
+                          color: theme.text,
+                          fontSize: "12px",
+                          textDecoration: "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {gene}.fasta
+                      </a>
+                    ))
+                  ) : (
+                    <div
                       style={{
-                        display: "block",
                         padding: "7px 12px",
-                        color: theme.text,
+                        color: theme.textMuted,
                         fontSize: "12px",
-                        textDecoration: "none",
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {gene}.fasta
-                    </a>
-                  ))}
+                      No FASTA files
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -994,6 +1220,51 @@ function ResultsPage({ jobId, onReset }: ResultsPageProps) {
           </>
         )}
       </div>
+
+      {!loading && !error && (
+        <div style={styles.card}>
+          <div style={styles.cardTitle}>Operon Diagrams</div>
+          {operonItems.length === 0 && (
+            <div style={alertStyle("warn")}>
+              No operon diagrams are available for this job.
+            </div>
+          )}
+          {operonItems.map(([id, item]) => (
+            <div
+              key={id}
+              style={{
+                marginTop: "18px",
+                paddingTop: "18px",
+                borderTop: `1px solid ${theme.border}`,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  marginBottom: "12px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ color: theme.text, fontSize: "13px", fontWeight: 700 }}>
+                  {item.organism || item.genome || id}
+                </div>
+                <div
+                  style={{
+                    color: theme.textMuted,
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                  }}
+                >
+                  {id}
+                </div>
+              </div>
+              <OperonDiagram item={item} />
+            </div>
+          ))}
+        </div>
+      )}
 
       <button style={styles.btnSecondary} onClick={onReset}>
         ← Submit another job
