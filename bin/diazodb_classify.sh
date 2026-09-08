@@ -185,6 +185,7 @@ if [[ -s "$OPERON_CLUSTERS" && -s "$OPERON_NIF_FINAL" ]]; then
       --database "$MICROBE_DB" \
       -t "${DIAZODB_MICROBE_THREADS:-4}" \
       --refine \
+      --light \
       --no_plot
 
     (
