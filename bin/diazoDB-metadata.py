@@ -226,7 +226,7 @@ def export_metadata(gene_data, operons, metadata_file):
     )
 
     # known regulon genes (in sort order)
-    reg_genes = ['nifA', 'nifL', 'nifR', 'nifI', 'nifI1', 'nifI2', 'glnB', 'glnK', 'draT', 'draG']
+    reg_genes = ['nifA', 'nifL', 'nifR', 'nifI', 'nifI1', 'nifI2', 'glnB', 'glnK', 'draT', 'draG', 'cnfR']
 
     metadata = {}
     for _, cluster in operons.iterrows():

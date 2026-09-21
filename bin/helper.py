@@ -3,6 +3,9 @@ import argparse
 import glob
 import os
 
+import matplotlib.pyplot as plt
+from matplotlib_venn import venn3
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
@@ -125,6 +128,47 @@ def tree_node_match_metadata(tree_file):
 
     Phylo.write(tree, tree_file, "newick")
 
+def tree_comparison(cutoff=90):
+    # for each comparison DB, create a list of nodes that have a match in diazoDB
+    # matched are considered when the percent identity is above the cutoff
+    #ref_tree = Phylo.read('../diazoDB-comparison/tree-comparison/nifD_anfD_vnfD_clustered.trim.treefile', 'newick')
+    comparison_DBs = ['NSDB', 'Nif-Finder', 'NFixDB']
+    #ref_nodes = {clade.name for clade in ref_tree.get_terminals()}
+    node_matches = pd.read_csv('../diazoDB-comparison/tree-comparison/nifD_anfD_vnfD_clustered.fasta.tsv', sep='\t', names=['cluster', 'acc'], index_col='acc')
+    node_matches[comparison_DBs] = False
+
+    for comparison in comparison_DBs:
+        blast = pd.read_csv(f'../diazoDB-comparison/venn/{comparison}.blast', 
+                            sep='\t', names=['qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore'])
+
+        blast = blast[blast['evalue'] < 1e-5]
+        blast = blast.loc[blast.groupby('qseqid')['pident'].idxmax()]
+        matches = blast.loc[blast['pident'] >= cutoff, 'sseqid']
+        node_matches.loc[node_matches.index.isin(matches), comparison] = True        
+
+    # collapse into cluster
+    cluster_matches = node_matches.groupby('cluster', as_index=False)[comparison_DBs].any()
+
+    # convert to boolean
+    cluster_matches[comparison_DBs] = cluster_matches[comparison_DBs].astype(int)
+
+    # export to csv
+    cluster_matches.to_csv('../diazoDB-comparison/tree-comparison/nifD-tree-comparison.csv', index=False)
+
+# def venn():
+#     # create a venn diagram of the comparison DBs
+#     comparison_DBs = ['NSDB', 'Nif-Finder', 'NFixDB']
+
+#     # get the sets of clusters for each comparison DB
+
+
+#     # create the venn diagram
+#     plt.figure(figsize=(8, 8))
+#     venn3(sets, set_labels=comparison_DBs)
+#     plt.title('Venn Diagram of Comparison DBs')
+#     plt.savefig('../diazoDB-comparison/tree-comparison/nifD-tree-comparison-venn.png')
+#     plt.close()
+
 
 def main():
     parser = argparse.ArgumentParser(description="DiazoDB helper functions")
@@ -139,6 +183,8 @@ def main():
     args = parser.parse_args()
     if args.command == "tree_node_match_metadata":
         tree_node_match_metadata(args.tree_file)
+
+    
 
 
 if __name__ == "__main__":

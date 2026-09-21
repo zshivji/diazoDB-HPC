@@ -207,6 +207,12 @@ else
   log "No nif result tables found; skipping operon diagram"
 fi
 
+# show identified nif genes on nifH reference tree
+#module load blast/2.15.0
+#makeblastdb 
+#blastp
+
+
 # Emit final result for the runner
 FINAL_NAME="$(basename "$FINAL_OUTPUT")"
 FINAL_CSV="$FINAL_DIR/$FINAL_NAME"
