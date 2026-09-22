@@ -51,6 +51,8 @@ async def poll_jobs(session: Session = Depends(get_db)) -> list[dict]:
             "filename": job.filename,
             "hpc_path": hpc_path,
             "use_prodigal": job.use_prodigal,
+            "include_in_database": job.include_in_database,
+            "orcid": job.orcid,
         })
         update_job(session=session, job=job, seen_by_runner=True)
 

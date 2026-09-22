@@ -364,6 +364,19 @@ export const PublicJobCreateSchema = {
             type: 'boolean',
             title: 'Use Prodigal',
             default: false
+        },
+        include_in_database: {
+            type: 'boolean',
+            title: 'Include In Database',
+            default: false
+        },
+        orcid: {
+            anyOf: [{
+                type: 'string'
+            }, {
+                type: 'null'
+            }],
+            title: 'Orcid'
         }
     },
     type: 'object',

@@ -1,0 +1,250 @@
+:root {
+  --page: #f7f6f2;
+  --ink: #1a1a18;
+  --muted: #5b5a54;
+  --line: rgba(30, 30, 20, 0.14);
+  --accent: #776c4d;
+  --link: #014371;
+  --white: #fbfeff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--page) url("../images/header.png") top center / 100% 18rem no-repeat;
+  font-family: Lato, "Helvetica Neue", sans-serif;
+  line-height: 1.65;
+}
+
+a {
+  color: var(--link);
+  font-weight: 600;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 3rem;
+  padding: 0.5rem 1rem;
+}
+
+.header a {
+  color: var(--white);
+  text-decoration: none;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.logo-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #fff;
+  background: var(--accent);
+  font-family: "DM Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+.header__navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.header__navigation a {
+  border-bottom: 1px solid transparent;
+  font-size: 16px;
+}
+
+.header__navigation a:hover,
+.header__navigation a[aria-current="page"] {
+  border-bottom-color: currentColor;
+}
+
+.header-separator {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  background: var(--page);
+  padding: 1.5rem max(1rem, calc((100% - 960px) / 2)) 2.5rem;
+}
+
+.intro {
+  max-width: 680px;
+  margin-bottom: 1.5rem;
+}
+
+.eyebrow,
+.section-label {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.2;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.45rem;
+}
+
+.lede {
+  max-width: 640px;
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.about-tabs {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab-button {
+  flex: 0 0 auto;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.65rem 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.tab-button:hover,
+.tab-button:focus-visible,
+.tab-button.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+  outline: none;
+}
+
+.tab-panel {
+  max-width: 760px;
+  min-height: 220px;
+  padding: 1.5rem 0.25rem 0.5rem;
+  font-size: 0.92rem;
+}
+
+.tab-panel p {
+  margin: 0 0 0.8rem;
+}
+
+.tab-panel ul {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.tab-panel code {
+  padding: 0.12rem 0.3rem;
+  background: rgba(30, 30, 20, 0.06);
+  font-size: 0.9em;
+}
+
+.contributors-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contributors-list li {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.65);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.contributors-status {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-family: inherit !important;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 0.75rem 1rem;
+  color: var(--muted);
+  background: rgba(225, 225, 225, 0.9);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+footer p {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  main {
+    padding-top: 1.25rem;
+  }
+
+  .tab-button {
+    padding-right: 0.65rem;
+    padding-left: 0.65rem;
+  }
+}

@@ -47,6 +47,7 @@ def test_runner_poll_returns_ready_jobs(client, runner_headers, job, db):
     assert jobs[0]["id"] == str(job.id)
     assert "hpc_path" in jobs[0]
     assert jobs[0]["use_prodigal"] is True
+    assert jobs[0]["include_in_database"] is False
 
 
 def test_runner_poll_returns_legacy_transferring_jobs(client, runner_headers, job, db):

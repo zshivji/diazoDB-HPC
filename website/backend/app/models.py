@@ -35,10 +35,18 @@ class Job(SQLModel, table=True):
     result_filename: str | None = None
     user_email: EmailStr | None = Field(default=None, max_length=255, index=True)
     use_prodigal: bool = Field(default=False)
+    include_in_database: bool = Field(default=False)
+    orcid: str | None = Field(default=None, max_length=19)
     error_message: str | None = None
     email_status: str | None = None
     created_at: datetime = Field(default_factory=get_datetime_utc)
     updated_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+class Contributor(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    orcid: str = Field(max_length=19, unique=True, index=True)
+    created_at: datetime = Field(default_factory=get_datetime_utc)
 
 
 class JobCreate(SQLModel):
@@ -62,6 +70,8 @@ class JobRunnerView(SQLModel):
     filename: str
     hpc_path: str   # backend upload path retained for older runner logs
     use_prodigal: bool = False
+    include_in_database: bool = False
+    orcid: str | None = None
 
 
 # ── User models ───────────────────────────────────────────────────────────────

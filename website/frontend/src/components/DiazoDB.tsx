@@ -632,6 +632,8 @@ function CitingBanner() {
 // --- Upload page ---
 function UploadPage({ onSubmit }: UploadPageProps) {
   const [email, setEmail] = useState("")
+  const [includeInDatabase, setIncludeInDatabase] = useState(false)
+  const [orcid, setOrcid] = useState("")
   const [sequences, setSequences] = useState("")
   const [fileName, setFileName] = useState<string | null>(null)
   // const [useProdigal, setUseProdigal] = useState(false)
@@ -672,6 +674,8 @@ function UploadPage({ onSubmit }: UploadPageProps) {
           user_email: email,
           filename: fileName ?? "sequences.fasta",
           file_size_bytes: fileSizeBytes,
+          include_in_database: includeInDatabase,
+          orcid: orcid.trim() || null,
           // use_prodigal: useProdigal,
           sequences,
         }),
@@ -730,6 +734,35 @@ function UploadPage({ onSubmit }: UploadPageProps) {
               placeholder="you@institution.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+            />
+
+            <label style={styles.checkbox}>
+              <input
+                type="checkbox"
+                checked={includeInDatabase}
+                onChange={(e) => setIncludeInDatabase(e.target.checked)}
+                style={{ marginTop: "2px", accentColor: theme.green }}
+              />
+              <div>
+                <div style={{ ...styles.checkboxLabel, color: theme.text, fontWeight: 600 }}>
+                  Include my nitrogenase results in DiazoDB
+                </div>
+                <div style={styles.checkboxLabel}>
+                  Allow these submitted results to be incorporated into the database.
+                </div>
+              </div>
+            </label>
+
+            <label style={styles.label}>
+              ORCID iD (optional, for the contributor page)
+            </label>
+            <input
+              style={styles.input}
+              type="text"
+              inputMode="numeric"
+              placeholder="0000-0000-0000-0000"
+              value={orcid}
+              onChange={(e) => setOrcid(e.target.value)}
             />
 
             {/* <label style={styles.label}>Paste FASTA sequences</label>
@@ -841,6 +874,9 @@ function UploadPage({ onSubmit }: UploadPageProps) {
             <p style={styles.sidebarText}>
               Provide your email to receive a link when the job completes or
               fails.
+            </p>
+            <p style={styles.sidebarText}>
+              ORCID iDs are saved for the future DiazoDB contributor page.
             </p>
           </div>
 
@@ -1424,6 +1460,9 @@ export default function DiazoDB() {
           </a>
           <a href="/classify" style={styles.headerLinkActive}>
             Upload
+          </a>
+          <a href="/about" style={styles.headerLink}>
+            About
           </a>
           {/* <a href="/wiki" style={styles.headerLink}>Nitrogenase Wiki</a> */}
         </nav>

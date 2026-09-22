@@ -5,6 +5,7 @@ Public endpoints for the classify page — no JWT auth required.
 Separate from /api/v1/jobs/ which requires a logged-in user.
 """
 import logging
+import re
 import uuid
 from pathlib import Path
 
@@ -12,12 +13,12 @@ import aiofiles
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import EmailStr
-from sqlmodel import Session, SQLModel
+from sqlmodel import Field, Session, SQLModel, select
 
 from app.api.deps import get_db
 from app.core.config import settings
 from app.crud import get_job, update_job
-from app.models import Job, JobStatus
+from app.models import Contributor, Job, JobStatus
 from app.services.email import send_submission_email
 from app.services.results import get_result_path, safe_result_filename
 
@@ -51,6 +52,8 @@ class PublicJobCreate(SQLModel):
     filename: str
     file_size_bytes: int
     use_prodigal: bool = False
+    include_in_database: bool = False
+    orcid: str | None = Field(default=None, max_length=19)
     sequences: str | None = None  # File content sent directly in JSON
 
 
@@ -60,6 +63,37 @@ class PublicJobPublic(SQLModel):
     file_size_bytes: int | None
     status: JobStatus
     result_filename: str | None = None
+
+
+ORCID_PATTERN = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$")
+
+
+def _validate_orcid(orcid: str | None) -> None:
+    if not orcid:
+        return
+    if not ORCID_PATTERN.fullmatch(orcid):
+        raise HTTPException(
+            status_code=422,
+            detail="ORCID must use the format 0000-0000-0000-0000",
+        )
+
+
+def _record_contributor(session: Session, orcid: str | None) -> None:
+    if not orcid or session.exec(
+        select(Contributor).where(Contributor.orcid == orcid)
+    ).first():
+        return
+    session.add(Contributor(orcid=orcid))
+
+
+@router.get("/contributors", response_model=list[str])
+def get_contributors(session: Session = Depends(get_db)) -> list[str]:
+    """Return the public ORCID identifiers contributed through DiazoDB."""
+    return sorted(
+        contributor.orcid
+        for contributor in session.exec(select(Contributor)).all()
+    )
+
 
 def _parse_content_range(content_range: str) -> tuple[int, int, int]:
     try:
@@ -86,6 +120,8 @@ async def create_public_job(
     inline_sequences = job_in.sequences
     if inline_sequences is not None and not inline_sequences.strip():
         raise HTTPException(status_code=400, detail="No sequences provided")
+    _validate_orcid(job_in.orcid)
+    _record_contributor(session, job_in.orcid)
 
     # Use a sentinel UUID for public jobs (no real owner)
     PUBLIC_OWNER_ID = uuid.UUID("00000000-0000-0000-0000-000000000000")
@@ -97,6 +133,8 @@ async def create_public_job(
         status=JobStatus.ready if inline_sequences is not None else JobStatus.created,
         user_email=job_in.user_email,
         use_prodigal=job_in.use_prodigal,
+        include_in_database=job_in.include_in_database,
+        orcid=job_in.orcid,
     )
     session.add(job)
     session.commit()

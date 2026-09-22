@@ -58,6 +58,9 @@ export type JobRunnerView = {
     id: string;
     filename: string;
     hpc_path: string;
+    use_prodigal?: boolean;
+    include_in_database?: boolean;
+    orcid?: (string | null);
 };
 
 export type JobStatus = 'created' | 'uploading' | 'transferring' | 'ready' | 'processing' | 'complete' | 'failed';
@@ -83,6 +86,8 @@ export type PublicJobCreate = {
     filename: string;
     file_size_bytes: number;
     use_prodigal?: boolean;
+    include_in_database?: boolean;
+    orcid?: (string | null);
 };
 
 export type PublicJobPublic = {

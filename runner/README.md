@@ -13,6 +13,8 @@ between systems is `RUNNER_SECRET`.
 API_URL=https://api.example.edu
 RUNNER_SECRET=<same value as website RUNNER_SECRET>
 HPC_JOB_BASE=/scratch/zshivji/diazodb/jobs
+# Persistent destination for submissions that opt into the database.
+HPC_DATABASE_BASE=/diazoDB-HPC/uploads
 SLURM_SCRIPT=/path/to/diazoDB-HPC/bin/diazodb_classify.sh
 SLURM_WAIT_TIMEOUT_SECONDS=32400
 ```
@@ -53,6 +55,24 @@ HPC_JOB_BASE/<job-id>/
     ├── slurm-<name>-<id>.out
     └── slurm-<name>-<id>.err
 ```
+
+Jobs with `include_in_database=true` are copied after successful analysis to
+`HPC_DATABASE_BASE/<job-id>/`. The archive contains the original input, the
+published result files, and `manifest.json`. Jobs that do not opt in remain
+under `HPC_JOB_BASE` and can be removed using the normal scratch retention
+policy.
+
+Create the persistent destination on the HPC before starting the runner:
+
+```bash
+mkdir -p /diazoDB-HPC/uploads
+chmod 750 /diazoDB-HPC/uploads
+```
+
+Do not use `/diazoDB-HPC/postgres` for this integration. PostgreSQL runs on the
+Sassy server, and a directory on the separate HPC cannot be mounted into that
+Docker container. Keep `/diazoDB-HPC/postgres` only if you later run a separate
+HPC database service.
 
 The runner passes the job-specific parsed hits, temporary-results directory,
 final-results directory, protein lookup directory, and reference IDs directly

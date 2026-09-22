@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiazoDB - About</title>
+  <link rel="icon" href="./assets/images/FeMoco-favicon.ico" />
+  <link rel="stylesheet" href="./css/style-about.css" />
+</head>
+
+<body>
+  <div id="root">
+    <header>
+      <div class="header">
+        <a href="/" class="logo">DiazoDB <span class="logo-badge">About</span></a>
+        <nav class="header__navigation" aria-label="Primary navigation">
+          <a href="/database">DiazoDB</a>
+          <a href="/">Phylogeny</a>
+          <a href="/classify">Upload</a>
+          <a href="/about" aria-current="page">About</a>
+        </nav>
+      </div>
+    </header>
+
+    <hr class="header-separator">
+
+    <main>
+      <section class="intro">
+        <p class="eyebrow">DiazoDB</p>
+        <h1>About the database</h1>
+        <p class="lede">Automated annotation and curation of nitrogenase genes using profile hidden Markov models and conserved residue matching.</p>
+      </section>
+
+      <section class="about-tabs" aria-label="About DiazoDB">
+        <div class="tab-list" role="tablist" aria-label="About sections">
+          <button class="tab-button is-active" id="tab-citation" role="tab" aria-selected="true" aria-controls="panel-citation">Citation</button>
+          <button class="tab-button" id="tab-source" role="tab" aria-selected="false" aria-controls="panel-source" tabindex="-1">Source code</button>
+          <button class="tab-button" id="tab-provenance" role="tab" aria-selected="false" aria-controls="panel-provenance" tabindex="-1">Data provenance</button>
+          <button class="tab-button" id="tab-acknowledgements" role="tab" aria-selected="false" aria-controls="panel-acknowledgements" tabindex="-1">Acknowledgements</button>
+          <button class="tab-button" id="tab-license" role="tab" aria-selected="false" aria-controls="panel-license" tabindex="-1">License</button>
+          <button class="tab-button" id="tab-contributors" role="tab" aria-selected="false" aria-controls="panel-contributors" tabindex="-1">External contributors</button>
+        </div>
+
+        <div class="tab-panel is-active" id="panel-citation" role="tabpanel" aria-labelledby="tab-citation" tabindex="0">
+          <h2>Citation</h2>
+          <p>DiazoDB: Interactive Nitrogenase Web Database, Shivji (2026).</p>
+          <p><a href="https://doi.org/10.5281/zenodo.21909831" target="_blank" rel="noopener">doi:10.5281/zenodo.21909831</a></p>
+        </div>
+
+        <div class="tab-panel" id="panel-source" role="tabpanel" aria-labelledby="tab-source" tabindex="0" hidden>
+          <h2>Source code</h2>
+          <p>DiazoDB is developed in the open. The repository contains the analysis scripts, HMM seeds, web application, and reproducibility files.</p>
+          <p><a href="https://github.com/zshivji/diazoDB-HPC" target="_blank" rel="noopener">View the DiazoDB source code on GitHub</a></p>
+        </div>
+
+        <div class="tab-panel" id="panel-provenance" role="tabpanel" aria-labelledby="tab-provenance" tabindex="0" hidden>
+          <h2>Data provenance</h2>
+          <p><strong>Source data:</strong> Genome Taxonomy Database (GTDB) R232.</p>
+          <ul>
+            <li><a href="https://data.gtdb.aau.ecogenomic.org/releases/latest/genomic_files_reps/gtdb_proteins_aa_reps.tar.gz" target="_blank" rel="noopener">GTDB representative proteins</a></li>
+            <li><a href="https://data.gtdb.aau.ecogenomic.org/releases/latest/bac120_taxonomy.tsv.gz" target="_blank" rel="noopener">GTDB bacterial taxonomy</a></li>
+            <li><a href="https://data.gtdb.aau.ecogenomic.org/releases/latest/ar53_metadata.tsv.gz" target="_blank" rel="noopener">GTDB archaeal metadata</a></li>
+          </ul>
+          <p>Manually curated seed files include <code>nifH</code>, <code>nifD</code>, <code>nifK</code>, <code>nifE</code>, <code>nifN</code>, <code>nifB</code>, <code>anfG</code>, <code>vnfG</code>, and <code>anfO</code>.</p>
+        </div>
+
+        <div class="tab-panel" id="panel-acknowledgements" role="tabpanel" aria-labelledby="tab-acknowledgements" tabindex="0" hidden>
+          <h2>Acknowledgements</h2>
+          <p>DiazoDB relies on the Genome Taxonomy Database and the open-source bioinformatics tools documented in the repository.</p>
+          <p>This section will be expanded as project contributors and supporting resources are formally documented.</p>
+        </div>
+
+        <div class="tab-panel" id="panel-license" role="tabpanel" aria-labelledby="tab-license" tabindex="0" hidden>
+          <h2>License</h2>
+          <p>No license file is currently included in the DiazoDB repository. Please contact the project maintainers before redistributing code or data.</p>
+          <p><a href="https://github.com/zshivji/diazoDB-HPC" target="_blank" rel="noopener">Check the repository for licensing updates</a></p>
+        </div>
+
+        <div class="tab-panel" id="panel-contributors" role="tabpanel" aria-labelledby="tab-contributors" tabindex="0" hidden>
+          <h2>External contributors</h2>
+          <p>Researchers who choose to contribute their ORCID iD when submitting results are listed here.</p>
+          <ul id="contributors-list" class="contributors-list">
+            <li class="contributors-status">Loading contributor iDs...</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p><strong>Citation:</strong> DiazoDB: Interactive Nitrogenase Web Database, Shivji (2026) · <a href="https://doi.org/10.5281/zenodo.21909831">doi: 10.5281/zenodo.21909831</a> · <a href="https://github.com/zshivji/diazoDB-HPC" target="_blank" rel="noopener">GitHub</a></p>
+    </footer>
+  </div>
+
+  <script>
+    const contributorsList = document.querySelector("#contributors-list")
+
+    const tabs = [...document.querySelectorAll(".tab-button")]
+    const panels = [...document.querySelectorAll(".tab-panel")]
+
+    function activateTab(tab) {
+      tabs.forEach((item) => {
+        const active = item === tab
+        item.classList.toggle("is-active", active)
+        item.setAttribute("aria-selected", String(active))
+        item.tabIndex = active ? 0 : -1
+      })
+      panels.forEach((panel) => {
+        const active = panel.id === tab.getAttribute("aria-controls")
+        panel.classList.toggle("is-active", active)
+        panel.hidden = !active
+      })
+    }
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => activateTab(tab))
+      tab.addEventListener("keydown", (event) => {
+        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return
+        event.preventDefault()
+        const offset = event.key === "ArrowRight" ? 1 : -1
+        const nextTab = tabs[(index + offset + tabs.length) % tabs.length]
+        nextTab.focus()
+        activateTab(nextTab)
+      })
+    })
+
+    fetch("/api/v1/classify/contributors")
+      .then((response) => {
+        if (!response.ok) throw new Error("Contributor registry unavailable")
+        return response.json()
+      })
+      .then((orcids) => {
+        contributorsList.replaceChildren()
+        if (orcids.length === 0) {
+          const emptyMessage = document.createElement("li")
+          emptyMessage.className = "contributors-status"
+          emptyMessage.textContent = "No external contributors have been listed yet."
+          contributorsList.append(emptyMessage)
+          return
+        }
+
+        orcids.forEach((orcid) => {
+          const item = document.createElement("li")
+          const link = document.createElement("a")
+          link.href = `https://orcid.org/${orcid}`
+          link.target = "_blank"
+          link.rel = "noopener"
+          link.textContent = orcid
+          item.append(link)
+          contributorsList.append(item)
+        })
+      })
+      .catch(() => {
+        contributorsList.replaceChildren()
+        const errorMessage = document.createElement("li")
+        errorMessage.className = "contributors-status"
+        errorMessage.textContent = "Contributor information is temporarily unavailable."
+        contributorsList.append(errorMessage)
+      })
+  </script>
+</body>
+</html>

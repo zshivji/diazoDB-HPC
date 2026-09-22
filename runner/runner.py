@@ -1,4 +1,5 @@
-import os, base64, subprocess, requests, logging
+import os, base64, json, shutil, subprocess, requests, logging
+from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -11,6 +12,7 @@ HEADERS   = {"x-runner-token": os.environ["RUNNER_SECRET"]}
 JOB_BASE  = Path(os.environ["HPC_JOB_BASE"])
 DUMMY_RUNNER = os.environ.get("DUMMY_RUNNER", "").lower() in {"1", "true", "yes"}
 SLURM_SCRIPT = os.environ.get("SLURM_SCRIPT")
+HPC_DATABASE_BASE = os.environ.get("HPC_DATABASE_BASE")
 
 # runner polls API (HTTP request)
 def poll() -> list[dict]:
@@ -86,6 +88,56 @@ def push_results(job_id: str, result_paths: list[Path]) -> dict:
 def push_result(job_id: str, result_path: Path) -> dict:
     """Backward-compatible helper for callers that have one result file."""
     return push_results(job_id, [result_path])
+
+
+def archive_database_job(
+    job: dict, input_path: Path, result_paths: list[Path], workspace: Path
+) -> Path | None:
+    """Persist opted-in inputs and results outside temporary HPC storage."""
+    if not job.get("include_in_database"):
+        return None
+    if not HPC_DATABASE_BASE:
+        raise RuntimeError("HPC_DATABASE_BASE is required for database contributions")
+
+    archive_root = Path(HPC_DATABASE_BASE)
+    archive_root.mkdir(parents=True, exist_ok=True)
+    archive_path = archive_root / str(job["id"])
+    temporary_path = archive_root / f".{job['id']}.tmp"
+    if archive_path.exists():
+        raise FileExistsError(f"Database archive already exists: {archive_path}")
+    if temporary_path.exists():
+        shutil.rmtree(temporary_path)
+
+    try:
+        (temporary_path / "input").mkdir(parents=True)
+        (temporary_path / "results").mkdir(parents=True)
+        shutil.copy2(input_path, temporary_path / "input" / input_path.name)
+
+        archived_results = []
+        for result_path in result_paths:
+            relative_path = result_path.relative_to(workspace)
+            destination = temporary_path / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(result_path, destination)
+            archived_results.append(str(relative_path))
+
+        manifest = {
+            "job_id": str(job["id"]),
+            "filename": job["filename"],
+            "orcid": job.get("orcid"),
+            "archived_at": datetime.now(timezone.utc).isoformat(),
+            "input": str(Path("input") / input_path.name),
+            "results": archived_results,
+        }
+        (temporary_path / "manifest.json").write_text(
+            json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+        )
+        temporary_path.rename(archive_path)
+    except Exception:
+        shutil.rmtree(temporary_path, ignore_errors=True)
+        raise
+
+    return archive_path
 
 
 def download_input(job: dict, dest: Path) -> Path:
@@ -214,6 +266,9 @@ def process(job: dict) -> None:
                 "Expected result file(s) were not created: "
                 + ", ".join(str(path) for path in missing)
             )
+        archive_path = archive_database_job(job, input_path, result_paths, workspace)
+        if archive_path:
+            log.info("[%s] archived database contribution at %s", job_id, archive_path)
         push_results(job_id, result_paths)
         log.info(f"[{job_id}] complete")
     except subprocess.CalledProcessError as e:
