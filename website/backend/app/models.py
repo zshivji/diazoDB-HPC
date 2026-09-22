@@ -50,6 +50,8 @@ class Contributor(SQLModel, table=True):
 
 
 class UserDatabaseRecord(SQLModel, table=True):
+    __tablename__ = "user_database_record"
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     job_id: uuid.UUID = Field(foreign_key="job.id", index=True)
     row_number: int
