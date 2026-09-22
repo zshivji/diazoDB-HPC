@@ -11,6 +11,7 @@ const downloadFastaDropdown = document.querySelector("[data-download-dropdown]")
 const tableSearchInput = document.getElementById("tableSearchInput")
 const tableSearchForm = document.getElementById("tableSearchForm")
 const CSV_PATH = "../results/nif_clusters.csv"
+const USER_RECORDS_PATH = "/api/v1/database/user-records"
 
 const ROW_HEIGHT = 40 // must match CSS .data-row height
 const BUFFER = 10
@@ -36,6 +37,7 @@ const rowCellMap = {
   ".col-ContigAcc": "contig",
   ".col-GTDBPhylo": "GTDB Taxonomy",
   ".col-Cluster": "cluster",
+  ".col-Provenance": "Provenance",
 }
 
 const sortKeyMap = {
@@ -48,6 +50,7 @@ const sortKeyMap = {
   "ContigAcc": "contig",
   "GTDBPhylo": "GTDB Taxonomy",
   "Cluster": "cluster",
+  "Provenance": "Provenance",
 }
 
 const searchableColumnKeys = headers.map(
@@ -338,12 +341,7 @@ if (tableSearchForm && tableSearchInput) {
 }
 
 async function downloadCurrentCsv() {
-  const response = await fetch(CSV_PATH)
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-
-  const blob = await response.blob()
+  const blob = new Blob([Papa.unparse(allData)], { type: "text/csv;charset=utf-8" })
   const blobUrl = URL.createObjectURL(blob)
   const tempLink = document.createElement("a")
   tempLink.href = blobUrl
@@ -409,15 +407,24 @@ viewport.addEventListener("scroll", () => {
 })
 
 // load CSV, parse, and add rows to table
-fetch(CSV_PATH)
-  .then((r) => {
+Promise.all([
+  fetch(CSV_PATH).then((r) => {
     if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`)
     return r.text()
-  })
-  .then((csvText) => {
-    const rows = parseCSVToObjects(csvText)
-    console.log(`Parsed ${rows.length} rows from CSV.`)
-    allData = rows // Store all data for filtering
+  }),
+  fetch(USER_RECORDS_PATH).then((r) => {
+    if (!r.ok) return []
+    return r.json()
+  }).catch(() => []),
+])
+  .then(([csvText, userRows]) => {
+    const gtdbRows = parseCSVToObjects(csvText).map((row) => ({
+      ...row,
+      Provenance: "GTDB",
+    }))
+    const rows = [...gtdbRows, ...userRows]
+    console.log(`Parsed ${gtdbRows.length} GTDB rows and ${userRows.length} user rows.`)
+    allData = rows
     renderTable(rows)
     updateResultCount(rows.length)
   })
