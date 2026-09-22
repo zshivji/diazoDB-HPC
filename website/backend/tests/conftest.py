@@ -9,12 +9,13 @@ from app.core.config import settings
 from app.core.db import engine, init_db
 from app.crud import create_job
 from app.main import app
-from app.models import Item, Job, JobCreate, User
+from app.models import Item, Job, JobCreate, User, UserDatabaseRecord
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
 
 
 def _clear_test_data(session: Session) -> None:
+    session.execute(delete(UserDatabaseRecord))
     session.execute(delete(Job))
     session.execute(delete(Item))
     session.execute(
@@ -53,6 +54,7 @@ def normal_user_token_headers(client: TestClient, db: Session) -> dict[str, str]
 
 
 def _clear_jobs_and_items(session: Session) -> None:
+    session.execute(delete(UserDatabaseRecord))
     session.execute(delete(Job))
     session.execute(delete(Item))
     session.commit()

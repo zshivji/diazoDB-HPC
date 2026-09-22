@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 
 from pydantic import EmailStr
-from sqlalchemy import DateTime
+from sqlalchemy import JSON, Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -46,6 +46,18 @@ class Job(SQLModel, table=True):
 class Contributor(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     orcid: str = Field(max_length=19, unique=True, index=True)
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+class UserDatabaseRecord(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    job_id: uuid.UUID = Field(foreign_key="job.id", index=True)
+    row_number: int
+    provenance: str = Field(default="USER_UPLOAD", max_length=32, index=True)
+    orcid: str | None = Field(default=None, max_length=19)
+    data: dict[str, str] = Field(
+        default_factory=dict, sa_column=Column(JSON, nullable=False)
+    )
     created_at: datetime = Field(default_factory=get_datetime_utc)
 
 

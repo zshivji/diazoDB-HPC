@@ -6,9 +6,10 @@ import base64
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from sqlmodel import select
 
 from app.crud import update_job
-from app.models import JobStatus
+from app.models import JobStatus, UserDatabaseRecord
 
 # ── Step 4: runner auth ───────────────────────────────────────────────────────
 
@@ -161,6 +162,11 @@ def test_runner_post_result_sends_email(client, runner_headers, job, db, monkeyp
     ]
     assert (tmp_path / str(job.id) / "results" / "nif_clusters.csv").read_bytes() == csv_bytes
 
+    records = db.exec(
+        select(UserDatabaseRecord).where(UserDatabaseRecord.job_id == job.id)
+    ).all()
+    assert records == []
+
     download = client.get(f"/api/v1/classify/{job.id}/results/nif_clusters.csv")
     assert download.status_code == 200
     assert download.content == csv_bytes
@@ -170,7 +176,6 @@ def test_runner_post_result_uses_public_job_email(client, runner_headers, job, d
     monkeypatch.setattr("app.core.config.settings.UPLOAD_DIR", str(tmp_path))
     monkeypatch.setattr("app.core.config.settings.SMTP_HOST", "smtp.test.com")
     monkeypatch.setattr("app.core.config.settings.EMAILS_FROM_EMAIL", "noreply@lab.edu")
-
     from app.models import Job
 
     public_job = Job(
@@ -200,6 +205,49 @@ def test_runner_post_result_uses_public_job_email(client, runner_headers, job, d
 
     assert r.status_code == 200
     assert mock_email.call_args.kwargs["to"] == "submitter@example.edu"
+
+
+def test_runner_post_opted_in_result_adds_user_database_records(
+    client, runner_headers, job, db, monkeypatch, tmp_path
+):
+    monkeypatch.setattr("app.core.config.settings.UPLOAD_DIR", str(tmp_path))
+    job.include_in_database = True
+    update_job(session=db, job=job, status=JobStatus.processing)
+
+    csv_bytes = (
+        b"GenomeID,Organism,cluster\n"
+        b"uploaded-genome,Uploaded organism,1\n"
+    )
+    payload = {
+        "filename": "nif_clusters.csv",
+        "content_type": "text/csv",
+        "data_base64": base64.b64encode(csv_bytes).decode(),
+    }
+
+    response = client.post(
+        f"/api/v1/runner/jobs/{job.id}/result",
+        json=payload,
+        headers=runner_headers,
+    )
+
+    assert response.status_code == 200
+    records = db.exec(
+        select(UserDatabaseRecord).where(UserDatabaseRecord.job_id == job.id)
+    ).all()
+    assert len(records) == 1
+    assert records[0].provenance == "USER_UPLOAD"
+    assert records[0].data["Organism"] == "Uploaded organism"
+
+    public_records = client.get("/api/v1/database/user-records")
+    assert public_records.status_code == 200
+    assert public_records.json() == [
+        {
+            "GenomeID": "uploaded-genome",
+            "Organism": "Uploaded organism",
+            "cluster": "1",
+            "Provenance": "USER_UPLOAD",
+        }
+    ]
 
 
 def test_runner_post_result_reports_email_failure(

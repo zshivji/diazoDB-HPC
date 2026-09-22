@@ -1,4 +1,6 @@
 import binascii
+import csv
+import io
 import logging
 import uuid
 from pathlib import Path
@@ -6,12 +8,12 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlmodel import Session, delete
 
 from app.api.deps import get_db, verify_runner_token
 from app.core.config import settings
 from app.crud import get_job, get_jobs_for_runner, update_job
-from app.models import Job, JobRunnerView, JobStatus, User
+from app.models import Job, JobRunnerView, JobStatus, User, UserDatabaseRecord
 from app.services.email import send_failure_email, send_result_email
 from app.services.results import save_result_file
 
@@ -179,6 +181,26 @@ def post_result(
             attachments.append((filename, content_type, data))
     except (KeyError, TypeError, binascii.Error, ValueError):
         raise HTTPException(status_code=400, detail="Invalid result payload")
+
+    if job.include_in_database:
+        cluster_result = next(
+            (data for filename, _, data in attachments if filename == "nif_clusters.csv"),
+            None,
+        )
+        if cluster_result is not None:
+            rows = list(csv.DictReader(io.StringIO(cluster_result.decode("utf-8-sig"))))
+            session.exec(
+                delete(UserDatabaseRecord).where(UserDatabaseRecord.job_id == job.id)
+            )
+            session.add_all(
+                UserDatabaseRecord(
+                    job_id=job.id,
+                    row_number=row_number,
+                    orcid=job.orcid,
+                    data={key: value or "" for key, value in row.items()},
+                )
+                for row_number, row in enumerate(rows, start=1)
+            )
 
     recipient = _job_recipient(session=session, job=job)
 
