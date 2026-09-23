@@ -13,12 +13,12 @@ import aiofiles
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import EmailStr
-from sqlmodel import Field, Session, SQLModel
+from sqlmodel import Field, Session, SQLModel, select
 
 from app.api.deps import get_db
 from app.core.config import settings
 from app.crud import get_job, update_job
-from app.models import Job, JobStatus
+from app.models import Contributor, Job, JobStatus
 from app.services.email import send_submission_email
 from app.services.results import get_result_path, safe_result_filename
 
@@ -68,7 +68,7 @@ class PublicJobPublic(SQLModel):
 ORCID_PATTERN = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$")
 
 
-def _record_orcid(orcid: str | None) -> None:
+def _validate_orcid(orcid: str | None) -> None:
     if not orcid:
         return
     if not ORCID_PATTERN.fullmatch(orcid):
@@ -77,31 +77,21 @@ def _record_orcid(orcid: str | None) -> None:
             detail="ORCID must use the format 0000-0000-0000-0000",
         )
 
-    destination = Path(settings.ORCID_IDS_FILE)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    existing = set()
-    if destination.exists():
-        existing = {
-            line.strip() for line in destination.read_text(encoding="utf-8").splitlines()
-        }
-    if orcid not in existing:
-        with destination.open("a", encoding="utf-8") as file:
-            file.write(f"{orcid}\n")
+
+def _record_contributor(session: Session, orcid: str | None) -> None:
+    if not orcid or session.exec(
+        select(Contributor).where(Contributor.orcid == orcid)
+    ).first():
+        return
+    session.add(Contributor(orcid=orcid))
 
 
 @router.get("/contributors", response_model=list[str])
-def get_contributors() -> list[str]:
+def get_contributors(session: Session = Depends(get_db)) -> list[str]:
     """Return the public ORCID identifiers contributed through DiazoDB."""
-    destination = Path(settings.ORCID_IDS_FILE)
-    if not destination.exists():
-        return []
-
     return sorted(
-        {
-            line.strip()
-            for line in destination.read_text(encoding="utf-8").splitlines()
-            if ORCID_PATTERN.fullmatch(line.strip())
-        }
+        contributor.orcid
+        for contributor in session.exec(select(Contributor)).all()
     )
 
 
@@ -130,7 +120,8 @@ async def create_public_job(
     inline_sequences = job_in.sequences
     if inline_sequences is not None and not inline_sequences.strip():
         raise HTTPException(status_code=400, detail="No sequences provided")
-    _record_orcid(job_in.orcid)
+    _validate_orcid(job_in.orcid)
+    _record_contributor(session, job_in.orcid)
 
     # Use a sentinel UUID for public jobs (no real owner)
     PUBLIC_OWNER_ID = uuid.UUID("00000000-0000-0000-0000-000000000000")

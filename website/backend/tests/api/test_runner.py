@@ -8,6 +8,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlmodel import select
 
+from app.core.config import settings
 from app.crud import update_job
 from app.models import JobStatus, UserDatabaseRecord
 
@@ -130,6 +131,7 @@ def test_runner_post_result_sends_email(client, runner_headers, job, db, monkeyp
     monkeypatch.setattr("app.core.config.settings.SMTP_HOST", "smtp.test.com")
     monkeypatch.setattr("app.core.config.settings.EMAILS_FROM_EMAIL", "noreply@lab.edu")
     monkeypatch.setattr("app.core.config.settings.BACKEND_PUBLIC_URL", "https://api.example.edu")
+    monkeypatch.setattr(settings, "JOB_NOTIFICATION_EMAIL", None)
     update_job(session=db, job=job, status=JobStatus.processing, seen_by_runner=True)
 
     csv_bytes = b"seq,score\nATCG,0.99\n"
@@ -176,6 +178,7 @@ def test_runner_post_result_uses_public_job_email(client, runner_headers, job, d
     monkeypatch.setattr("app.core.config.settings.UPLOAD_DIR", str(tmp_path))
     monkeypatch.setattr("app.core.config.settings.SMTP_HOST", "smtp.test.com")
     monkeypatch.setattr("app.core.config.settings.EMAILS_FROM_EMAIL", "noreply@lab.edu")
+    monkeypatch.setattr(settings, "JOB_NOTIFICATION_EMAIL", None)
     from app.models import Job
 
     public_job = Job(
