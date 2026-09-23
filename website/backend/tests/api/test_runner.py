@@ -130,6 +130,7 @@ def test_runner_post_result_sends_email(client, runner_headers, job, db, monkeyp
     monkeypatch.setattr("app.core.config.settings.UPLOAD_DIR", str(tmp_path))
     monkeypatch.setattr("app.core.config.settings.SMTP_HOST", "smtp.test.com")
     monkeypatch.setattr("app.core.config.settings.EMAILS_FROM_EMAIL", "noreply@lab.edu")
+    monkeypatch.setattr("app.core.config.settings.FRONTEND_HOST", "http://localhost:5173")
     monkeypatch.setattr("app.core.config.settings.BACKEND_PUBLIC_URL", "https://api.example.edu")
     monkeypatch.setattr(settings, "JOB_NOTIFICATION_EMAIL", None)
     update_job(session=db, job=job, status=JobStatus.processing, seen_by_runner=True)

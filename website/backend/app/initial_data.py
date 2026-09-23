@@ -1,16 +1,11 @@
 import logging
-import uuid
-
 from sqlmodel import Session
 
-from app.core.db import engine, init_db
+from app.core.db import PUBLIC_USER_ID, engine, init_db
 from app.models import User
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-PUBLIC_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000000")
-
 
 def create_sentinel_user(session: Session) -> None:
     existing = session.get(User, PUBLIC_USER_ID)

@@ -1,3 +1,5 @@
+import uuid
+
 from sqlmodel import Session, create_engine, select
 
 from app import crud
@@ -5,6 +7,7 @@ from app.core.config import settings
 from app.models import User, UserCreate
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+PUBLIC_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000000")
 
 
 # make sure all SQLModel models are imported (app.models) before initializing DB
@@ -31,3 +34,17 @@ def init_db(session: Session) -> None:
             is_superuser=True,
         )
         user = crud.create_user(session=session, user_create=user_in)
+
+    sentinel = session.get(User, PUBLIC_USER_ID)
+    if not sentinel:
+        session.add(
+            User(
+                id=PUBLIC_USER_ID,
+                email="public@system.internal",
+                hashed_password="",
+                is_active=False,
+                is_superuser=False,
+                full_name="Public Submissions",
+            )
+        )
+        session.commit()
