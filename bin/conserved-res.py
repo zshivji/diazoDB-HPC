@@ -459,59 +459,6 @@ def export_results(
         'pos_num': ('pos_num', lambda x: x.astype(int).tolist())
     }).reset_index()
 
-    # def get_hit(rec):
-    #     return rec.description.split(' ')[-1]
-
-    # def get_cluster(file):
-    #     clusters = {}
-    #     clusters_fasta = list(SeqIO.parse(file, 'fasta'))
-
-    #     index = 0
-    #     while index < len(clusters_fasta)-1:
-    #         rec = clusters_fasta[index]
-    #         if rec.seq == '': # cluster header
-    #             cluster = get_hit(clusters_fasta[index+1]) # hit
-    #             clause = True
-    #             members = []
-    #             i = 1
-    #             while clause & (index+i < len(clusters_fasta)): # add members (until next cluster header)
-    #                 if clusters_fasta[index+i].seq != '':
-    #                     members.append(get_hit(clusters_fasta[index+i]))
-    #                     i+=1
-    #                 elif clusters_fasta[index+i].seq == '':
-    #                     clause = False
-    #             index += i
-
-    #             clusters[cluster] = members
-
-    #     return clusters
-
-    # operons['Group'] = ''
-    # #     #genes = {'H': 'H', 'D': 'D_noOut'}
-    # genes = {'H': 'H'}
-
-    # for gene, file in genes.items():
-    #     # get clustered datapoints
-    #     clusters = get_cluster(f'../trees/nif{file}/clustered_nif{file}_all_seqs.fasta') 
-
-    #     # assign group 
-    #     for group in ['1', '2', '3', '4a', '4c', '3anfvnf']:
-    #         lines = []
-    #         hits = []
-    #         with open(f'nif_groups/nif{gene}_group{group}.txt','r') as f:
-    #             lines = f.read().splitlines()
-    #             for line in lines:
-    #                 hit = '_'.join(line.split('|')[-1].split(' '))[:-1]
-    #                 hits.append(hit) # reformat "hits" to match nif index
-    #                 hits.extend(clusters[hit]) # add clustered hits to list of hits to update
-    #         for hit in hits:
-    #             operons.loc[operons.index == hit, 'Group'] = f'Group {group}'
-
-#     # group by genome, contig and save
-#     nif = nif[['GenomeID', 'contig', 'Gene set', 'Position', 'GTDB', 'Location' ,'Orientation', 'Group']]
-#     nif = nif.groupby(['GenomeID','contig']).first()
-#     nif.reset_index(level=['GenomeID','contig'], inplace = True)
-
     if include_metadata:
         # Database-build mode enriches representative genomes with taxonomy.
         gtdb_metadata = pd.read_csv(

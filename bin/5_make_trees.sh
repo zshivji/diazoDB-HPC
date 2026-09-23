@@ -23,24 +23,30 @@ module load mafft/7.505-gcc-13.2.0-nklkvtc
 
 echo "preprocessing"
 # cluster, to keep full fasta header, run easy-cluster workflow separately
-#cat ../results/final/fastas/final_nifH.fasta ../results/final/fastas/final_vnfH.fasta ../results/final/fastas/final_anfH.fasta > ../trees/nifH/nifH_vnfH_anfH.fasta
+cat ../results/final/fastas/final_nifH.fasta ../results/final/fastas/final_vnfH.fasta ../results/final/fastas/final_anfH.fasta > ../trees/nifH/nifH_anfH_vnfH.fasta
 #cat ../results/final/fastas/final_nifD*.fasta ../results/final/fastas/final_anfD*.fasta ../results/final/fastas/final_vnfD*.fasta > ../diazoDB-comparison/tree-comparison/nifD_anfD_vnfD.fasta
-#find tmp/ -type f -delete
-#TREE_FILE="../diazoDB-comparison/tree-comparison/nifD_anfD_vnfD.fasta"
-CLUSTER="../diazoDB-comparison/tree-comparison/nifD_anfD_vnfD_clustered.fasta"
-#CLUSTER="../diazoDB-comparison/tree-comparison/nifD_anfD_vnfD.fasta"
-#mmseqs createdb "$TREE_FILE" tmp/seqDB
-#mmseqs cluster tmp/seqDB tmp/clustered tmp --min-seq-id 0.85 -c 0.8 --cov-mode 0
-#mmseqs createtsv tmp/seqDB tmp/seqDB tmp/clustered "${CLUSTER}.tsv"
-#mmseqs result2repseq tmp/seqDB tmp/clustered tmp/clustered_reps
-#mmseqs result2flat tmp/seqDB tmp/seqDB tmp/clustered_reps "$CLUSTER" --use-fasta-header
+
+#DIR="../diazoDB-comparison/tree-comparison"
+GENE="H"
+DIR="../trees/nif${GENE}"
+TREE_FILE="${DIR}/nif${GENE}_anf${GENE}_vnf${GENE}.fasta"
+CLUSTER="${DIR}/nif${GENE}_anf${GENE}_vnf${GENE}_clustered.fasta"
+
+mkdir -p "${DIR}/tmp"
+find "${DIR}/tmp"/ -type f -delete
+
+mmseqs createdb "$TREE_FILE" "${DIR}/tmp/seqDB"
+mmseqs cluster "${DIR}/tmp/seqDB" "${DIR}/tmp/clustered" "${DIR}/tmp" --min-seq-id 0.9 -c 0.8 --cov-mode 0
+mmseqs createtsv "${DIR}/tmp/seqDB" "${DIR}/tmp/seqDB" "${DIR}/tmp/clustered" "${CLUSTER}.tsv"
+mmseqs result2repseq "${DIR}/tmp/seqDB" "${DIR}/tmp/clustered" "${DIR}/tmp/clustered_reps"
+mmseqs result2flat "${DIR}/tmp/seqDB" "${DIR}/tmp/seqDB" "${DIR}/tmp/clustered_reps" "$CLUSTER" --use-fasta-header
 
 # count clusters
-#num=$(grep ">" "$CLUSTER" | wc -l)
-#echo "$num clusters for 0.85"
+num=$(grep ">" "$CLUSTER" | wc -l)
+echo "$num clusters for 0.9"
 
 # add outgroup
-#cat ../trees/BchL.fasta >> ../trees/nifH/nifH_vnfH_anfH_clustered.fasta
+cat ../trees/BchL.fasta >> "$CLUSTER"
 #cat ../trees/CfbD.fasta ../trees/BchN.fasta ../trees/BchB.fasta >> "$CLUSTER"
 
 # find comparison database closest match to clusters
@@ -72,13 +78,13 @@ CLUSTER="${CLUSTER%.*}"
 #mafft --auto --thread 4 ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.fasta > ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.aln
 #mafft --auto --thread 4 ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.fasta > ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.aln
 #mafft --auto --thread 4 ../trees/nifH/nifH_vnfH_anfH_clustered.fasta > ../trees/nifH/nifH_vnfH_anfH_clustered.aln
-#mafft --auto --thread 4 "${CLUSTER}.fasta" > "${CLUSTER}.aln"
+mafft --auto --thread 4 "${CLUSTER}.fasta" > "${CLUSTER}.aln"
 
 # remove gappy alignments
 #trimal -in ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.aln -out ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.trim -sgc -gappyout -keepheader
 #trimal -in ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.aln -out ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.trim -sgc -gappyout -keepheader
 #trimal -in ../trees/nifH/nifH_vnfH_anfH_clustered.aln -out ../trees/nifH/nifH_vnfH_anfH_clustered.trim -sgc -gappyout -keepheader
-#trimal -in "${CLUSTER}.aln" -out "${CLUSTER}.trim" -sgc -gappyout -keepheader
+trimal -in "${CLUSTER}.aln" -out "${CLUSTER}.trim" -sgc -gappyout -keepheader
 
 echo "tree building"
 # build maximum likelihood tree
@@ -86,7 +92,7 @@ echo "tree building"
 #iqtree -s ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.trim -safe -m LG+R10 -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000 #use this to find best model and threads
 #iqtree -s ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.trim -safe -m MFP -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000
 #iqtree -s ../trees/nifH/nifH_vnfH_anfH_clustered.trim -safe -m MFP -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000
-iqtree -s "${CLUSTER}.trim" -safe -m MFP -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000
+iqtree -s "${CLUSTER}.trim" -pre "${CLUSTER}" -safe -m MFP -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000
 
 # Replace tree tip IDs with metadata-matched organism/cluster/genome/contig/operon IDs.
 #TREE_FILE="../trees/nifH/nifH_vnfH_anfH_clustered.trim.treefile"

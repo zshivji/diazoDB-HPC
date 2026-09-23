@@ -119,9 +119,7 @@ def tree_node_match_metadata(tree_file):
                     organism = row['Organism']
                     clusterID = row['cluster']
                     genome = row['GenomeID']
-                    contig = row['contig']
-                    operon = row['operon']
-                    new_name = f"{organism} | {clusterID} | {genome} | {contig} | {operon}"
+                    new_name = f"{organism} | {clusterID} | {genome} | {protein}"
                     break
 
         clade.name = new_name

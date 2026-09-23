@@ -219,6 +219,43 @@ def get_plot_data(nif_final_file, clusters_file, operon_dir):
     gene_data.to_csv(Path(operon_dir) / 'operon-org-plot-data.csv', index=False)
     return gene_data
 
+# need tree built with final data to get group info
+    # appends Grou info onto exisiting nif_final.csv and nif_clusters.csv
+def get_group():
+    nif = pd.read_csv('../results/final/nif_final.csv')
+
+    # start with assigning nifH clusters
+    gene = 'H'
+
+    # get clustered datapoints
+    tree_clusters = pd.read_csv(f'../trees/nif{gene}/nif{gene}_anf{gene}_vnf{gene}_clustered.fasta.tsv', sep = '\t', names = ['hit', 'cluster']) 
+    tree_clusters.set_index('hit', inplace=True)
+
+    # assign group 
+    for group in ['1', '2', '3', '4a', '4c', '3anfvnf']:
+        lines = []
+        hits = []
+        with open(f'nif_groups/nif{gene}_group{group}.txt','r') as f:
+            lines = f.read().splitlines()
+            for line in lines:
+                hit = line.split('|')[-1]
+                hits.append(hit) # reformat "hits" to match nif index
+                hits.extend(tree_clusters[hit]) # add clustered hits to list of hits to update
+        for hit in hits:
+            nif.loc[nif.protein==hit, 'Group'] = f'Group {group}'
+
+    # export updated nif_final.csv with group info
+    nif.to_csv('../results/final/nif_final.csv', index=False)
+
+    # export updated nif_clusters.csv with group info
+    clusters = pd.read_csv('../results/final/nif_clusters.csv')
+    # add Group col to nif_clusters.csv by matching rows GenomID, contig, cluster, and operon to nif_final.csv
+        # how='left' --> keep all rows in nif_clusters.csv, even if no match in nif_final.csv
+        # validate='many_to_one' --> each row in nif_clusters.csv should match at most one row in nif_final.csv
+    clusters = clusters.merge(nif[['GenomeID', 'contig', 'cluster', 'operon', 'Group']], 
+                              on=['GenomeID', 'contig', 'cluster', 'operon'], how='left', validate='many_to_one')
+    clusters.to_csv('../results/final/nif_clusters.csv', index=False)
+
 # export metadata.json for displaying hover info on diazoDB phylo tree
 def export_metadata(gene_data, operons, metadata_file):
     indexed_gene_data = gene_data.set_index(
@@ -344,6 +381,7 @@ def main() -> None:
     elif args.export or args.plot:
         results = pd.read_csv(args.clusters_file)
         gene_data = pd.read_csv(args.operon_dir / 'operon-org-plot-data.csv')
+        get_group() # make sure nif group info is appended to nif_final.csv and nif_clusters.csv
 
         if args.export:
             print("Exporting operon organization to metadata.json", flush=True)
