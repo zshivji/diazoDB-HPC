@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 
 from pydantic import EmailStr
-from sqlalchemy import JSON, Column, DateTime
+from sqlalchemy import JSON, BigInteger, Column, DateTime
 from sqlmodel import Field, Relationship, SQLModel
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -28,8 +28,12 @@ class Job(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
     filename: str
-    file_size_bytes: int | None = None
-    bytes_received: int = Field(default=0)
+    file_size_bytes: int | None = Field(
+        default=None, sa_column=Column(BigInteger, nullable=True)
+    )
+    bytes_received: int = Field(
+        default=0, sa_column=Column(BigInteger, nullable=False)
+    )
     status: JobStatus = Field(default=JobStatus.created)
     seen_by_runner: bool = Field(default=False)
     result_filename: str | None = None
