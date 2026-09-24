@@ -28,6 +28,23 @@ DIAZODB_HMM_PROFILE=/path/to/combined_nif.hmm
 DIAZODB_USE_PRODIGAL=false
 ```
 
+The runner sizes each Slurm submission from the downloaded input file. The
+current calibration point is a 2,004,971-byte input that used 106 seconds of
+walltime. Defaults are bounded at 10-70 minutes, 1-4 CPUs, and 16-100 GB of
+memory, with a 3x time safety factor. These settings can be tuned without code
+changes:
+
+```bash
+DIAZODB_REFERENCE_INPUT_BYTES=2004971
+DIAZODB_REFERENCE_ELAPSED_SECONDS=106
+DIAZODB_RESOURCE_SAFETY_FACTOR=3
+DIAZODB_MIN_TIME_MINUTES=10
+DIAZODB_MAX_TIME_MINUTES=70
+DIAZODB_MIN_MEMORY_GB=16
+DIAZODB_MAX_MEMORY_GB=100
+DIAZODB_MAX_CPUS=4
+```
+
 The runner performs one poll per invocation and is intended to be invoked
 periodically by cron.
 

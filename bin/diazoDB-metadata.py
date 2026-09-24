@@ -228,8 +228,7 @@ def get_group():
     gene = 'H'
 
     # get clustered datapoints
-    tree_clusters = pd.read_csv(f'../trees/nif{gene}/nif{gene}_anf{gene}_vnf{gene}_clustered.fasta.tsv', sep = '\t', names = ['hit', 'cluster']) 
-    tree_clusters.set_index('hit', inplace=True)
+    tree_clusters = pd.read_csv(f'../trees/nif{gene}/nif{gene}_anf{gene}_vnf{gene}_clustered.fasta.tsv', sep = '\t', names=['cluster', 'hits']) 
 
     # assign group 
     for group in ['1', '2', '3', '4a', '4c', '3anfvnf']:
@@ -238,9 +237,9 @@ def get_group():
         with open(f'nif_groups/nif{gene}_group{group}.txt','r') as f:
             lines = f.read().splitlines()
             for line in lines:
-                hit = line.split('|')[-1]
+                hit = '_'.join(line.split('|')[-1].strip().replace("'", "").split(' '))
                 hits.append(hit) # reformat "hits" to match nif index
-                hits.extend(tree_clusters[hit]) # add clustered hits to list of hits to update
+                hits.extend(tree_clusters.cluster==hit) # add clustered hits to list of hits to update
         for hit in hits:
             nif.loc[nif.protein==hit, 'Group'] = f'Group {group}'
 

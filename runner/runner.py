@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os, base64, json, shutil, subprocess, requests, logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +15,55 @@ JOB_BASE  = Path(os.environ["HPC_JOB_BASE"])
 DUMMY_RUNNER = os.environ.get("DUMMY_RUNNER", "").lower() in {"1", "true", "yes"}
 SLURM_SCRIPT = os.environ.get("SLURM_SCRIPT")
 HPC_DATABASE_BASE = os.environ.get("HPC_DATABASE_BASE")
+
+REFERENCE_INPUT_BYTES = 2_004_971
+REFERENCE_ELAPSED_SECONDS = 106
+
+
+def slurm_resources(input_bytes: int) -> dict[str, str]:
+    """Estimate a bounded Slurm request from the downloaded input size."""
+    reference_bytes = int(os.environ.get(
+        "DIAZODB_REFERENCE_INPUT_BYTES", str(REFERENCE_INPUT_BYTES)
+    ))
+    reference_seconds = int(os.environ.get(
+        "DIAZODB_REFERENCE_ELAPSED_SECONDS", str(REFERENCE_ELAPSED_SECONDS)
+    ))
+    safety_factor = float(os.environ.get("DIAZODB_RESOURCE_SAFETY_FACTOR", "3"))
+    minimum_minutes = int(os.environ.get("DIAZODB_MIN_TIME_MINUTES", "10"))
+    maximum_minutes = int(os.environ.get("DIAZODB_MAX_TIME_MINUTES", "240"))
+    maximum_cpus = int(os.environ.get("DIAZODB_MAX_CPUS", "4"))
+    minimum_memory_gb = int(os.environ.get("DIAZODB_MIN_MEMORY_GB", "16"))
+    maximum_memory_gb = int(os.environ.get("DIAZODB_MAX_MEMORY_GB", "100"))
+
+    size_ratio = max(input_bytes, 1) / reference_bytes
+    estimated_seconds = max(
+        minimum_minutes * 60,
+        int(reference_seconds * size_ratio * safety_factor + 0.999),
+    )
+    time_minutes = min(
+        maximum_minutes,
+        max(minimum_minutes, (estimated_seconds + 299) // 300 * 5),
+    )
+
+    if size_ratio <= 2:
+        cpus = 1
+    elif size_ratio <= 8:
+        cpus = 2
+    else:
+        cpus = maximum_cpus
+    cpus = min(maximum_cpus, max(1, cpus))
+
+    memory_gb = int(max(
+        minimum_memory_gb,
+        minimum_memory_gb * size_ratio ** 0.5 + 0.999,
+    ))
+    memory_gb = min(maximum_memory_gb, max(minimum_memory_gb, memory_gb))
+    return {
+        "time": f"{time_minutes}:00",
+        "cpus": str(cpus),
+        "memory": f"{memory_gb}G",
+        "microbe_threads": str(cpus),
+    }
 
 # runner polls API (HTTP request)
 def poll() -> list[dict]:
@@ -173,6 +224,7 @@ def run_slurm(
     intermediate_dir.mkdir(parents=True, exist_ok=True)
     result_path.parent.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
+    resources = slurm_resources(input_path.stat().st_size)
     export_vars = ",".join([
         "ALL",
         f"DIAZODB_JOB_ID={job_id}",
@@ -180,7 +232,16 @@ def run_slurm(
         f"DIAZODB_OUTDIR={intermediate_dir}",
         f"DIAZODB_OUTPUT={result_path}",
         f"DIAZODB_USE_PRODIGAL={os.environ.get('DIAZODB_USE_PRODIGAL', 'false')}",
+        f"DIAZODB_MICROBE_THREADS={resources['microbe_threads']}",
     ])
+    log.info(
+        "[%s] Slurm request for %d bytes: time=%s cpus=%s mem=%s",
+        job_id,
+        input_path.stat().st_size,
+        resources["time"],
+        resources["cpus"],
+        resources["memory"],
+    )
     subprocess.run(
         [
             "sbatch",
@@ -188,6 +249,12 @@ def run_slurm(
             "--parsable",
             "--job-name",
             f"diazodb_{job_id[:8]}",
+            "--time",
+            resources["time"],
+            "--cpus-per-task",
+            resources["cpus"],
+            "--mem",
+            resources["memory"],
             "--output",
             str(log_dir / "%x-%j.out"),
             "--export",

@@ -230,10 +230,10 @@ async def upload_public_file_chunk(
     dest = Path(settings.UPLOAD_DIR) / str(job.id) / job.filename
     dest.parent.mkdir(parents=True, exist_ok=True)
 
-    chunk = await request.body()
     async with aiofiles.open(dest, "r+b" if dest.exists() else "wb") as f:
         await f.seek(start)
-        await f.write(chunk)
+        async for chunk in request.stream():
+            await f.write(chunk)
 
     new_received = end + 1
     is_complete = new_received >= total

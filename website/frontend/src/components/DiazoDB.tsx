@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 
 const API_BASE = `${import.meta.env.VITE_API_URL}/api/v1`
 const RESULTS_TABLE_FILENAME = "nif_final.csv"
+const UPLOAD_CHUNK_SIZE = 25 * 1024 * 1024
 
 const theme = {
   bg: "#f7f6f2",
@@ -634,8 +635,9 @@ function UploadPage({ onSubmit }: UploadPageProps) {
   const [email, setEmail] = useState("")
   const [includeInDatabase, setIncludeInDatabase] = useState(false)
   const [orcid, setOrcid] = useState("")
-  const [sequences, setSequences] = useState("")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
   // const [useProdigal, setUseProdigal] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -644,10 +646,10 @@ function UploadPage({ onSubmit }: UploadPageProps) {
 
   const handleFile = (file: File | undefined) => {
     if (!file) return
+    setSelectedFile(file)
     setFileName(file.name)
-    const reader = new FileReader()
-    reader.onload = (e) => setSequences(e.target?.result as string)
-    reader.readAsText(file)
+    setUploadProgress(0)
+    setError(null)
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -657,27 +659,28 @@ function UploadPage({ onSubmit }: UploadPageProps) {
   }
 
   const handleSubmit = async () => {
-    if (!sequences.trim())
+    if (!selectedFile)
       return setError("Please provide sequences or upload a FASTA file.")
+    if (selectedFile.size === 0)
+      return setError("The selected FASTA file is empty.")
     if (!email.trim())
       return setError(
         "Please provide an email address for results notification.",
       )
     setError(null)
     setLoading(true)
+    setUploadProgress(0)
     try {
-      const fileSizeBytes = new Blob([sequences]).size
       const res = await fetch(`${API_BASE}/classify/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_email: email,
-          filename: fileName ?? "sequences.fasta",
-          file_size_bytes: fileSizeBytes,
+          filename: selectedFile.name,
+          file_size_bytes: selectedFile.size,
           include_in_database: includeInDatabase,
           orcid: orcid.trim() || null,
           // use_prodigal: useProdigal,
-          sequences,
         }),
       })
       if (!res.ok) {
@@ -697,6 +700,33 @@ function UploadPage({ onSubmit }: UploadPageProps) {
         throw new Error(`HTTP ${res.status} ${res.statusText}${suffix}`)
       }
       const data = await res.json()
+
+      let offset = 0
+      while (offset < selectedFile.size) {
+        const end = Math.min(offset + UPLOAD_CHUNK_SIZE, selectedFile.size)
+        const uploadRes = await fetch(
+          `${API_BASE}/classify/${data.id}/upload`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Range": `bytes ${offset}-${end - 1}/${selectedFile.size}`,
+            },
+            body: selectedFile.slice(offset, end),
+          },
+        )
+
+        if (!uploadRes.ok) {
+          const detail = await uploadRes.text()
+          const suffix = detail ? ` - ${detail}` : ""
+          throw new Error(
+            `Upload failed: HTTP ${uploadRes.status} ${uploadRes.statusText}${suffix}`,
+          )
+        }
+
+        offset = end
+        setUploadProgress(Math.round((offset / selectedFile.size) * 100))
+      }
+
       onSubmit({ jobId: data.id, email })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error"
@@ -759,6 +789,8 @@ function UploadPage({ onSubmit }: UploadPageProps) {
             <input
               style={styles.input}
               type="text"
+              name="orcid"
+              autoComplete="off"
               inputMode="numeric"
               placeholder="0000-0000-0000-0000"
               value={orcid}
@@ -815,6 +847,19 @@ function UploadPage({ onSubmit }: UploadPageProps) {
                 </span>
               )}
             </div>
+
+            {loading && uploadProgress > 0 && uploadProgress < 100 && (
+              <div style={{ marginBottom: "20px" }}>
+                <progress
+                  value={uploadProgress}
+                  max={100}
+                  style={{ width: "100%" }}
+                />
+                <div style={{ ...styles.sidebarText, marginTop: "6px" }}>
+                  Uploading {uploadProgress}%
+                </div>
+              </div>
+            )}
 
             {/* <div style={styles.divider}>
               <div style={styles.dividerLine} />

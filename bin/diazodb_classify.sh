@@ -8,11 +8,11 @@
 #   DIAZODB_OUTPUT   - final CSV path to post back to the API
 
 # Operon annotation is substantially slower than HMM classification.
-#SBATCH --time=1:10:00
+#SBATCH --time=0:10:00
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=100GB
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=16G
 #SBATCH -J diazodb_operon
 #SBATCH -o /resnick/scratch/zshivji/diazoDB-HPC/logs/%x-%j.out
 
@@ -45,6 +45,7 @@ DIAZODB_CONDA_ENV="${DIAZODB_CONDA_ENV:-/resnick/groups/enviromics/zahra/minicon
 CONDA_BIN="${DIAZODB_CONDA_BIN:-/resnick/groups/enviromics/zahra/miniconda3/bin/conda}"
 MICROBE_ENV="${DIAZODB_MICROBE_ENV:-/resnick/groups/enviromics/zahra/miniconda3/envs/microbeannotator}"
 MICROBE_DB="${DIAZODB_MICROBE_DB:-/resnick/groups/enviromics/databases/microbeannotator-db}"
+MICROBE_THREADS="${DIAZODB_MICROBE_THREADS:-1}"
 
 QUERY_FASTA="$INPUT_FASTA"
 # Allow deployments to pin a profile explicitly; keep the repository's current
@@ -183,7 +184,7 @@ if [[ -s "$OPERON_CLUSTERS" && -s "$OPERON_NIF_FINAL" ]]; then
       --outdir "$OPERON_ANNOT_DIR" \
       --method diamond \
       --database "$MICROBE_DB" \
-      -t "${DIAZODB_MICROBE_THREADS:-4}" \
+      -t "$MICROBE_THREADS" \
       --refine \
       --light \
       --no_plot
