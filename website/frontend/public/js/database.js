@@ -42,6 +42,7 @@ const rowCellMap = {
 
 const sortKeyMap = {
   "Organism": "Organism",
+  "GroupNo": "Group",
   "NitrogenaseSet": "Nitrogenase Set",
   "Env": "Isolation Source",
   "GenomeID": "GenomeID",
@@ -86,7 +87,7 @@ function cleanGTDBPhylo(taxonomy) {
 }
 
 function getGroupTagClass(groupValue) {
-  const normalized = String(groupValue || "")
+  const normalized = String(groupValue ?? "")
     .toLowerCase()
     .replace(/\s+/g, "")
     .replace(/^group/, "")
@@ -150,7 +151,8 @@ function buildRowNode(row, idx) {
 
   const groupCell = tr.querySelector(".col-GroupNo")
   if (groupCell) {
-    const value = String(row.GroupNo || "").trim()
+    // The cluster CSV calls this field "Group"; keep GroupNo for older uploads.
+    const value = String(row.Group ?? row.GroupNo ?? "").trim()
     if (value) {
       const tag = document.createElement("span")
       tag.className = `group-tag ${getGroupTagClass(value)}`
