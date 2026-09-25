@@ -228,30 +228,40 @@ def get_group():
     gene = 'H'
 
     # get clustered datapoints
-    tree_clusters = pd.read_csv(f'../trees/nif{gene}/nif{gene}_anf{gene}_vnf{gene}_clustered.fasta.tsv', sep = '\t', names=['cluster', 'hits']) 
+    tree_clusters = pd.read_csv(f'../trees/nif{gene}/nif{gene}_anf{gene}_vnf{gene}_clustered.fasta.tsv', 
+                                sep = '\t', 
+                                header = None,
+                                names = ['rep', 'acc']) 
 
     # assign group 
     for group in ['1', '2', '3', '4a', '4c', '3anfvnf']:
         lines = []
         hits = []
+        # for each group, find all matching hits in nif_final.csv
         with open(f'nif_groups/nif{gene}_group{group}.txt','r') as f:
             lines = f.read().splitlines()
             for line in lines:
                 hit = '_'.join(line.split('|')[-1].strip().replace("'", "").split(' '))
                 hits.append(hit) # reformat "hits" to match nif index
-                hits.extend(tree_clusters.cluster==hit) # add clustered hits to list of hits to update
-        for hit in hits:
-            nif.loc[nif.protein==hit, 'Group'] = f'Group {group}'
-
+                hits.extend(tree_clusters.loc[tree_clusters['rep'] == hit, 'acc'].to_list()) # add clustered hits to list of hits to update
+        
+        # Apply the nifH/anfH/vnfH group to every gene in each matched cluster
+        cluster_cols = ['GenomeID', 'contig', 'cluster', 'operon']
+        grouped_clusters = nif.loc[nif['protein'].isin(hits), cluster_cols].drop_duplicates()
+        cluster_index = pd.MultiIndex.from_frame(grouped_clusters)
+        nif_index = pd.MultiIndex.from_frame(nif[cluster_cols])
+        nif.loc[nif_index.isin(cluster_index), 'Group'] = f'Group {group}'
+    
     # export updated nif_final.csv with group info
     nif.to_csv('../results/final/nif_final.csv', index=False)
 
     # export updated nif_clusters.csv with group info
     clusters = pd.read_csv('../results/final/nif_clusters.csv')
+    clusters = clusters.drop(columns=['Group'], errors='ignore') # make sure no duplicate Group columns exist before merging
     # add Group col to nif_clusters.csv by matching rows GenomID, contig, cluster, and operon to nif_final.csv
         # how='left' --> keep all rows in nif_clusters.csv, even if no match in nif_final.csv
         # validate='many_to_one' --> each row in nif_clusters.csv should match at most one row in nif_final.csv
-    clusters = clusters.merge(nif[['GenomeID', 'contig', 'cluster', 'operon', 'Group']], 
+    clusters = clusters.merge(nif[['GenomeID', 'contig', 'cluster', 'operon', 'Group']].drop_duplicates(), 
                               on=['GenomeID', 'contig', 'cluster', 'operon'], how='left', validate='many_to_one')
     clusters.to_csv('../results/final/nif_clusters.csv', index=False)
 
@@ -363,13 +373,15 @@ def main() -> None:
         )
 
     if args.data:
-        results = pd.read_csv(args.clusters_file)
         print("Pulling operon organization data from MicrobeAnnotator output", flush=True)
         gene_data = get_plot_data(
             nif_final_file=args.nif_final_file,
             clusters_file=args.clusters_file,
             operon_dir=args.operon_dir,
         )
+
+        get_group() # make sure nif group info is appended to nif_final.csv and nif_clusters.csv
+        results = pd.read_csv(args.clusters_file)
 
         print("Exporting operon organization to metadata.json", flush=True)
         export_metadata(gene_data, results, metadata_file=args.metadata_file)
@@ -378,9 +390,9 @@ def main() -> None:
             plot(gene_data, plot_file=args.plot_file)
 
     elif args.export or args.plot:
+        get_group() # make sure nif group info is appended to nif_final.csv and nif_clusters.csv
         results = pd.read_csv(args.clusters_file)
         gene_data = pd.read_csv(args.operon_dir / 'operon-org-plot-data.csv')
-        get_group() # make sure nif group info is appended to nif_final.csv and nif_clusters.csv
 
         if args.export:
             print("Exporting operon organization to metadata.json", flush=True)
