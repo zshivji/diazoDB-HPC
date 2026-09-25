@@ -244,9 +244,12 @@ def get_group():
                 hit = '_'.join(line.split('|')[-1].strip().replace("'", "").split(' '))
                 hits.append(hit) # reformat "hits" to match nif index
                 hits.extend(tree_clusters.loc[tree_clusters['rep'] == hit, 'acc'].to_list()) # add clustered hits to list of hits to update
+                if group == '3anfvnf':
+                    hits.extend(nif.loc[nif['Gene'].isin(['anfH', 'vnfH']), 'protein'].to_list()) # add anfH/vnfH to group 3anfvnf
         
         # Apply the nifH/anfH/vnfH group to every gene in each matched cluster
         cluster_cols = ['GenomeID', 'contig', 'cluster', 'operon']
+
         grouped_clusters = nif.loc[nif['protein'].isin(hits), cluster_cols].drop_duplicates()
         cluster_index = pd.MultiIndex.from_frame(grouped_clusters)
         nif_index = pd.MultiIndex.from_frame(nif[cluster_cols])
@@ -257,7 +260,7 @@ def get_group():
 
     # export updated nif_clusters.csv with group info
     clusters = pd.read_csv('../results/final/nif_clusters.csv')
-    clusters = clusters.drop(columns=['Group'], errors='ignore') # make sure no duplicate Group columns exist before merging
+    clusters = clusters.drop(columns=['Group', 'Group No', 'Group_x', 'Group_y'], errors='ignore') # make sure no duplicate Group columns exist before merging
     # add Group col to nif_clusters.csv by matching rows GenomID, contig, cluster, and operon to nif_final.csv
         # how='left' --> keep all rows in nif_clusters.csv, even if no match in nif_final.csv
         # validate='many_to_one' --> each row in nif_clusters.csv should match at most one row in nif_final.csv
