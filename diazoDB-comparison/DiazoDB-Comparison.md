@@ -53,6 +53,12 @@ NSDB (updated April 9)
     (nif-iii: 31)
     anf: 17
     vnf: 17
+- seqeucnes accessed:
+  - date:
+  - url:
+  - post-processing:
+    - convert aln to fasta:
+    - extract extant (v ancestral) sequences only: awk 'BEGIN {RS=">"} NR>1 {if ($0 !~ /^[0-9]/) print ">"$0}' ../diazoDB-comparison/Kacar-Results/converted-nifH.fasta > ../diazoDB-comparison/Kacar-Results/converted-nifH-extant.fasta
 
 Cyano/Nif-Finder (updated April 9)
 - published: BioRxiv, Jan 15 2026
@@ -78,12 +84,12 @@ _ license:
 - notes:
     - software tool not dataset
     - how do they define accuracy & sensitivity? what is the test set
+    - code is written in matlab
 - number of sequences
     nifH:
     nifD:
     nifK:
 - groups: N/A
-
 
 Carmna:
 - published: Mar 2025

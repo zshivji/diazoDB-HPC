@@ -133,7 +133,7 @@ python parse_hmm.py \
   --skip_taxonomy
 
 # Run conserved-residue classification entirely within this job's directories.
-python conserved-res.py \
+python conserved_res.py \
   --reload_fasta \
   --hits_file "$JOB_PARSED_HITS" \
   --results_dir "$JOB_CONSERVED_DIR" \
