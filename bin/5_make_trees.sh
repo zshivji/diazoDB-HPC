@@ -53,15 +53,15 @@ CLUSTER="${DIR}/nif${GENE}_anf${GENE}_vnf${GENE}_clustered.fasta"
 
 #module load blast/2.15.0
 #makeblastdb -in "$CLUSTER" -dbtype prot
-#blastp -query ../diazoDB-comparison/Kacar-Results/swh:1:dir:7c3fb980f24a20df3144ebbf1f4be9feb80c634f/converted-nifD-extant.fasta -db "$CLUSTER" -out ../diazoDB-comparison/tree-comparison/NSDB.blast -outfmt 6 -max_target_seqs 5
-#blastp -query ../diazoDB-comparison/NFixDB-Results/nifD_anfD_vnfD_12192023.faa -db "$CLUSTER" -out ../diazoDB-comparison/tree-comparison/NFixDB.blast -outfmt 6 -max_target_seqs 5
+#blastp -query ../diazoDB-comparison/NSDB/converted-nifD-extant.fasta -db "$CLUSTER" -out ../diazoDB-comparison/tree-comparison/NSDB.blast -outfmt 6 -max_target_seqs 5
+#blastp -query ../diazoDB-comparison/NFixDB/nifD_anfD_vnfD_12192023.faa -db "$CLUSTER" -out ../diazoDB-comparison/tree-comparison/NFixDB.blast -outfmt 6 -max_target_seqs 5
 #blastp -query ../diazoDB-comparison/Nif-finder-Results/true-nifD.faa -db "$CLUSTER" -out ../diazoDB-comparison/tree-comparison/Nif-Finder.blast -outfmt 6 -max_target_seqs 5
 
 # return sequences without a match in DiazoDB (pident > 90%)
 #awk '$2 > 99 {print $1}' ../diazoDB-comparison/tree-comparison/NFixDB-full.blast | sort -u > ../diazoDB-comparison/tree-comparison/NFixDB-matches.txt
 #seqkit grep -v -f ../diazoDB-comparison/tree-comparison/NFixDB-matches.txt ../diazoDB-comparison/NFixDB-Results/nifD_anfD_vnfD_12192023.faa -o ../diazoDB-comparison/tree-comparison/NFixDB-no_hits.fasta
 #awk '$2 > 99 {print $1}' ../diazoDB-comparison/tree-comparison/NSDB-full.blast | sort -u > ../diazoDB-comparison/tree-comparison/NSDB-matches.txt
-#seqkit grep -v -f ../diazoDB-comparison/tree-comparison/NSDB-matches.txt ../diazoDB-comparison/Kacar-Results/swh:1:dir:7c3fb980f24a20df3144ebbf1f4be9feb80c634f/converted-nifD-extant.fasta -o ../diazoDB-comparison/tree-comparison/NSDB-no_hits.fasta
+#seqkit grep -v -f ../diazoDB-comparison/tree-comparison/NSDB-matches.txt ../diazoDB-comparison/NSDB/converted-nifD-extant.fasta -o ../diazoDB-comparison/tree-comparison/NSDB-no_hits.fasta
 #awk '$2 > 99 {print $1}' ../diazoDB-comparison/tree-comparison/Nif-Finder-full.blast | sort -u > ../diazoDB-comparison/tree-comparison/Nif-Finder-matches.txt
 #seqkit grep -v -f ../diazoDB-comparison/tree-comparison/Nif-Finder-matches.txt ../diazoDB-comparison/Nif-finder-Results/true-nifD.faa -o ../diazoDB-comparison/tree-comparison/Nif-Finder-no_hits.fasta
 

@@ -58,7 +58,7 @@ NSDB (updated April 9)
   - url:
   - post-processing:
     - convert aln to fasta:
-    - extract extant (v ancestral) sequences only: awk 'BEGIN {RS=">"} NR>1 {if ($0 !~ /^[0-9]/) print ">"$0}' ../diazoDB-comparison/Kacar-Results/converted-nifH.fasta > ../diazoDB-comparison/Kacar-Results/converted-nifH-extant.fasta
+    - extract extant (v ancestral) sequences only: awk 'BEGIN {RS=">"} NR>1 {if ($0 !~ /^[0-9]/) print ">"$0}' ../diazoDB-comparison/NSDB/converted-nifH.fasta > ../diazoDB-comparison/NSDB/converted-nifH-extant.fasta
 
 Cyano/Nif-Finder (updated April 9)
 - published: BioRxiv, Jan 15 2026
@@ -73,6 +73,10 @@ Cyano/Nif-Finder (updated April 9)
     nif: 351
     anf: 
     vnf: 
+
+NFixPlanet
+- https://zenodo.org/records/20644959?preview_file=NFixPlanet_db_r1.0.zip
+- seqkit translate fna/nif*.fna > nif*.faa
 
 TOOLS
 

@@ -28,7 +28,7 @@ DB="${VENN_DIR}/nifD_anfD_vnfD.fasta"
 # find comparison database closest match to NIFDs
 module load blast/2.15.0
 #makeblastdb -in "$NIFD" -dbtype prot -out "$DB" 
-#blastp -query ../diazoDB-comparison/Kacar-Results/swh:1:dir:7c3fb980f24a20df3144ebbf1f4be9feb80c634f/converted-nifD-extant.fasta -db "$DB" -out "${VENN_DIR}/NSDB.blast" -outfmt 6 -max_target_seqs 5
+#blastp -query ../diazoDB-comparison/NSDB/converted-nifD-extant.fasta -db "$DB" -out "${VENN_DIR}/NSDB.blast" -outfmt 6 -max_target_seqs 5
 #blastp -query ../diazoDB-comparison/NFixDB-Results/nifD_anfD_vnfD_12192023.faa -db "$DB" -out "${VENN_DIR}/NFixDB.blast" -outfmt 6 -max_target_seqs 5
 #blastp -query ../diazoDB-comparison/Nif-finder-Results/true-nifD.faa -db "$DB" -out "${VENN_DIR}/Nif-Finder.blast" -outfmt 6 -max_target_seqs 5
 
@@ -36,13 +36,13 @@ module load blast/2.15.0
 awk '$3 > 97.5 {print $1}' "${VENN_DIR}/NFixDB.blast" | sort -u > "${VENN_DIR}/NFixDB-matches.txt"
 seqkit grep -v -f "${VENN_DIR}/NFixDB-matches.txt" ../diazoDB-comparison/NFixDB-Results/nifD_anfD_vnfD_12192023.faa -o "${VENN_DIR}/NFixDB-no_hits.fasta"
 awk '$3 > 97.5 {print $1}' "${VENN_DIR}/NSDB.blast" | sort -u > "${VENN_DIR}/NSDB-matches.txt"
-seqkit grep -v -f "${VENN_DIR}/NSDB-matches.txt" ../diazoDB-comparison/Kacar-Results/swh:1:dir:7c3fb980f24a20df3144ebbf1f4be9feb80c634f/converted-nifD-extant.fasta -o "${VENN_DIR}/NSDB-no_hits.fasta"
+seqkit grep -v -f "${VENN_DIR}/NSDB-matches.txt" ../diazoDB-comparison/NSDB/converted-nifD-extant.fasta -o "${VENN_DIR}/NSDB-no_hits.fasta"
 awk '$3 > 97.5 {print $1}' "${VENN_DIR}/Nif-Finder.blast" | sort -u > "${VENN_DIR}/Nif-Finder-matches.txt"
 seqkit grep -v -f "${VENN_DIR}/Nif-Finder-matches.txt" ../diazoDB-comparison/Nif-finder-Results/true-nifD.faa -o "${VENN_DIR}/Nif-Finder-no_hits.fasta"
 
 #inter-database comparison
 DB="${VENN_DIR}/NSDB"
-#makeblastdb -in ../diazoDB-comparison/Kacar-Results/swh:1:dir:7c3fb980f24a20df3144ebbf1f4be9feb80c634f/converted-nifD-extant.fasta -dbtype prot -out "$DB"
+#makeblastdb -in ../diazoDB-comparison/NSDB/converted-nifD-extant.fasta -dbtype prot -out "$DB"
 #blastp -query ../diazoDB-comparison/NFixDB-Results/nifD_anfD_vnfD_12192023.faa -db "$DB" -out "${VENN_DIR}/NSDB-v-NFixDB.blast" -outfmt 6 -max_target_seqs 5
 #blastp -query ../diazoDB-comparison/Nif-finder-Results/true-nifD.faa -db "$DB" -out "${VENN_DIR}/NSDB-v-Nif-Finder.blast" -outfmt 6 -max_target_seqs 5
 awk '$3 > 97.5 {print $1}' "${VENN_DIR}/NSDB-v-NFixDB.blast" | sort -u > "${VENN_DIR}/NSDB-v-NFixDB-matches.txt"
