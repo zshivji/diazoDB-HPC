@@ -25,12 +25,14 @@ echo "preprocessing"
 # cluster, to keep full fasta header, run easy-cluster workflow separately
 #cat ../results/final/fastas/final_nifH.fasta ../results/final/fastas/final_vnfH.fasta ../results/final/fastas/final_anfH.fasta > ../trees/nifH/nifH_anfH_vnfH.fasta
 #cat ../results/final/fastas/final_nifD*.fasta ../results/final/fastas/final_anfD*.fasta ../results/final/fastas/final_vnfD*.fasta > ../diazoDB-comparison/tree-comparison/nifD_anfD_vnfD.fasta
+#cat nifD_clustered_0.75_allDB.fasta ../Nfl/nflD.fasta ../../trees/BchB.fasta ../../trees/CfbD.fasta > nifD_clustered_0.75_allDB_outgroup.fasta
 
-#DIR="../diazoDB-comparison/tree-comparison"
-GENE="H"
-DIR="../trees/nif${GENE}"
-TREE_FILE="${DIR}/nif${GENE}_anf${GENE}_vnf${GENE}.fasta"
-CLUSTER="${DIR}/nif${GENE}_anf${GENE}_vnf${GENE}_clustered.fasta"
+DIR="../diazoDB-comparison/tree-comparison"
+GENE="D"
+CLUSTER="${DIR}/nifD_clustered_0.75_allDB_outgroup.fasta"
+#DIR="../trees/nif${GENE}"
+#TREE_FILE="${DIR}/nif${GENE}_anf${GENE}_vnf${GENE}.fasta"
+#CLUSTER="${TREE_FILE%.*}_cluster.fasta"
 
 #mkdir -p "${DIR}/tmp"
 #find "${DIR}/tmp"/ -type f -delete
@@ -78,13 +80,13 @@ CLUSTER="${CLUSTER%.*}"
 #mafft --auto --thread 4 ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.fasta > ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.aln
 #mafft --auto --thread 4 ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.fasta > ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.aln
 #mafft --auto --thread 4 ../trees/nifH/nifH_vnfH_anfH_clustered.fasta > ../trees/nifH/nifH_vnfH_anfH_clustered.aln
-#mafft --auto --thread 4 "${CLUSTER}.fasta" > "${CLUSTER}.aln"
+mafft --auto --thread 4 "${CLUSTER}.fasta" > "${CLUSTER}.aln"
 
 # remove gappy alignments
 #trimal -in ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.aln -out ../trees/nifK_noOut_04292025/clustered_nifK_noOut_rep_seq.trim -sgc -gappyout -keepheader
 #trimal -in ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.aln -out ../trees/nifH_500nodes/nifH_500nodes_clustered_rep_seq.trim -sgc -gappyout -keepheader
 #trimal -in ../trees/nifH/nifH_vnfH_anfH_clustered.aln -out ../trees/nifH/nifH_vnfH_anfH_clustered.trim -sgc -gappyout -keepheader
-#trimal -in "${CLUSTER}.aln" -out "${CLUSTER}.trim" -sgc -gappyout -keepheader
+trimal -in "${CLUSTER}.aln" -out "${CLUSTER}.trim" -sgc -gappyout -keepheader
 
 echo "tree building"
 # build maximum likelihood tree
@@ -95,7 +97,7 @@ echo "tree building"
 iqtree -s "${CLUSTER}.trim" -pre "${CLUSTER}" -safe -m MFP -msub nuclear -T AUTO -ntmax 8 -B 1000 -alrt 1000
 
 # Replace tree tip IDs with metadata-matched organism/cluster/genome/contig/operon IDs.
-python helper.py tree_node_match_metadata "${CLUSTER}.treefile"
+#python helper.py tree_node_match_metadata "${CLUSTER}.treefile"
 
 echo ""
 echo "======================================================"

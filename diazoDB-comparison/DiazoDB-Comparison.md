@@ -60,7 +60,7 @@ NSDB (updated April 9)
     - convert aln to fasta:
     - extract extant (v ancestral) sequences only: awk 'BEGIN {RS=">"} NR>1 {if ($0 !~ /^[0-9]/) print ">"$0}' ../diazoDB-comparison/NSDB/converted-nifH.fasta > ../diazoDB-comparison/NSDB/converted-nifH-extant.fasta
 
-Cyano/Nif-Finder (updated April 9)
+Cyano/Nif_Finder (updated Sept 29)
 - published: BioRxiv, Jan 15 2026
 - paper: https://doi.org/10.64898/2026.01.15.699626
 - data:
@@ -71,8 +71,12 @@ Cyano/Nif-Finder (updated April 9)
     - 285 nifHDKENB
 - groups
     nif: 351
-    anf: 
+    anf: 0
     vnf: 
+- data isn't really publically avail, they have cyano seqs avail for download on git but not all the GTDB data
+    - https://github.com/kazumaxneo/Nif_finder/tree/main --> generl_bacteria/nif*/true_nif*.faa
+    - note, fasta files only avail for nifHDK... not vnfHDK
+    - nif*classification seems to represent GTDB results but there are no accession numbers
 
 NFixPlanet
 - https://zenodo.org/records/20644959?preview_file=NFixPlanet_db_r1.0.zip

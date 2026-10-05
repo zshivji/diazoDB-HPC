@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH --time=04:04:00   # walltime #8hrs?
+#SBATCH --time=01:04:00   # walltime #8hrs?
 #SBATCH --ntasks=4   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=1   # number of nodes
-#SBATCH --mem 10GB   # memory per CPU core
+#SBATCH --mem 4GB   # memory per CPU core
 #SBATCH --job-name=checkDB   # job name
 #SBATCH -o logs/%x-%j.out # STDOUT
 
@@ -113,10 +113,11 @@ for i, split_path in enumerate(sorted(glob.glob(f"{split_prefix}.*.fa")), start=
             residue_scores,
             passing_score,
             p=(i == 1),
-        )[:-1]
+        )
     )
 
 df = pd.concat(checked) if checked else pd.DataFrame()
+df.drop_duplicates(inplace=True)
 out_file = file_dir / f"{fasta.stem}_rescheck.csv"
 df.to_csv(out_file)
 print(f"Saved {df.shape[0]} rows to {out_file} \n", flush=True)

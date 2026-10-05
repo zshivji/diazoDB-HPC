@@ -256,22 +256,15 @@ def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../res
             residue_scores = [1] * len(important_residues)
         passing_score = config[gene]['passing_score']
 
-        # initialize dataframe from first split
-        first_file = os.path.join(results_dir, 'fasta_splits', f"{gene}_split.00001.aln")
-        if not os.path.exists(first_file):
-            all_genes_checked[gene] = pd.DataFrame()
-            continue
-        checked = check_gene(first_file, important_residues, residue_scores, passing_score, p=True)
+        # loop through each split and check for conserved residues
+        checked = []
+        for i, file in enumerate(glob.glob(os.path.join(results_dir, 'fasta_splits', f"{gene}_split.*.aln"))):
+            checked.append(check_gene(file, important_residues, residue_scores, passing_score, p=(i==1)))
 
-        for file in glob.glob(os.path.join(results_dir, 'fasta_splits', f"{gene}_split.*.aln")):
-            if f'{gene}_split.00001' in file:
-                continue
-            new = check_gene(file, important_residues, residue_scores, passing_score)
-            checked = pd.concat([checked, new])
-
-        checked.drop_duplicates(subset = ['hit'], inplace = True)
-        checked.set_index(['hit'], append= True, inplace = True)
-        checked.to_csv(os.path.join(results_dir, f'{gene}_residues.csv'))
+        checked_df = pd.concat(checked) if checked else pd.DataFrame()
+        checked_df.drop_duplicates(subset = ['hit'], inplace = True)
+        checked_df.set_index(['hit'], append= True, inplace = True)
+        checked_df.to_csv(os.path.join(results_dir, f'{gene}_residues.csv'))
 
         # only keep gene where residue matching passed
         tmp = gene_list[(gene_list['Gene'] == gene) & (gene_list['Hit'].isin(checked.index.get_level_values(1)))].copy()
