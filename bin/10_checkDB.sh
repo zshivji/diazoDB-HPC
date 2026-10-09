@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --time=01:04:00   # walltime #8hrs?
+#SBATCH --time=03:04:00   # walltime #8hrs?
 #SBATCH --ntasks=4   # number of processor cores (i.e. tasks)
 #SBATCH --nodes=1   # number of nodes
 #SBATCH --mem 4GB   # memory per CPU core
@@ -117,10 +117,25 @@ for i, split_path in enumerate(sorted(glob.glob(f"{split_prefix}.*.fa")), start=
     )
 
 df = pd.concat(checked) if checked else pd.DataFrame()
-df.drop_duplicates(inplace=True)
+df = df.reset_index().drop_duplicates().set_index('index')
 out_file = file_dir / f"{fasta.stem}_rescheck.csv"
 df.to_csv(out_file)
-print(f"Saved {df.shape[0]} rows to {out_file} \n", flush=True)
+print(f"Saved {df.shape[0]-1} rows to {out_file}", flush=True)
+
+# export the passing records to a new fasta file
+passed_fasta = file_dir / f"{fasta.stem}_rescheck.fasta"
+
+passed_hits = set(df.index.dropna().astype(str))
+
+passed_records = []
+for record in SeqIO.parse(fasta, "fasta"):
+    if record.id in passed_hits:
+        passed_records.append(record)
+
+    with open(passed_fasta, "w") as output_handle:
+        SeqIO.write(passed_records, output_handle, "fasta")
+
+print(f"Saved {len(passed_records)} passing records to {passed_fasta} \n", flush=True)
 PY
 done
 

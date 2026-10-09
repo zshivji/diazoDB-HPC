@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH --time=1:00:00
+#SBATCH --time=0:20:00
 #SBATCH --ntasks=4
 #SBATCH --nodes=1
-#SBATCH --mem=40GB
+#SBATCH --mem=4GB
 #SBATCH --job-name=clusterDB
 #SBATCH -o logs/%x-%j.out
 
@@ -62,13 +62,20 @@ for gene in $(tail -n +2 "${TABLE_PATH}" | cut -d, -f2 | sort -u); do
     : > "${input}"
     while IFS=, read -r file file_gene; do
         [[ "${file_gene}" == "${gene}" ]] || continue
+        # only get rechecked (TP) seqs aka those that passed 10_checkDB.sh
+        file="${DIR}/${file%.*}_rescheck.fasta"
 
-        file="${DIR}/${file}"
+        # append newline to end of file if not present
+        sed -i -e '$a\' "${file}"
+
         database="${file#${DIR}/}"
         database="${database%%/*}"
         sed "s/^>/>${database}_/" "${file}" >> "${input}"
     done < <(tail -n +2 "${TABLE_PATH}")
 
+    # replace .. with DiazoDB (dir name change)
+    sed -i 's/\.\./DiazoDB/g' "${input}"
+    
     echo "Clustering ${gene} at ${THRESHOLD} identity"
     mmseqs easy-cluster "${input}" "${cluster}" "${OUTPUT_DIR}/tmp/${gene}" \
         --min-seq-id "${THRESHOLD}" -c "${C}" --cov-mode "${COV_MODE}" --threads 4
