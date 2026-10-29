@@ -11,14 +11,6 @@ from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
 import Bio.Phylo.NewickIO
 
-def default_proteins_dir() -> str:
-    """Resolve the GTDB protein reps directory with sensible fallbacks."""
-    if os.getenv("DIAZODB_PROTEIN_REPS_DIR"):
-        return os.environ["DIAZODB_PROTEIN_REPS_DIR"]
-    if os.path.isdir("../protein_faa_reps_latest"):
-        return "../protein_faa_reps_latest"
-    return "../protein_faa_reps_232"
-
 def load_nif(update_index, archaea_only=False, hits_file=None):
     if hits_file:
         nif = pd.read_csv(hits_file)
@@ -34,16 +26,38 @@ def load_nif(update_index, archaea_only=False, hits_file=None):
 
     return nif
 
+def load_faa(dir: str = "../protein_faa_reps_232", genome=None):
+    # load  protein fasta files from the specified directory
+    # if using GTDB, pull the protein fasta file for the specified genome
+    if dir == "../protein_faa_reps_232":
+        candidates = glob.glob(f"{dir}/*/{genome}_protein.faa")
+        if not candidates:
+            raise FileNotFoundError(
+                f"No protein FASTA files found under {dir}"
+            )
+        file = candidates[0]
+    else: 
+         # if running the API, the protein fasta files are organized into a single directory (accepts multiple file types)
+        files = [
+            f for f in glob.glob(f"{dir}/*")
+            if f.endswith((".faa", ".fa", ".fasta", '.txt'))
+            ]
+        if not files:
+            raise FileNotFoundError(
+                f"No protein FASTA files found under {dir}"
+            )
+        file = files[0] if files else None
+
+    return file
+
 def get_seq(genome, hit, id=None, description=None, start=None, end=None, dir: str = "../protein_faa_reps_232"):
     # get the sequence of a hit from the protein fasta file
     record_id = genome if id is None else id
     record_description = hit if description is None else description
-    candidates = glob.glob(f"{dir}/*/{genome}_protein.faa")
-    if not candidates:
-        raise FileNotFoundError(
-            f"Protein FASTA not found for genome {genome!r} under {dir}"
-        )
-    file = candidates[0]
+
+    file = load_faa(dir, genome)
+
+    # get sequence from fasta file 
     for result in SeqIO.parse(file, "fasta"):
         if result.id == hit:
             # store seq

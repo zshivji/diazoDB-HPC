@@ -12,7 +12,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from helper import load_nif, filter_groups_by_unique_counts, get_seq, default_proteins_dir
+from helper import load_nif, filter_groups_by_unique_counts, get_seq
 from test import test
 
 # get args (reload_fasta)
@@ -48,7 +48,7 @@ def parse_args() -> argparse.Namespace:
             "Root containing <group>/<genome>_protein.faa files. "
             "The API runner supplies its uploaded proteins and packaged references."
         ),
-        default=default_proteins_dir(),
+        default='../protein_faa_reps_232',
     )
 
     parser.add_argument(
@@ -71,7 +71,7 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--results_dir",
+        "--tmp",
         default="../results/tmp",
         help="Directory for temporary FASTA, alignment, and residue-check files.",
     )
@@ -101,11 +101,11 @@ def write_fasta(
     gene_list: dict,
     config: dict,
     proteins_dir: str = "../protein_faa_reps_232",
-    results_dir: str = "../results/tmp",
+    tmp: str = "../results/tmp",
 ):
     """Get fasta sequences for each gene & export to fasta of domains.
     """
-    os.makedirs(results_dir, exist_ok=True)
+    os.makedirs(tmp, exist_ok=True)
     for name, gene in gene_list.items():
         print('getting ' + name + ' fasta', flush=True)
         # filter out hits that don't meet length criteria (domain is too short, pre-filtering decreases runtime)
@@ -126,27 +126,27 @@ def write_fasta(
             records.append(seq)
 
         print(len(records), "records found for " + name, flush=True)
-        with open(os.path.join(results_dir, name + ".fasta"), "w") as output_handle:
+        with open(os.path.join(tmp, name + ".fasta"), "w") as output_handle:
             SeqIO.write(records, output_handle, "fasta")
 
     gene_list = pd.concat(gene_list.values())
-    gene_list.to_csv(os.path.join(results_dir, 'hits_seq.csv'))
+    gene_list.to_csv(os.path.join(tmp, 'hits_seq.csv'))
 
     return gene_list
 
 def aln_fasta(
     genes: dict,
     config: dict,
-    results_dir: str = "../results/tmp",
+    tmp_dir: str = "../results/tmp",
 ):
     # align fasta files
-    splits_dir = os.path.join(results_dir, 'fasta_splits')
+    splits_dir = os.path.join(tmp_dir, 'fasta_splits')
     os.makedirs(splits_dir, exist_ok=True)
     for name in genes['Gene'].unique():
         print("aligning "+ name, flush=True)
         tmp = genes[genes['Gene']==name].copy()
         num = int(tmp.shape[0]/200)+1 # how many splits
-        fasta_path = os.path.join(results_dir, f"{name}.fasta")
+        fasta_path = os.path.join(tmp_dir, f"{name}.fasta")
         split_prefix = os.path.join(splits_dir, f"{name}_split")
         # split fasta file into smaller files for alignment
         subprocess.run(
@@ -241,7 +241,7 @@ def check_gene(file, important_residues, residue_scores, passing_score, p=False)
 
     return pssm
 
-def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../results/tmp") -> dict:
+def check_gene_wrapper(gene_list: dict, config: dict, tmp_dir: str = "../results/tmp") -> dict:
     print("Checking for conserved residues...", flush=True)
 
     all_genes_checked = {}
@@ -257,19 +257,21 @@ def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../res
         passing_score = config[gene]['passing_score']
 
         # loop through each split and check for conserved residues
+            # store in list of dataframes
         checked = []
-        for i, file in enumerate(glob.glob(os.path.join(results_dir, 'fasta_splits', f"{gene}_split.*.aln"))):
+        for i, file in enumerate(glob.glob(os.path.join(tmp_dir, 'fasta_splits', f"{gene}_split.*.aln"))):
             checked.append(check_gene(file, important_residues, residue_scores, passing_score, p=(i==1)))
 
+        # concat list of df into df
         checked_df = pd.concat(checked) if checked else pd.DataFrame()
         checked_df.drop_duplicates(subset = ['hit'], inplace = True)
         checked_df.set_index(['hit'], append= True, inplace = True)
-        checked_df.to_csv(os.path.join(results_dir, f'{gene}_residues.csv'))
+        checked_df.to_csv(os.path.join(tmp_dir, f'{gene}_residues.csv'))
 
         # only keep gene where residue matching passed
-        tmp = gene_list[(gene_list['Gene'] == gene) & (gene_list['Hit'].isin(checked.index.get_level_values(1)))].copy()
+        tmp = gene_list[(gene_list['Gene'] == gene) & (gene_list['Hit'].isin(checked_df.index.get_level_values(1)))].copy()
         tmp['residue_match'] = gene
-        tmp.to_csv(os.path.join(results_dir, f'{gene}_rescheck_nofilt.csv'))
+        tmp.to_csv(os.path.join(tmp_dir, f'{gene}_rescheck_nofilt.csv'))
 
         # potentially add code for (1) keeping best hit per genome and (2) removing hits that are in other genes (e.g. remove nifD,E hits from nifK)
 
@@ -278,9 +280,9 @@ def check_gene_wrapper(gene_list: dict, config: dict, results_dir: str = "../res
         print(f"{len(checked)} {gene} seqs \n", flush=True)
 
     # export
-    os.makedirs(results_dir, exist_ok=True)
+    os.makedirs(tmp_dir, exist_ok=True)
     all_genes_checked = pd.concat(all_genes_checked.values())
-    all_genes_checked.to_csv(os.path.join(results_dir, 'nif_rescheck_nofilt.csv')) # index = GenomeID
+    all_genes_checked.to_csv(os.path.join(tmp_dir, 'nif_rescheck_nofilt.csv')) # index = GenomeID
 
     return all_genes_checked
 
@@ -497,7 +499,7 @@ def export_results(
     if external: # clean up export for external DiazoDB users
         # append contig to the front of each value in pos_num 
         operons['proteins'] = operons.apply(lambda row: [f"{row['contig']}_{pos}" for pos in row['pos_num']], axis=1)
-        operons = operons[['GenomeID', 'contig', 'proteins', 'cluster', 'Nitrogenase Set', 'Location_start', 'Location_end', 'Orientation']]
+        operons = operons[['GenomeID', 'contig', 'proteins', 'cluster', 'operon', 'Nitrogenase Set', 'Location_start', 'Location_end', 'Orientation']]
 
     operons.to_csv(os.path.join(results_dir, 'nif_clusters.csv'), index=False)
 
@@ -523,15 +525,15 @@ def main() -> None:
 
     # reload + align fasta files if specified
     if args.reload_fasta:
-        gene_list = write_fasta(gene_list, config, proteins_dir=args.proteins_dir, results_dir=args.results_dir)
+        gene_list = write_fasta(gene_list, config, proteins_dir=args.proteins_dir, tmp=args.tmp)
         args.align_fasta = True  # Automatically align if reloading fasta
     else: 
-        gene_list = pd.read_csv(os.path.join(args.results_dir, 'hits_seq.csv'))
+        gene_list = pd.read_csv(os.path.join(args.tmp, 'hits_seq.csv'))
     if args.align_fasta:
-        aln_fasta(gene_list, config, results_dir=args.results_dir)
+        aln_fasta(gene_list, config, tmp_dir=args.tmp)
 
     # check for conserved residues and save results
-    checked = check_gene_wrapper(gene_list, config, results_dir=args.results_dir)
+    checked = check_gene_wrapper(gene_list, config, tmp_dir=args.tmp)
     export_results(
         checked,
         args.min_genes,

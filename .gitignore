@@ -10,6 +10,11 @@ bin/logs
 bin/old_slurm/**
 bin/batch*
 bin/__pycache__/
+
+# Large GTDB files
+bin/GTDB_taxonomy_r232.tsv
+bin/GTDB_taxonomy.tsv
+
 pangenome/batch*
 pangenome/
 runner/runner.log
@@ -50,7 +55,11 @@ website/*/playwright-report/
 website/*/blob-report/
 website/*/playwright/.cache/
 
-# DVC tracked
+# DVC Zipped (do not push .zip to github, only .zip.dvc)
+.calkit/zip/*/*.zip
+
+
+# DVC tracked (automatically uploaded by calkit w/ --to dvc or dvc-zip)
 
 all_rep_proteins_aa/archaea/
 all_rep_proteins_aa/bacteria/
@@ -70,3 +79,9 @@ protein_faa_reps_232/archaea.dvc
 protein_faa_reps_232/bacteria.dvc
 
 protein_faa_reps_232/gtdb_release_tk.log.dvc
+
+bin/GTDB_taxonomy_r232.tsv
+
+bin/bac120_taxonomy_r232.tsv
+
+bin/ar53_taxonomy_r232.tsv

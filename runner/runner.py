@@ -229,7 +229,7 @@ def run_slurm(
         "ALL",
         f"DIAZODB_JOB_ID={job_id}",
         f"DIAZODB_INPUT={input_path}",
-        f"DIAZODB_OUTDIR={intermediate_dir}",
+        f"DIAZODB_INTERMEDIATE={intermediate_dir}",
         f"DIAZODB_OUTPUT={result_path}",
         f"DIAZODB_USE_PRODIGAL={os.environ.get('DIAZODB_USE_PRODIGAL', 'false')}",
         f"DIAZODB_MICROBE_THREADS={resources['microbe_threads']}",
@@ -304,10 +304,9 @@ def process(job: dict) -> None:
         raise ValueError("Job filename is invalid")
     input_path = download_input(job, workspace / "input" / safe_filename)
     intermediate_dir = workspace / "intermediate"
-    result_path = workspace / "results" / "nif_clusters.csv"
-    final_result_path = workspace / "results" / "nif_final.csv"
-    operon_plot_path = workspace / "intermediate" / "operon-org.png"
-    operon_metadata_path = workspace / "results" / "operon_metadata.json"
+    result_path = workspace / "results" / "final" 
+    # operon_plot_path = workspace / "intermediate" / "operon-org.png"
+    operon_metadata_path = result_path / "operon_metadata.json"
     log_dir = workspace / "logs"
 
     if not input_path.exists():
@@ -322,11 +321,16 @@ def process(job: dict) -> None:
     try:
         run_analysis(job_id, input_path, intermediate_dir, result_path, log_dir)
         fasta_paths = sorted((workspace / "results" / "fastas").glob("final_*.fasta"))
-        operon_paths = [
-            path for path in (operon_plot_path, operon_metadata_path)
-            if path.exists()
-        ]
-        result_paths = [result_path, final_result_path, *fasta_paths, *operon_paths]
+        # operon_paths = [
+        #     path for path in (operon_plot_path, operon_metadata_path)
+        #     if path.exists()
+        # ]
+        result_csv_paths = sorted(result_path.glob("*.csv"))
+        if not result_csv_paths:
+            raise FileNotFoundError(
+                f"Expected at least one CSV result in {result_path}, but none was created"
+            )
+        result_paths = [*result_csv_paths, *fasta_paths, operon_metadata_path]
         missing = [path for path in result_paths if not path.exists()]
         if missing:
             raise FileNotFoundError(

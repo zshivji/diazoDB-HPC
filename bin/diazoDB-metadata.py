@@ -16,7 +16,7 @@ from pathlib import Path
 
 from Bio import SeqIO
 from pygenomeviz import GenomeViz
-from helper import default_proteins_dir
+from helper import load_faa
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -64,11 +64,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--proteins_dir",
         help=(
-            "Path to GTDB representative protein directories. "
-            "Defaults to DIAZODB_PROTEIN_REPS_DIR, then ../protein_faa_reps_latest, "
-            "then ../protein_faa_reps_232."
+            "Path to input protein directories (GTDB or DiazoDB user input). "
+            "Defaults to DIAZODB_PROTEIN_REPS_DIR, then ../protein_faa_reps_232."
         ),
-        default=default_proteins_dir(),
+        default="../protein_faa_reps_232",
     )
     parser.add_argument(
         "--clusters_file",
@@ -148,7 +147,7 @@ def get_operon_fasta(results, proteins_dir, operon_dir):
         acc = [contig + '_' + str(p) for p in range(start, end)] # get acc
 
         # save subsets as fasta
-        file = glob.glob(f"{proteins_path}/*/{genome}_protein.faa")[0]
+        file = load_faa(proteins_path, genome)
 
         records = [record for record in SeqIO.parse(file, "fasta") if record.id in set(acc)]
         output = output_dir / (f"{genome}_{contig}_{operon}_{cl}_operon.fasta")
@@ -194,11 +193,11 @@ def get_plot_data(nif_final_file, clusters_file, operon_dir):
         # for diazoDB annotated nif genes, replace with diazoDB results
             # accounts for incorrect annotations from microbeannotator (e.g. anfH annotated as nifH)
         for _, row in subset.iterrows():
-            annot.loc[row.protein, 'gene'] = row.Gene
+            annot.loc[row.protein, 'gene'] = row.gene
             annot.loc[row.protein, 'start'] = int(row.Location.split('-')[0])
             annot.loc[row.protein, 'end'] = int(row.Location.split('-')[1])
             annot.loc[row.protein, 'orientation'] = row.Orientation
-            if row.Gene == 'anfO':
+            if row.gene == 'anfO':
                 print(row.protein)
 
         # add info at end, after all rows added (microbeannotator + diazoDB -- microbeannotator may have missed some diazoDB hits (anfO, nifB, etc.))
