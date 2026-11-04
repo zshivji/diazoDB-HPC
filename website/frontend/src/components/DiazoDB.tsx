@@ -326,7 +326,7 @@ function alertStyle(type: "info" | "warn" | "error"): CSSProperties {
 interface JobData {
   jobId: string
   email: string
-  // useProdigal: boolean
+  useProdigal: boolean
 }
 
 interface UploadPageProps {
@@ -638,7 +638,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
-  // const [useProdigal, setUseProdigal] = useState(false)
+  const [useProdigal, setUseProdigal] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -680,7 +680,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
           file_size_bytes: selectedFile.size,
           include_in_database: includeInDatabase,
           orcid: orcid.trim() || null,
-          // use_prodigal: useProdigal,
+          use_prodigal: useProdigal,
         }),
       })
       if (!res.ok) {
@@ -861,13 +861,13 @@ function UploadPage({ onSubmit }: UploadPageProps) {
               </div>
             )}
 
-            {/* <div style={styles.divider}>
+            <div style={styles.divider}>
               <div style={styles.dividerLine} />
               options
               <div style={styles.dividerLine} />
-            </div> */}
+            </div>
 
-            {/* <label style={styles.checkbox}>
+            <label style={styles.checkbox}>
               <input
                 type="checkbox"
                 checked={useProdigal}
@@ -890,7 +890,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
                   not check this for protein sequences.
                 </div>
               </div>
-            </label> */}
+            </label>
 
             <button
               style={{ ...styles.btn, opacity: loading ? 0.6 : 1 }}
@@ -906,16 +906,17 @@ function UploadPage({ onSubmit }: UploadPageProps) {
           <div style={styles.sidebar}>
             <div style={styles.sidebarTitle}>Instructions</div>
             <p style={styles.sidebarText}>
-              Upload a <code>.fasta</code>{" "} with CDS regions predicted with Prodigal.
+              Upload a <code>.fasta</code>{" "} containing protein sequences, or
+              enable Prodigal below for nucleotide sequences.
             </p>
-            {/* <p style={styles.sidebarText}>
+            <p style={styles.sidebarText}>
               For nucleotide input from metagenomes, enable{" "}
               <strong style={{ color: theme.textDim }}>
                 Prodigal CDS prediction
               </strong>{" "}
               to automatically predict protein-coding sequences before
               classification.
-            </p> */}
+            </p>
             <p style={styles.sidebarText}>
               Provide your email to receive a link when the job completes or
               fails.
@@ -1472,7 +1473,7 @@ export default function DiazoDB() {
     initialJobId ? "waiting" : "upload",
   )
   const [jobData, setJobData] = useState<JobData | null>(() =>
-    initialJobId ? { jobId: initialJobId, email: "" } : null,
+    initialJobId ? { jobId: initialJobId, email: "", useProdigal: false } : null,
   )
   const [resultFilename, setResultFilename] = useState("nif_clusters.csv")
 

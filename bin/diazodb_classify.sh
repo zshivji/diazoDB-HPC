@@ -42,6 +42,7 @@ HMMSEARCH_BIN="${DIAZODB_HMMSEARCH_BIN:-hmmsearch}"
 PRODIGAL_BIN="${DIAZODB_PRODIGAL_BIN:-prodigal}"
 USE_PRODIGAL="${DIAZODB_USE_PRODIGAL:-false}"
 DIAZODB_CONDA_ENV="${DIAZODB_CONDA_ENV:-/resnick/groups/enviromics/zahra/miniconda3/envs/parse_hmm}"
+DIAZODB_PRODIGAL_ENV="${DIAZODB_PRODIGAL_ENV:-/resnick/groups/enviromics/zahra/miniconda3/envs/prodigal}"
 CONDA_BIN="${DIAZODB_CONDA_BIN:-/resnick/groups/enviromics/zahra/miniconda3/bin/conda}"
 MICROBE_ENV="${DIAZODB_MICROBE_ENV:-/resnick/groups/enviromics/zahra/miniconda3/envs/microbeannotator}"
 MICROBE_DB="${DIAZODB_MICROBE_DB:-/resnick/groups/enviromics/databases/microbeannotator-db}"
@@ -85,7 +86,7 @@ conda activate "$DIAZODB_CONDA_ENV"
 
 if [[ "$USE_PRODIGAL" == "true" ]]; then
   QUERY_FASTA="$INTERMEDIATE/predicted_proteins.faa"
-  "$PRODIGAL_BIN" \
+  conda run --no-capture-output -p "$DIAZODB_PRODIGAL_ENV" "$PRODIGAL_BIN" \
     -i "$INPUT_FASTA" \
     -a "$QUERY_FASTA" \
     -p meta \
@@ -199,7 +200,6 @@ fi
 #module load blast/2.15.0
 #makeblastdb 
 #blastp
-
 
 # Emit final result for the runner
 FINAL_CSV="$FINAL_DIR/nif_clusters.csv"

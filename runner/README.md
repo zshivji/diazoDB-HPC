@@ -23,6 +23,7 @@ Optional pipeline settings consumed by `bin/diazodb_classify.sh`:
 
 ```bash
 DIAZODB_CONDA_ENV=/path/to/conda/env
+DIAZODB_PRODIGAL_ENV=/resnick/groups/enviromics/zahra/miniconda3/envs/prodigal
 DIAZODB_CONDA_BIN=/path/to/miniconda3/bin/conda
 DIAZODB_HMM_PROFILE=/path/to/combined_nif.hmm
 DIAZODB_USE_PRODIGAL=false
