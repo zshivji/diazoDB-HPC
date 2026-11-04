@@ -1384,7 +1384,7 @@ function FailurePage({ jobId, onReset }: FailurePageProps) {
         An error occurred while running your job. Please check that your input
         is valid FASTA format. If the error persists, contact{" "}
         <a
-          href={`mailto:admin@diazo.db?subject=DiazoDB Error: ${jobId}`}
+          href={`mailto:diazodb@caltech.edu?subject=DiazoDB Error: ${jobId}`}
           style={{ color: theme.red }}
         >
           the administrator
