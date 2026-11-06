@@ -727,7 +727,7 @@ function UploadPage({ onSubmit }: UploadPageProps) {
         setUploadProgress(Math.round((offset / selectedFile.size) * 100))
       }
 
-      onSubmit({ jobId: data.id, email })
+      onSubmit({ jobId: data.id, email, useProdigal })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error"
       setError(`Could not submit job: ${message}`)
